@@ -18,41 +18,37 @@ export default function Model(): React.ReactElement {
             return;
         }
 
-        gsap.fromTo(
-            model.position,
-            {
-                x: 0.8,
-                y: -0.1,
-            },
-            {
-                x: 0,
-                y: 0,
-                duration: 1.1,
-                delay: 0.1,
-                ease: "power3.out",
-            },
-        );
+        model.position.set(0.8, -0.1, 0);
+        model.rotation.set(0, -Math.PI / 2, 0);
+        model.scale.set(0.0085, 0.0085, 0.0085);
 
-        gsap.fromTo(
-            model.scale,
-            {
-                x: 0.0085,
-                y: 0.0085,
-                z: 0.0085,
-            },
-            {
-                x: 0.01,
-                y: 0.01,
-                z: 0.01,
-                duration: 1.1,
-                delay: 0.1,
-                ease: "power3.out",
-            },
-        );
+        const entrance = gsap.timeline({
+            delay: 0.15,
+        });
+
+        entrance.to(model.position, {
+            x: 0,
+            y: 0,
+            duration: 1.2,
+            ease: "power3.out",
+        }, 0);
+
+        entrance.to(model.scale, {
+            x: 0.01,
+            y: 0.01,
+            z: 0.01,
+            duration: 1.2,
+            ease: "power3.out",
+        }, 0);
+
+        entrance.to(model.rotation, {
+            y: `+=${Math.PI * 2}`,
+            duration: 1.35,
+            ease: "power3.out",
+        }, 0);
 
         return () => {
-            gsap.killTweensOf(model.position);
-            gsap.killTweensOf(model.scale);
+            entrance.kill();
         };
     }, []);
 
@@ -70,11 +66,7 @@ export default function Model(): React.ReactElement {
     });
 
     return (
-        <group
-            ref={modelRef}
-            rotation={[0, -Math.PI / 2, 0]}
-            scale={0.01}
-        >
+        <group ref={modelRef}>
             <primitive object={scene} />
         </group>
     );

@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import newLogo from "@/public/images/F1-images/newlogo2.png";
+import F1DataHub from "@/components/f1/F1DataHub";
 
 const HeroScene = dynamic(
     () => import("@/components/3d/HeroScene"),
@@ -37,7 +38,12 @@ export default function Home(): React.ReactElement {
                         onClick={closeMenu}
                         className="text-xl font-black uppercase tracking-[-0.06em]"
                     >
-                        <Image src={newLogo} alt="Fast Girls" width={100} height={100} />
+                        <Image
+                            src={newLogo}
+                            alt="Fast Girls"
+                            width={100}
+                            height={100}
+                        />
                     </Link>
 
                     <div className="hidden items-center gap-8 text-xs font-bold uppercase tracking-[0.18em] md:flex">
@@ -194,32 +200,6 @@ export default function Home(): React.ReactElement {
                             </span>
                         </motion.div>
 
-                        {/* <motion.h1
-                            initial={{
-                                opacity: 0,
-                                x: -50,
-                            }}
-                            animate={{
-                                opacity: 1,
-                                x: 0,
-                            }}
-                            transition={{
-                                duration: 0.9,
-                                delay: 0.1,
-                                ease: [0.22, 1, 0.36, 1],
-                            }}
-                            className="text-[clamp(4rem,9vw,8.5rem)] font-black uppercase leading-[0.78] tracking-[-0.075em]"
-                        >
-                            Fast
-                            <br />
-                            <span className="text-[#ff729f]">
-                                Girls
-                            </span>
-                            <br />
-                            Club
-                            <span className="text-[#ee8434]">.</span>
-                        </motion.h1> */}
-
                         <motion.img
                             initial={{
                                 opacity: 0,
@@ -339,9 +319,11 @@ export default function Home(): React.ReactElement {
                 </div>
             </section>
 
+            <F1DataHub />
+
             <section
                 id="latest"
-                className="bg-[#e6e6e6] px-6 py-20 text-[#1c1c1c] lg:px-10 lg:py-28"
+                className="bg-[#e6e6e6] px-6 py-10 text-[#1c1c1c] lg:px-10 lg:py-18"
             >
                 <div className="mx-auto max-w-[77.5rem]">
                     <div className="flex flex-col justify-between gap-5 border-b border-[#1c1c1c]/15 pb-6 md:flex-row md:items-end">
