@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getLatestSession, getTeamChampionship } from "@/lib/f1/openf1";
+import { getTeamChampionship } from "@/lib/f1/openf1";
 
 import type {
   F1ConstructorStanding,
@@ -11,30 +11,22 @@ export async function GET(): Promise<
   NextResponse<F1ConstructorStandingsResponse | { error: string }>
 > {
   try {
-    const sessions = await getLatestSession();
-    const session = sessions[0];
-
-    if (!session) {
-      return NextResponse.json({
-        standings: [],
-        sessionKey: null,
-      });
-    }
-
-    const championship = await getTeamChampionship(session.session_key);
+    const championship = await getTeamChampionship();
 
     const standings: F1ConstructorStanding[] = championship
       .map((team) => ({
-        position: team.position_current,
-        team: team.team_name,
-        points: team.points_current,
-        pointsStart: team.points_start,
+        position: team.position,
+        team: team.team.teamName,
+        countryCode: team.team.teamNationality,
+        points: team.points,
+        pointsStart: 0,
+        teamColour: "",
       }))
       .sort((a, b) => a.position - b.position);
 
     return NextResponse.json({
       standings,
-      sessionKey: session.session_key,
+      sessionKey: null,
     });
   } catch (error) {
     console.error("F1 constructor standings API error:", error);
