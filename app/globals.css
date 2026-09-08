@@ -1,26 +1,78 @@
 @import "tailwindcss";
 
 :root {
+  --pink: #ff729f;
+  --orange: #ee8434;
+  --black: #1c1c1c;
+  --offwhite: #e6e6e6;
+  --grey: #747578;
+  --white: #ffffff;
+
+  --gradient-pink-orange: linear-gradient(135deg, #ff729f 0%, #ee8434 100%);
+
+  --gradient-orange-pink: linear-gradient(135deg, #ee8434 0%, #ff729f 100%);
+
+  --gradient-dark-pink: linear-gradient(
+    135deg,
+    #1c1c1c 0%,
+    #3a2029 55%,
+    #ff729f 100%
+  );
+
+  --gradient-pink-dark: linear-gradient(135deg, #ff729f 0%, #1c1c1c 100%);
+
+  --gradient-editorial: linear-gradient(
+    135deg,
+    #1c1c1c 0%,
+    #242426 50%,
+    #332027 100%
+  );
+
+  --max: 1240px;
+
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #1c1c1c;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-pink: var(--pink);
+  --color-orange: var(--orange);
+  --color-black: var(--black);
+  --color-offwhite: var(--offwhite);
+  --color-grey: var(--grey);
+  --color-white: var(--white);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
+  margin: 0;
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+::selection {
+  background: var(--pink);
+  color: var(--black);
+}
+
+a {
+  text-decoration: none;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
 }

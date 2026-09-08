@@ -1,58 +1,58 @@
 "use client";
 
-import { Environment, Float } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
+import { Environment } from "@react-three/drei";
 
-import CameraRig from "./CameraRig";
 import Model from "./Model";
 
 export default function Scene(): React.ReactElement {
     return (
         <Canvas
             camera={{
-                position: [0, 1.2, 6],
-                fov: 38,
+                position: [4, 2.5, 6],
+                fov: 40,
+                near: 0.01,
+                far: 100,
             }}
             dpr={[1, 1.5]}
             gl={{
                 antialias: true,
-                alpha: true,
+                alpha: false,
+                powerPreference: "high-performance",
             }}
         >
-            <color attach="background" args={["#16070d"]} />
+            <color
+                attach="background"
+                args={["#1c1c1c"]}
+            />
 
-            <ambientLight intensity={1.8} />
+            <ambientLight intensity={1.5} />
 
             <directionalLight
-                position={[4, 5, 4]}
-                intensity={3}
-                color="#ffffff"
+                position={[5, 8, 5]}
+                intensity={4}
             />
 
             <directionalLight
-                position={[-4, 2, 2]}
+                position={[-5, 3, 2]}
                 intensity={2}
+            />
+
+            <pointLight
+                position={[2, 2, 4]}
+                intensity={8}
                 color="#ff729f"
             />
 
             <pointLight
-                position={[0, 1, 3]}
-                intensity={3}
-                distance={10}
-                color="#ff729f"
+                position={[-3, 1, -2]}
+                intensity={5}
+                color="#ee8434"
             />
 
             <Environment preset="studio" />
 
-            <CameraRig />
-
-            <Float
-                speed={1.2}
-                rotationIntensity={0.08}
-                floatIntensity={0.25}
-            >
-                <Model />
-            </Float>
+            <Model />
         </Canvas>
     );
 }
