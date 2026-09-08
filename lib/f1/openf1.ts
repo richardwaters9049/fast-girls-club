@@ -1,5 +1,7 @@
 const F1_API_BASE = "https://f1api.dev/api";
 
+const CACHE_DURATION = 5 * 60 * 1000;
+
 export interface F1ApiDriver {
   driverId: string;
   name: string;
@@ -112,6 +114,21 @@ interface ConstructorAccumulator {
   wins: number;
 }
 
+let driverStandingsCache: {
+  data: F1ApiDriverStanding[];
+  timestamp: number;
+} | null = null;
+
+let constructorStandingsCache: {
+  data: F1ApiConstructorStanding[];
+  timestamp: number;
+} | null = null;
+
+let completedRacesCache: {
+  data: F1ApiRace[];
+  timestamp: number;
+} | null = null;
+
 async function f1ApiFetch<T>(endpoint: string): Promise<T> {
   const response = await fetch(`${F1_API_BASE}${endpoint}`, {
     headers: {
@@ -157,9 +174,16 @@ export async function getRace(year: number, round: number): Promise<F1ApiRace> {
 }
 
 async function getCompletedRaces(): Promise<F1ApiRace[]> {
+  if (
+    completedRacesCache &&
+    Date.now() - completedRacesCache.timestamp < CACHE_DURATION
+  ) {
+    return completedRacesCache.data;
+  }
+
   const currentSeason = await getCurrentSeason();
 
-  const races = currentSeason.races.filter((race) => {
+  const completedRaceDefinitions = currentSeason.races.filter((race) => {
     const raceDate = race.schedule?.race?.date;
 
     if (!raceDate) {
@@ -169,14 +193,30 @@ async function getCompletedRaces(): Promise<F1ApiRace[]> {
     return new Date(raceDate).getTime() <= Date.now();
   });
 
-  const results = await Promise.all(
-    races.map((race) => getRace(currentSeason.season, race.round)),
+  const races = await Promise.all(
+    completedRaceDefinitions.map((race) =>
+      getRace(currentSeason.season, race.round),
+    ),
   );
 
-  return results.filter((race) => race.results.length > 0);
+  const completedRaces = races.filter((race) => race.results.length > 0);
+
+  completedRacesCache = {
+    data: completedRaces,
+    timestamp: Date.now(),
+  };
+
+  return completedRaces;
 }
 
 export async function getDriverChampionship(): Promise<F1ApiDriverStanding[]> {
+  if (
+    driverStandingsCache &&
+    Date.now() - driverStandingsCache.timestamp < CACHE_DURATION
+  ) {
+    return driverStandingsCache.data;
+  }
+
   const races = await getCompletedRaces();
 
   const drivers = new Map<string, DriverAccumulator>();
@@ -208,7 +248,7 @@ export async function getDriverChampionship(): Promise<F1ApiDriverStanding[]> {
     }
   }
 
-  return Array.from(drivers.values())
+  const standings = Array.from(drivers.values())
     .sort((a, b) => {
       if (b.points !== a.points) {
         return b.points - a.points;
@@ -223,11 +263,25 @@ export async function getDriverChampionship(): Promise<F1ApiDriverStanding[]> {
       driver: entry.driver,
       team: entry.team,
     }));
+
+  driverStandingsCache = {
+    data: standings,
+    timestamp: Date.now(),
+  };
+
+  return standings;
 }
 
 export async function getTeamChampionship(): Promise<
   F1ApiConstructorStanding[]
 > {
+  if (
+    constructorStandingsCache &&
+    Date.now() - constructorStandingsCache.timestamp < CACHE_DURATION
+  ) {
+    return constructorStandingsCache.data;
+  }
+
   const races = await getCompletedRaces();
 
   const teams = new Map<string, ConstructorAccumulator>();
@@ -256,7 +310,7 @@ export async function getTeamChampionship(): Promise<
     }
   }
 
-  return Array.from(teams.values())
+  const standings = Array.from(teams.values())
     .sort((a, b) => {
       if (b.points !== a.points) {
         return b.points - a.points;
@@ -270,4 +324,11 @@ export async function getTeamChampionship(): Promise<
       wins: entry.wins,
       team: entry.team,
     }));
+
+  constructorStandingsCache = {
+    data: standings,
+    timestamp: Date.now(),
+  };
+
+  return standings;
 }
