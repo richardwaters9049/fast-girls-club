@@ -14,18 +14,13 @@ export default function Scene(): React.ReactElement {
                 near: 0.01,
                 far: 100,
             }}
-            dpr={[1, 1.5]}
+            dpr={[1, 1.25]}
             gl={{
                 antialias: true,
-                alpha: false,
+                alpha: true,
                 powerPreference: "high-performance",
             }}
         >
-            <color
-                attach="background"
-                args={["#1c1c1c"]}
-            />
-
             <ambientLight intensity={1.5} />
 
             <directionalLight
