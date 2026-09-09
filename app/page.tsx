@@ -319,8 +319,6 @@ export default function Home(): React.ReactElement {
                 </div>
             </section>
 
-            <F1DataHub />
-
             <section
                 id="latest"
                 className="bg-[#e6e6e6] px-6 py-6 text-[#1c1c1c] lg:px-10 lg:py-10"
@@ -437,6 +435,8 @@ export default function Home(): React.ReactElement {
                     </div>
                 </div>
             </section>
+
+            <F1DataHub />
 
             <section
                 id="racing"
