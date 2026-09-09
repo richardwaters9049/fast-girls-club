@@ -156,7 +156,7 @@ export default function F1DataHub(): React.ReactElement {
                                     type="button"
                                     onClick={() => setActiveTab(tab.id)}
                                     className={[
-                                        "group relative px-2 py-5 text-center text-[10px] font-black uppercase tracking-[0.12em] transition-all duration-300 sm:px-4 sm:text-xs sm:tracking-[0.18em]",
+                                        "group relative px-2 py-5 text-center text-[10px] font-black uppercase tracking-[0.12em] transition-all duration-300 sm:px-4 sm:text-xs sm:tracking-[0.18em] hover:cursor-pointer underline underline-offset-4",
                                         active
                                             ? "text-[#1c1c1c]"
                                             : "text-white/45 hover:text-white",
