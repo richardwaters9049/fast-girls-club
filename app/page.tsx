@@ -5,7 +5,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import { useState } from "react";
-import newLogo from "@/public/images/F1-images/newlogo2.png";
+import newLogo from "@/public/images/F1-images/newlogo3.png";
 import F1DataHub from "@/components/f1/F1DataHub";
 
 const HeroScene = dynamic(
@@ -41,8 +41,8 @@ export default function Home(): React.ReactElement {
                         <Image
                             src={newLogo}
                             alt="Fast Girls"
-                            width={100}
-                            height={100}
+                            width={80}
+                            height={80}
                         />
                     </Link>
 
@@ -323,7 +323,7 @@ export default function Home(): React.ReactElement {
 
             <section
                 id="latest"
-                className="bg-[#e6e6e6] px-6 py-10 text-[#1c1c1c] lg:px-10 lg:py-18"
+                className="bg-[#e6e6e6] px-6 py-6 text-[#1c1c1c] lg:px-10 lg:py-10"
             >
                 <div className="mx-auto max-w-[77.5rem]">
                     <div className="flex flex-col justify-between gap-5 border-b border-[#1c1c1c]/15 pb-6 md:flex-row md:items-end">
@@ -440,7 +440,7 @@ export default function Home(): React.ReactElement {
 
             <section
                 id="racing"
-                className="relative overflow-hidden bg-[#1c1c1c] px-6 py-20 lg:px-10 lg:py-28"
+                className="relative overflow-hidden bg-[#1c1c1c] px-6 py-6 lg:px-10 lg:py-10"
             >
                 <div className="absolute right-0 top-0 h-full w-1/3 bg-[linear-gradient(135deg,transparent_0%,rgba(255,114,159,0.08)_100%)]" />
 

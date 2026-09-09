@@ -118,7 +118,7 @@ export default function F1DataHub(): React.ReactElement {
             </div>
 
             <div className="relative mx-auto max-w-[1240px]">
-                <div className="mb-10 grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
+                <div className="mb-5 grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
                     <div>
                         <div className="mb-4 flex items-center gap-3">
                             <span className="h-[3px] w-10 bg-[#ff729f]" />
