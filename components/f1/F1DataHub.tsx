@@ -100,7 +100,7 @@ export default function F1DataHub(): React.ReactElement {
     return (
         <section
             id="f1-data"
-            className="relative overflow-hidden bg-[#1c1c1c] px-5 py-16 text-white sm:px-8 sm:py-20 lg:px-12 lg:py-24"
+            className="scroll-mt-6 relative overflow-hidden bg-[#1c1c1c] px-5 py-16 text-white sm:px-8 sm:py-20 lg:px-12 lg:py-24"
         >
             <div className="pointer-events-none absolute inset-0 overflow-hidden">
                 <div className="absolute -right-40 -top-40 h-[420px] w-[420px] rounded-full bg-[#ff729f]/20 blur-[120px]" />
@@ -130,7 +130,10 @@ export default function F1DataHub(): React.ReactElement {
 
                         <h2 className="max-w-3xl text-4xl font-black uppercase leading-[0.95] tracking-[-0.04em] sm:text-5xl lg:text-6xl">
                             F1 Data
-                            <span className="text-[#ff729f]"> Hub</span>
+                            <span className="text-[#ff729f]">
+                                {" "}
+                                Hub
+                            </span>
                         </h2>
 
                         <p className="mt-5 max-w-2xl text-sm leading-6 text-white/55 sm:text-base">
@@ -156,7 +159,7 @@ export default function F1DataHub(): React.ReactElement {
                                     type="button"
                                     onClick={() => setActiveTab(tab.id)}
                                     className={[
-                                        "group relative px-2 py-5 text-center text-[10px] font-black uppercase tracking-[0.12em] transition-all duration-300 sm:px-4 sm:text-xs sm:tracking-[0.18em] hover:cursor-pointer underline underline-offset-4",
+                                        "group relative px-2 py-5 text-center text-[10px] font-black uppercase tracking-[0.12em] transition-all duration-300 hover:cursor-pointer underline underline-offset-4 sm:px-4 sm:text-xs sm:tracking-[0.18em]",
                                         active
                                             ? "text-[#1c1c1c]"
                                             : "text-white/45 hover:text-white",
@@ -224,7 +227,9 @@ function SeasonBadge({
     return (
         <div className="flex w-fit items-center gap-4 border border-white/10 bg-white/4 px-5 py-4">
             <span
-                className={`h-2.5 w-2.5 rounded-full ${isLive ? "bg-[#ff729f]" : "bg-white/25"
+                className={`h-2.5 w-2.5 rounded-full ${isLive
+                    ? "bg-[#ff729f]"
+                    : "bg-white/25"
                     }`}
             />
 

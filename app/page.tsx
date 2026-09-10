@@ -43,6 +43,11 @@ export default function Home(): React.ReactElement {
                             alt="Fast Girls"
                             width={80}
                             height={80}
+                            loading="eager"
+                            style={{
+                                width: "auto",
+                                height: "auto",
+                            }}
                         />
                     </Link>
 
@@ -55,7 +60,7 @@ export default function Home(): React.ReactElement {
                         </Link>
 
                         <Link
-                            href="#racing"
+                            href="#f1-data"
                             className="transition-colors hover:text-[#ff729f]"
                         >
                             Racing
@@ -141,7 +146,7 @@ export default function Home(): React.ReactElement {
                                 </Link>
 
                                 <Link
-                                    href="#racing"
+                                    href="#f1-data"
                                     onClick={closeMenu}
                                     className="border-b border-white/10 py-5 text-3xl font-black uppercase tracking-[-0.04em] transition-colors hover:text-[#ff729f]"
                                 >
@@ -261,7 +266,7 @@ export default function Home(): React.ReactElement {
                             </Link>
 
                             <Link
-                                href="#racing"
+                                href="#f1-data"
                                 className="border border-white/25 px-7 py-4 text-xs font-black uppercase tracking-[0.18em] transition-colors hover:border-[#ff729f] hover:text-[#ff729f]"
                             >
                                 Latest racing
@@ -425,7 +430,7 @@ export default function Home(): React.ReactElement {
                                 </p>
 
                                 <Link
-                                    href="#grid"
+                                    href="#f1-data"
                                     className="mt-8 inline-block border-b-2 border-[#1c1c1c] pb-2 text-xs font-black uppercase tracking-[0.2em]"
                                 >
                                     View the grid →
