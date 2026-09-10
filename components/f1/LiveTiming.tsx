@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 
+import { countryCodeToEmoji } from "@/lib/f1/countries";
 import type {
     F1Driver,
     F1LiveResponse,
@@ -390,39 +391,6 @@ function CountryFlag({
             {emoji}
         </span>
     );
-}
-
-function countryCodeToEmoji(countryCode: string): string {
-    if (!countryCode || countryCode.length !== 3) {
-        return "🏁";
-    }
-
-    const codes: Record<string, string> = {
-        AUS: "🇦🇺",
-        AUT: "🇦🇹",
-        BEL: "🇧🇪",
-        BRA: "🇧🇷",
-        CAN: "🇨🇦",
-        CHE: "🇨🇭",
-        CHN: "🇨🇳",
-        DEU: "🇩🇪",
-        ESP: "🇪🇸",
-        FRA: "🇫🇷",
-        GBR: "🇬🇧",
-        HUN: "🇭🇺",
-        ITA: "🇮🇹",
-        JPN: "🇯🇵",
-        MEX: "🇲🇽",
-        MCO: "🇲🇨",
-        NLD: "🇳🇱",
-        NZL: "🇳🇿",
-        PRT: "🇵🇹",
-        SGP: "🇸🇬",
-        THA: "🇹🇭",
-        USA: "🇺🇸",
-    };
-
-    return codes[countryCode] ?? "🏁";
 }
 
 function LoadingState(): React.ReactElement {
