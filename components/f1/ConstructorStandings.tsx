@@ -20,7 +20,9 @@ export default function ConstructorStandings(): React.ReactElement {
                 setLoading(true);
                 setError(null);
 
-                const response = await fetch("/api/f1/constructors");
+                const response = await fetch(
+                    "/api/f1/constructors",
+                );
 
                 if (!response.ok) {
                     throw new Error(
@@ -59,11 +61,15 @@ export default function ConstructorStandings(): React.ReactElement {
     return (
         <div>
             <div className="border-b border-white/10 px-5 py-6 sm:px-8 sm:py-7">
-                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#ff729f]">
-                    2026 Championship
-                </p>
+                <div className="flex items-center gap-3">
+                    <span className="h-2 w-2 bg-[#ee8434]" />
 
-                <h3 className="mt-2 text-2xl font-black uppercase tracking-tight sm:text-3xl">
+                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#ff729f]">
+                        2026 Championship
+                    </p>
+                </div>
+
+                <h3 className="mt-3 text-2xl font-black uppercase tracking-[-0.03em] sm:text-3xl">
                     Constructor Standings
                 </h3>
 
@@ -75,7 +81,9 @@ export default function ConstructorStandings(): React.ReactElement {
 
             {loading && <LoadingState />}
 
-            {!loading && error && <ErrorState message={error} />}
+            {!loading && error && (
+                <ErrorState message={error} />
+            )}
 
             {!loading && !error && standings.length === 0 && (
                 <EmptyState />
@@ -83,10 +91,13 @@ export default function ConstructorStandings(): React.ReactElement {
 
             {!loading && !error && standings.length > 0 && (
                 <div>
-                    <div className="grid grid-cols-[48px_1fr_90px] items-center gap-3 border-b border-white/10 px-5 py-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25 sm:grid-cols-[55px_1fr_90px] sm:px-8">
+                    <div className="grid grid-cols-[48px_1fr_90px] items-center gap-3 border-b border-white/10 bg-black/[0.08] px-5 py-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25 sm:grid-cols-[55px_1fr_90px] sm:px-8">
                         <span>Pos</span>
                         <span>Constructor</span>
-                        <span className="text-right">Points</span>
+
+                        <span className="text-right">
+                            Points
+                        </span>
                     </div>
 
                     {standings.map((team) => (
@@ -112,6 +123,8 @@ function ConstructorRow({
 }: {
     team: F1ConstructorStanding;
 }): React.ReactElement {
+    const isTopThree = team.position <= 3;
+
     return (
         <div className="group relative grid grid-cols-[48px_1fr_90px] items-center gap-3 border-b border-white/[0.06] px-5 py-5 transition-colors duration-200 hover:bg-white/[0.035] sm:grid-cols-[55px_1fr_90px] sm:px-8">
             <span
@@ -119,7 +132,9 @@ function ConstructorRow({
                     "absolute bottom-0 left-0 top-0 w-[3px]",
                     team.position === 1
                         ? "bg-[#ff729f]"
-                        : "bg-white/10",
+                        : team.position === 2
+                            ? "bg-[#ee8434]"
+                            : "bg-white/10",
                 ].join(" ")}
             />
 
@@ -127,7 +142,7 @@ function ConstructorRow({
                 <span
                     className={[
                         "text-lg font-black tracking-tight",
-                        team.position <= 3
+                        isTopThree
                             ? "text-[#ff729f]"
                             : "text-white/50",
                     ].join(" ")}
@@ -143,9 +158,17 @@ function ConstructorRow({
                 />
 
                 <div className="min-w-0">
-                    <p className="truncate text-sm font-black uppercase text-white sm:text-base">
-                        {team.team}
-                    </p>
+                    <div className="flex items-center gap-2">
+                        <p className="truncate text-sm font-black uppercase text-white sm:text-base">
+                            {team.team}
+                        </p>
+
+                        {team.position === 1 && (
+                            <span className="hidden border border-[#ff729f]/20 bg-[#ff729f]/5 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-[#ff729f] sm:inline-block">
+                                P1
+                            </span>
+                        )}
+                    </div>
 
                     <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.15em] text-white/25">
                         Constructor
@@ -154,7 +177,14 @@ function ConstructorRow({
             </div>
 
             <div className="text-right">
-                <p className="text-sm font-black tabular-nums text-white sm:text-base">
+                <p
+                    className={[
+                        "text-sm font-black tabular-nums sm:text-base",
+                        isTopThree
+                            ? "text-white"
+                            : "text-white/75",
+                    ].join(" ")}
+                >
                     {team.points}
                 </p>
 
@@ -185,7 +215,9 @@ function TeamMark({
                 "flex h-10 w-10 shrink-0 items-center justify-center border text-[10px] font-black uppercase",
                 position === 1
                     ? "border-[#ff729f]/40 bg-[#ff729f]/10 text-[#ff729f]"
-                    : "border-white/10 bg-white/[0.04] text-white/40",
+                    : position === 2
+                        ? "border-[#ee8434]/30 bg-[#ee8434]/5 text-[#ee8434]"
+                        : "border-white/10 bg-white/[0.04] text-white/40",
             ].join(" ")}
         >
             {initials}

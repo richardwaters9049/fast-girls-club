@@ -43,19 +43,23 @@ export default function LiveTiming({
                                     ? "Live Timing"
                                     : "Last Session"}
                             </p>
+
+                            {isLive && (
+                                <span className="border border-[#ff729f]/25 bg-[#ff729f]/5 px-2 py-1 text-[8px] font-black uppercase tracking-[0.18em] text-[#ff729f]">
+                                    Live
+                                </span>
+                            )}
                         </div>
 
-                        <div className="flex items-center gap-3">
-                            <h3 className="text-2xl font-black uppercase tracking-tight sm:text-3xl">
+                        <div className="flex flex-wrap items-center gap-3">
+                            <h3 className="text-2xl font-black uppercase tracking-[-0.03em] sm:text-3xl">
                                 {session?.circuitName ??
                                     "Formula 1"}
                             </h3>
 
                             {session && (
                                 <CountryFlag
-                                    countryCode={
-                                        session.countryCode
-                                    }
+                                    countryCode={session.countryCode}
                                 />
                             )}
                         </div>
@@ -159,15 +163,18 @@ function TimingTable({
 
     return (
         <div>
-            <div className="grid grid-cols-[42px_1fr_90px] items-center gap-3 border-b border-white/10 px-5 py-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25 sm:grid-cols-[55px_1fr_140px_120px_120px] sm:px-8">
+            <div className="grid grid-cols-[42px_1fr_90px] items-center gap-3 border-b border-white/10 bg-black/[0.08] px-5 py-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25 sm:grid-cols-[55px_1fr_140px_120px_120px] sm:px-8">
                 <span>Pos</span>
                 <span>Driver</span>
+
                 <span className="hidden sm:block">
                     Team
                 </span>
+
                 <span className="hidden sm:block">
                     Gap
                 </span>
+
                 <span className="text-right">
                     Fastest
                 </span>
@@ -205,10 +212,12 @@ function DriverRow({
     driver: F1Driver;
     isLive: boolean;
 }): React.ReactElement {
+    const isTopThree = driver.position <= 3;
+
     return (
         <div className="group relative grid grid-cols-[42px_1fr_90px] items-center gap-3 border-b border-white/[0.06] px-5 py-4 transition-colors duration-200 hover:bg-white/[0.035] sm:grid-cols-[55px_1fr_140px_120px_120px] sm:px-8">
             <span
-                className="absolute bottom-0 left-0 top-0 w-[3px]"
+                className="absolute bottom-0 left-0 top-0 w-[3px] opacity-80 transition-opacity group-hover:opacity-100"
                 style={{
                     backgroundColor: `#${driver.teamColour}`,
                 }}
@@ -218,15 +227,12 @@ function DriverRow({
                 <span
                     className={[
                         "text-lg font-black tracking-tight",
-                        driver.position <= 3
+                        isTopThree
                             ? "text-[#ff729f]"
                             : "text-white/50",
                     ].join(" ")}
                 >
-                    {String(driver.position).padStart(
-                        2,
-                        "0",
-                    )}
+                    {String(driver.position).padStart(2, "0")}
                 </span>
             </div>
 
@@ -236,9 +242,7 @@ function DriverRow({
                 <div className="min-w-0">
                     <div className="flex items-center gap-2">
                         <CountryFlag
-                            countryCode={
-                                driver.countryCode
-                            }
+                            countryCode={driver.countryCode}
                         />
 
                         <span className="text-[10px] font-black uppercase tracking-wider text-[#ff729f]">
@@ -354,20 +358,20 @@ function DriverImage({
 }): React.ReactElement {
     if (driver.headshotUrl) {
         return (
-            <div className="relative hidden h-10 w-10 shrink-0 overflow-hidden bg-white/[0.06] sm:block">
+            <div className="relative hidden h-10 w-10 shrink-0 overflow-hidden border border-white/10 bg-white/[0.06] sm:block">
                 <Image
                     src={driver.headshotUrl}
                     alt={driver.name}
                     fill
                     sizes="40px"
-                    className="object-cover object-top"
+                    className="object-cover object-top grayscale-[15%] transition-all duration-300 group-hover:grayscale-0"
                 />
             </div>
         );
     }
 
     return (
-        <div className="hidden h-10 w-10 shrink-0 items-center justify-center bg-white/[0.06] sm:flex">
+        <div className="hidden h-10 w-10 shrink-0 items-center justify-center border border-white/10 bg-white/[0.06] sm:flex">
             <span className="text-[10px] font-black text-white/30">
                 {driver.acronym}
             </span>

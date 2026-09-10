@@ -25,7 +25,9 @@ export default function DriverStandings(): React.ReactElement {
                 const response = await fetch("/api/f1/drivers");
 
                 if (!response.ok) {
-                    throw new Error("Failed to load driver standings");
+                    throw new Error(
+                        "Failed to load driver standings",
+                    );
                 }
 
                 const data: F1DriverStandingsResponse =
@@ -66,7 +68,9 @@ export default function DriverStandings(): React.ReactElement {
 
             {loading && <LoadingState />}
 
-            {!loading && error && <ErrorState message={error} />}
+            {!loading && error && (
+                <ErrorState message={error} />
+            )}
 
             {!loading && !error && standings.length === 0 && (
                 <EmptyState />
@@ -74,11 +78,17 @@ export default function DriverStandings(): React.ReactElement {
 
             {!loading && !error && standings.length > 0 && (
                 <div>
-                    <div className="grid grid-cols-[48px_1fr_90px] items-center gap-3 border-b border-white/10 px-5 py-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25 sm:grid-cols-[55px_1fr_150px_90px] sm:px-8">
+                    <div className="grid grid-cols-[48px_1fr_90px] items-center gap-3 border-b border-white/10 bg-black/[0.08] px-5 py-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25 sm:grid-cols-[55px_1fr_150px_90px] sm:px-8">
                         <span>Pos</span>
                         <span>Driver</span>
-                        <span className="hidden sm:block">Team</span>
-                        <span className="text-right">Points</span>
+
+                        <span className="hidden sm:block">
+                            Team
+                        </span>
+
+                        <span className="text-right">
+                            Points
+                        </span>
                     </div>
 
                     {standings.map((driver) => (
@@ -110,11 +120,15 @@ function PanelHeader({
 }): React.ReactElement {
     return (
         <div className="border-b border-white/10 px-5 py-6 sm:px-8 sm:py-7">
-            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#ff729f]">
-                {eyebrow}
-            </p>
+            <div className="flex items-center gap-3">
+                <span className="h-2 w-2 bg-[#ff729f]" />
 
-            <h3 className="mt-2 text-2xl font-black uppercase tracking-tight sm:text-3xl">
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#ff729f]">
+                    {eyebrow}
+                </p>
+            </div>
+
+            <h3 className="mt-3 text-2xl font-black uppercase tracking-[-0.03em] sm:text-3xl">
                 {title}
             </h3>
 
@@ -130,10 +144,12 @@ function DriverRow({
 }: {
     driver: F1DriverStanding;
 }): React.ReactElement {
+    const isTopThree = driver.position <= 3;
+
     return (
         <div className="group relative grid grid-cols-[48px_1fr_90px] items-center gap-3 border-b border-white/[0.06] px-5 py-4 transition-colors duration-200 hover:bg-white/[0.035] sm:grid-cols-[55px_1fr_150px_90px] sm:px-8">
             <span
-                className="absolute bottom-0 left-0 top-0 w-[3px] opacity-70"
+                className="absolute bottom-0 left-0 top-0 w-[3px] opacity-70 transition-opacity group-hover:opacity-100"
                 style={{
                     backgroundColor: `#${driver.teamColour}`,
                 }}
@@ -143,7 +159,7 @@ function DriverRow({
                 <span
                     className={[
                         "text-lg font-black tracking-tight",
-                        driver.position <= 3
+                        isTopThree
                             ? "text-[#ff729f]"
                             : "text-white/50",
                     ].join(" ")}
@@ -165,11 +181,18 @@ function DriverRow({
                             {driver.acronym}
                         </span>
 
-                        {driver.position <= 3 && (
-                            <span className="hidden bg-white/10 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-white/50 sm:inline-block">
-                                Top 3
+                        {driver.position === 1 && (
+                            <span className="hidden border border-[#ee8434]/25 bg-[#ee8434]/5 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-[#ee8434] sm:inline-block">
+                                Leader
                             </span>
                         )}
+
+                        {driver.position > 1 &&
+                            driver.position <= 3 && (
+                                <span className="hidden border border-white/10 bg-white/[0.04] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-white/40 sm:inline-block">
+                                    Top 3
+                                </span>
+                            )}
                     </div>
 
                     <p className="truncate text-sm font-black uppercase text-white sm:text-base">
@@ -189,7 +212,14 @@ function DriverRow({
             </div>
 
             <div className="text-right">
-                <p className="text-sm font-black tabular-nums text-white sm:text-base">
+                <p
+                    className={[
+                        "text-sm font-black tabular-nums sm:text-base",
+                        isTopThree
+                            ? "text-white"
+                            : "text-white/75",
+                    ].join(" ")}
+                >
                     {driver.points}
                 </p>
 
@@ -208,7 +238,7 @@ function DriverImage({
 }): React.ReactElement {
     if (driver.headshotUrl) {
         return (
-            <div className="relative hidden h-10 w-10 shrink-0 overflow-hidden bg-white/[0.06] sm:block">
+            <div className="relative hidden h-10 w-10 shrink-0 overflow-hidden border border-white/10 bg-white/[0.06] sm:block">
                 <Image
                     src={driver.headshotUrl}
                     alt={driver.driver}
@@ -221,7 +251,7 @@ function DriverImage({
     }
 
     return (
-        <div className="hidden h-10 w-10 shrink-0 items-center justify-center bg-white/[0.06] sm:flex">
+        <div className="hidden h-10 w-10 shrink-0 items-center justify-center border border-white/10 bg-white/[0.06] sm:flex">
             <span className="text-[10px] font-black text-white/30">
                 {driver.acronym}
             </span>
