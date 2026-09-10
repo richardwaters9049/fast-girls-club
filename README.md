@@ -275,23 +275,6 @@ New functionality should complement the Fast Girls Club identity. Adding technic
 
 Layouts should use natural document flow, grid, flexbox, spacing and responsive breakpoints. Avoid unnecessary fixed-height layouts that create problems on smaller screens.
 
-## Working with AI
-
-AI-assisted development is expected to follow the existing architecture and design decisions rather than introducing new patterns unnecessarily.
-
-Before changing Next.js functionality, check the version-specific documentation available in the installed project dependencies.
-
-When modifying F1 functionality:
-
-1. Understand the existing data flow.
-2. Reuse existing types and utilities where possible.
-3. Keep API, service and presentation responsibilities separate.
-4. Avoid duplicating external API calls inside components.
-5. Preserve existing design decisions unless the task explicitly requires changing them.
-6. Run the production build after significant changes.
-
-The detailed implementation rules for future AI-assisted development are maintained separately in `AGENTS.md`.
-
 ## Project philosophy
 
 Fast Girls Club is being built to demonstrate that a motorsport publication can combine strong editorial design with genuinely useful technology.
