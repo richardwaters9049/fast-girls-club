@@ -16,27 +16,6 @@ const HeroScene = dynamic(
     },
 );
 
-const dashboardCalendar = [
-    {
-        round: "16",
-        country: "🇮🇹",
-        race: "Italian Grand Prix",
-        circuit: "Monza Circuit",
-    },
-    {
-        round: "17",
-        country: "🇦🇿",
-        race: "Azerbaijan Grand Prix",
-        circuit: "Baku City Circuit",
-    },
-    {
-        round: "18",
-        country: "🇸🇬",
-        race: "Singapore Grand Prix",
-        circuit: "Marina Bay Street Circuit",
-    },
-];
-
 export default function Home(): React.ReactElement {
     const [menuOpen, setMenuOpen] = useState<boolean>(false);
 
@@ -458,7 +437,9 @@ export default function Home(): React.ReactElement {
                 id="f1-data"
                 className="relative overflow-hidden bg-[#151515] px-6 py-12 lg:px-10 lg:py-20"
             >
-                <div className="absolute right-[-8rem] top-[-8rem] h-[28rem] w-[28rem] rounded-full bg-[#ff729f]/10 blur-3xl" />
+                <div className="absolute -right-32 -top-32 h-[32rem] w-[32rem] rounded-full bg-[#ff729f]/10 blur-3xl" />
+
+                <div className="absolute bottom-0 left-0 h-px w-full bg-[linear-gradient(90deg,transparent,#ff729f,transparent)] opacity-30" />
 
                 <div className="relative mx-auto max-w-[77.5rem]">
                     <div className="flex flex-col justify-between gap-5 border-b border-white/10 pb-7 md:flex-row md:items-end">
@@ -472,16 +453,16 @@ export default function Home(): React.ReactElement {
                             </div>
 
                             <h2 className="mt-4 text-5xl font-black uppercase tracking-[-0.06em] md:text-7xl">
-                                F1
+                                Enter
                                 <br />
-                                Dashboard
+                                The Grid
                                 <span className="text-[#ff729f]">.</span>
                             </h2>
 
                             <p className="mt-5 max-w-[32rem] text-sm leading-6 text-white/45 md:text-base">
-                                Live timing, championships, race weekends
-                                and the complete 2026 calendar in one
-                                dedicated racing hub.
+                                Your complete F1 season hub. Follow the
+                                racing, explore the championship and keep
+                                up with every round of the 2026 calendar.
                             </p>
                         </div>
 
@@ -489,7 +470,7 @@ export default function Home(): React.ReactElement {
                             href="/f1"
                             className="inline-flex items-center self-start border border-white/20 px-6 py-3 text-[10px] font-black uppercase tracking-[0.2em] transition-colors hover:border-[#ff729f] hover:text-[#ff729f] md:self-auto"
                         >
-                            Open dashboard →
+                            Open the Grid →
                         </Link>
                     </div>
 
@@ -497,213 +478,108 @@ export default function Home(): React.ReactElement {
                         href="/f1"
                         className="group mt-8 block"
                     >
-                        <div className="relative overflow-hidden border border-white/10 bg-[#1c1c1c] shadow-2xl transition-transform duration-500 group-hover:-translate-y-1">
+                        <div className="relative overflow-hidden border border-white/10 bg-[#1c1c1c] transition-transform duration-500 group-hover:-translate-y-1">
                             <div className="absolute left-0 top-0 h-1 w-full bg-[linear-gradient(90deg,#ff729f,#ee8434)]" />
 
-                            <div className="grid lg:grid-cols-[1.65fr_0.85fr]">
-                                <div className="border-b border-white/10 p-5 md:p-7 lg:border-b-0 lg:border-r">
-                                    <div className="flex flex-wrap items-center justify-between gap-4">
-                                        <div className="flex items-center gap-2">
-                                            <span className="bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#1c1c1c]">
-                                                F1
-                                            </span>
+                            <div className="relative grid gap-10 p-6 md:p-8 lg:grid-cols-[1fr_0.8fr] lg:items-center lg:p-12">
+                                <div className="relative z-10">
+                                    <div className="flex items-center gap-3">
+                                        <span className="border border-[#ff729f]/30 bg-[#ff729f]/10 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#ff729f]">
+                                            2026 Season
+                                        </span>
 
-                                            <span className="border border-[#ff729f]/30 bg-[#ff729f]/10 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#ff729f]">
-                                                2026 Season
-                                            </span>
-                                        </div>
-
-                                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/30">
-                                            The Grid
+                                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/25">
+                                            F1 / Live / Data
                                         </span>
                                     </div>
 
-                                    <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                                        <div className="border border-white/10 bg-white/[0.03] p-4">
-                                            <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/30">
-                                                Rounds
-                                            </p>
+                                    <h3 className="mt-8 max-w-[30rem] text-4xl font-black uppercase leading-[0.9] tracking-[-0.06em] sm:text-5xl md:text-6xl">
+                                        Everything
+                                        <br />
+                                        starts
+                                        <br />
+                                        <span className="text-[#ff729f]">
+                                            here.
+                                        </span>
+                                    </h3>
 
-                                            <p className="mt-2 text-3xl font-black tracking-[-0.04em]">
-                                                24
-                                            </p>
+                                    <p className="mt-7 max-w-[28rem] text-sm leading-6 text-white/45 md:text-base">
+                                        Explore live timing, driver
+                                        standings, constructor
+                                        championships and the complete
+                                        race calendar in one dedicated
+                                        racing hub.
+                                    </p>
 
-                                            <p className="mt-1 text-[11px] text-white/30">
-                                                2026 calendar
-                                            </p>
-                                        </div>
-
-                                        <div className="border border-white/10 bg-white/[0.03] p-4">
-                                            <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/30">
-                                                Live feed
-                                            </p>
-
-                                            <p className="mt-2 text-3xl font-black tracking-[-0.04em] text-[#ff729f]">
-                                                LIVE
-                                            </p>
-
-                                            <p className="mt-1 text-[11px] text-white/30">
-                                                Timing ready
-                                            </p>
-                                        </div>
-
-                                        <div className="border border-white/10 bg-white/[0.03] p-4">
-                                            <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/30">
-                                                Series
-                                            </p>
-
-                                            <p className="mt-2 text-3xl font-black tracking-[-0.04em]">
-                                                F1
-                                            </p>
-
-                                            <p className="mt-1 text-[11px] text-white/30">
-                                                F2 · F3 included
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-5 overflow-hidden border border-white/10">
-                                        <div className="grid grid-cols-[4rem_3rem_1fr_auto] items-center gap-3 border-b border-white/10 bg-white/[0.03] px-4 py-3 text-[9px] font-bold uppercase tracking-[0.18em] text-white/30">
-                                            <span>Round</span>
-                                            <span>Flag</span>
-                                            <span>Grand Prix</span>
-                                            <span className="hidden sm:block">
-                                                Circuit
-                                            </span>
-                                        </div>
-
-                                        {dashboardCalendar.map((race) => (
-                                            <div
-                                                key={race.round}
-                                                className="grid grid-cols-[4rem_3rem_1fr_auto] items-center gap-3 border-b border-white/5 px-4 py-4 last:border-b-0"
+                                    <div className="mt-8 flex flex-wrap gap-2">
+                                        {[
+                                            "Live Timing",
+                                            "Drivers",
+                                            "Teams",
+                                            "Race Calendar",
+                                        ].map((item) => (
+                                            <span
+                                                key={item}
+                                                className="border border-white/10 px-3 py-2 text-[9px] font-bold uppercase tracking-[0.14em] text-white/40"
                                             >
-                                                <span className="text-xs font-bold text-white/35">
-                                                    {race.round}
-                                                </span>
-
-                                                <span className="text-base">
-                                                    {race.country}
-                                                </span>
-
-                                                <div>
-                                                    <p className="text-sm font-semibold text-white">
-                                                        {race.race}
-                                                    </p>
-
-                                                    <p className="mt-1 text-[10px] text-white/30 sm:hidden">
-                                                        {race.circuit}
-                                                    </p>
-                                                </div>
-
-                                                <span className="hidden text-[10px] text-white/30 sm:block">
-                                                    {race.circuit}
-                                                </span>
-                                            </div>
+                                                {item}
+                                            </span>
                                         ))}
                                     </div>
                                 </div>
 
-                                <div className="bg-[#121212] p-5 md:p-7">
-                                    <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                                        <div>
-                                            <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#ee8434]">
-                                                Championship
-                                            </p>
+                                <div className="relative flex min-h-[18rem] items-center justify-center overflow-hidden border border-white/10 bg-[#121212] md:min-h-[24rem]">
+                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,114,159,0.12),transparent_65%)]" />
 
-                                            <h3 className="mt-2 text-xl font-black uppercase tracking-[-0.04em]">
-                                                Driver standings
-                                            </h3>
-                                        </div>
+                                    <div className="absolute left-1/2 top-1/2 h-px w-[150%] -translate-x-1/2 -translate-y-1/2 rotate-[-24deg] bg-white/10" />
 
-                                        <span className="text-[10px] font-bold text-white/25">
-                                            01—10
+                                    <div className="absolute left-1/2 top-1/2 h-px w-[150%] -translate-x-1/2 -translate-y-1/2 rotate-[24deg] bg-white/10" />
+
+                                    <div className="absolute left-8 top-8 text-[10px] font-bold uppercase tracking-[0.25em] text-white/25">
+                                        FGC / 026
+                                    </div>
+
+                                    <div className="absolute bottom-8 right-8 text-right">
+                                        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/25">
+                                            Championship
+                                        </p>
+
+                                        <p className="mt-2 text-sm font-black uppercase tracking-[0.15em] text-[#ee8434]">
+                                            Full season
+                                        </p>
+                                    </div>
+
+                                    <div className="relative">
+                                        <span className="block text-[11rem] font-black leading-none tracking-[-0.16em] text-white/[0.04] sm:text-[15rem]">
+                                            01
+                                        </span>
+
+                                        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-5xl font-black uppercase tracking-[-0.08em] text-white/90 sm:text-6xl">
+                                            F1
                                         </span>
                                     </div>
 
-                                    <div className="mt-4 space-y-2">
-                                        <div className="grid grid-cols-[2rem_1fr_auto] items-center gap-3 border border-[#ff729f]/25 bg-[#ff729f]/[0.06] px-3 py-3">
-                                            <span className="text-[10px] font-black text-[#ff729f]">
-                                                01
-                                            </span>
+                                    <div className="absolute bottom-8 left-8 flex items-center gap-3">
+                                        <span className="h-2 w-2 bg-[#ff729f]" />
 
-                                            <div>
-                                                <p className="text-xs font-bold text-white">
-                                                    Leader
-                                                </p>
-
-                                                <p className="mt-0.5 text-[9px] text-white/30">
-                                                    Driver championship
-                                                </p>
-                                            </div>
-
-                                            <span className="text-xs font-black text-white">
-                                                PTS
-                                            </span>
-                                        </div>
-
-                                        {[2, 3, 4, 5].map((position) => (
-                                            <div
-                                                key={position}
-                                                className="grid grid-cols-[2rem_1fr_auto] items-center gap-3 border border-white/5 bg-white/[0.02] px-3 py-3"
-                                            >
-                                                <span className="text-[10px] font-black text-white/25">
-                                                    {String(position).padStart(2, "0")}
-                                                </span>
-
-                                                <div>
-                                                    <p className="text-xs font-semibold text-white/70">
-                                                        Championship
-                                                    </p>
-
-                                                    <p className="mt-0.5 text-[9px] text-white/20">
-                                                        Current position
-                                                    </p>
-                                                </div>
-
-                                                <span className="text-xs font-bold text-white/35">
-                                                    —
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    <div className="mt-5 border-t border-white/10 pt-5">
-                                        <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/25">
-                                            Dashboard includes
-                                        </p>
-
-                                        <div className="mt-3 flex flex-wrap gap-2">
-                                            {[
-                                                "Live Timing",
-                                                "Drivers",
-                                                "Teams",
-                                                "F1",
-                                                "F2",
-                                                "F3",
-                                            ].map((item) => (
-                                                <span
-                                                    key={item}
-                                                    className="border border-white/10 px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-[0.12em] text-white/40"
-                                                >
-                                                    {item}
-                                                </span>
-                                            ))}
-                                        </div>
+                                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/35">
+                                            The Grid awaits
+                                        </span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="flex flex-col justify-between gap-4 border-t border-white/10 bg-black/20 px-5 py-4 md:flex-row md:items-center md:px-7">
+                            <div className="flex flex-col justify-between gap-4 border-t border-white/10 bg-black/20 px-6 py-5 md:flex-row md:items-center md:px-8">
                                 <div className="flex items-center gap-3">
                                     <span className="h-2 w-2 bg-[#ff729f]" />
 
                                     <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/35">
-                                        Full F1 dashboard
+                                        Your F1 season starts here
                                     </span>
                                 </div>
 
                                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/45 transition-colors group-hover:text-[#ff729f]">
-                                    View the full grid →
+                                    Enter the Grid →
                                 </span>
                             </div>
                         </div>
