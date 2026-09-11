@@ -1,6 +1,13 @@
 "use client";
 
 import Image from "next/image";
+import {
+    useMemo,
+    useState,
+} from "react";
+
+import CategoryTag from "@/components/ui/CategoryTag";
+import Pagination from "@/components/ui/Pagination";
 
 import { countryCodeToEmoji } from "@/lib/f1/countries";
 import type {
@@ -8,438 +15,184 @@ import type {
     F1LiveResponse,
 } from "@/lib/f1/types";
 
+const PAGE_SIZE = 5;
+
 interface LiveTimingProps {
     data: F1LiveResponse | null;
     loading: boolean;
     error: string | null;
 }
 
-export default function LiveTiming({
-    data,
-    loading,
-    error,
-}: LiveTimingProps): React.ReactElement {
-    const session = data?.session ?? null;
-    const drivers = data?.drivers ?? [];
-    const isLive = data?.isLive ?? false;
-
-    return (
-        <div>
-            <div className="border-b border-white/10 px-5 py-6 sm:px-8 sm:py-7">
-                <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-                    <div>
-                        <div className="mb-4 flex items-center gap-3">
-                            <span
-                                className={[
-                                    "h-2.5 w-2.5 rounded-full",
-                                    isLive
-                                        ? "bg-[#ff729f] shadow-[0_0_14px_rgba(255,114,159,0.8)]"
-                                        : "bg-white/25",
-                                ].join(" ")}
-                            />
-
-                            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-white/40">
-                                {isLive ? "Live Timing" : "Last Session"}
-                            </p>
-
-                            {isLive && (
-                                <span className="border border-[#ff729f]/30 bg-[#ff729f]/10 px-2 py-1 text-[8px] font-black uppercase tracking-[0.18em] text-[#ff729f]">
-                                    Live
-                                </span>
-                            )}
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-3">
-                            <h3 className="text-2xl font-black uppercase leading-none tracking-[-0.04em] sm:text-3xl">
-                                {session?.circuitName ?? "Formula 1"}
-                            </h3>
-
-                            {session && (
-                                <CountryFlag
-                                    countryCode={session.countryCode}
-                                />
-                            )}
-                        </div>
-
-                        {session && (
-                            <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.16em] text-white/30">
-                                {session.location} · {session.countryName}
-                            </p>
-                        )}
-                    </div>
-
-                    {session && (
-                        <SessionInfo
-                            session={session}
-                            isLive={isLive}
-                        />
-                    )}
-                </div>
-            </div>
-
-            {loading && <LoadingState />}
-
-            {!loading && error && (
-                <ErrorState message={error} />
-            )}
-
-            {!loading && !error && !session && (
-                <EmptyState />
-            )}
-
-            {!loading && !error && session && (
-                <TimingTable
-                    drivers={drivers}
-                    isLive={isLive}
-                />
-            )}
-        </div>
-    );
-}
-
-function SessionInfo({
-    session,
-    isLive,
+function DriverAvatar({
+    driver,
 }: {
-    session: NonNullable<F1LiveResponse["session"]>;
-    isLive: boolean;
+    driver: F1Driver;
 }): React.ReactElement {
-    return (
-        <div className="grid grid-cols-2 border border-white/10 bg-black/10">
-            <div className="border-r border-white/10 px-5 py-4">
-                <p className="text-[8px] font-black uppercase tracking-[0.22em] text-white/25">
-                    Session
-                </p>
-
-                <p className="mt-1.5 text-xs font-black uppercase tracking-wide text-white">
-                    {session.sessionName}
-                </p>
-            </div>
-
-            <div className="px-5 py-4">
-                <p className="text-[8px] font-black uppercase tracking-[0.22em] text-white/25">
-                    Status
-                </p>
-
-                <p
-                    className={[
-                        "mt-1.5 text-xs font-black uppercase tracking-wide",
-                        isLive
-                            ? "text-[#ff729f]"
-                            : "text-white/55",
-                    ].join(" ")}
-                >
-                    {isLive ? "Live" : "Completed"}
-                </p>
-            </div>
-        </div>
-    );
-}
-
-function TimingTable({
-    drivers,
-    isLive,
-}: {
-    drivers: F1Driver[];
-    isLive: boolean;
-}): React.ReactElement {
-    if (drivers.length === 0) {
+    if (!driver.headshotUrl) {
         return (
-            <div className="px-5 py-16 text-center sm:px-8">
-                <p className="text-xl font-black uppercase tracking-[-0.03em]">
-                    No timing data
-                </p>
-
-                <p className="mt-2 text-sm text-white/40">
-                    Timing information is not currently available.
-                </p>
+            <div
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-xs font-black text-white/45"
+                style={{
+                    borderColor: driver.teamColour
+                        ? `#${driver.teamColour}`
+                        : undefined,
+                }}
+            >
+                {driver.acronym.slice(
+                    0,
+                    2,
+                )}
             </div>
         );
     }
 
     return (
-        <div>
-            <div className="grid grid-cols-[38px_minmax(0,1fr)_78px] items-center gap-3 border-b border-white/10 bg-black/15 px-5 py-3.5 text-[8px] font-black uppercase tracking-[0.22em] text-white/25 sm:grid-cols-[55px_minmax(0,1fr)_140px_120px_120px] sm:px-8">
-                <span>Pos</span>
-
-                <span>Driver</span>
-
-                <span className="hidden sm:block">
-                    Team
-                </span>
-
-                <span className="hidden sm:block">
-                    Gap
-                </span>
-
-                <span className="text-right">
-                    Fastest
-                </span>
-            </div>
-
-            {drivers.map((driver, index) => (
-                <DriverRow
-                    key={driver.driverNumber}
-                    driver={driver}
-                    isLive={isLive}
-                    index={index}
-                />
-            ))}
-
-            <div className="border-t border-white/10 bg-black/10 px-5 py-4 sm:px-8">
-                <div className="flex flex-col gap-2 text-[8px] font-bold uppercase tracking-[0.18em] text-white/25 sm:flex-row sm:items-center sm:justify-between">
-                    <span>
-                        {drivers.length} drivers
-                    </span>
-
-                    <span>
-                        {isLive
-                            ? "Live session data"
-                            : "Latest available race data"}
-                    </span>
-                </div>
-            </div>
+        <div
+            className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-white/10 bg-white/[0.05]"
+            style={{
+                borderColor: driver.teamColour
+                    ? `#${driver.teamColour}`
+                    : undefined,
+            }}
+        >
+            <Image
+                src={
+                    driver.headshotUrl
+                }
+                alt={driver.name}
+                fill
+                sizes="40px"
+                className="object-cover"
+            />
         </div>
     );
 }
 
 function DriverRow({
     driver,
-    isLive,
-    index,
+    isLeader,
 }: {
     driver: F1Driver;
-    isLive: boolean;
-    index: number;
+    isLeader: boolean;
 }): React.ReactElement {
-    const isTopThree = driver.position <= 3;
-    const isLeader = driver.position === 1;
-
     return (
         <div
-            className={[
-                "group relative grid grid-cols-[38px_minmax(0,1fr)_78px] items-center gap-3 border-b border-white/[0.055] px-5 py-4 transition-colors duration-200 hover:bg-white/[0.04] sm:grid-cols-[55px_minmax(0,1fr)_140px_120px_120px] sm:px-8",
-                isLeader ? "bg-white/[0.025]" : "",
-            ].join(" ")}
+            className={`grid grid-cols-[2.5rem_2.5rem_1fr_auto] items-center gap-3 border-b border-white/5 px-4 py-3 last:border-b-0 md:grid-cols-[3rem_3rem_1fr_7rem_6rem] md:px-5 ${isLeader
+                ? "bg-[#ff729f]/[0.06]"
+                : "bg-transparent"
+                }`}
         >
             <span
-                className="absolute bottom-0 left-0 top-0 w-[3px] opacity-70 transition-opacity duration-200 group-hover:opacity-100"
-                style={{
-                    backgroundColor: `#${driver.teamColour}`,
-                }}
-            />
+                className={`text-sm font-black ${isLeader
+                    ? "text-[#ff729f]"
+                    : "text-white/45"
+                    }`}
+            >
+                {String(
+                    driver.position,
+                ).padStart(
+                    2,
+                    "0",
+                )}
+            </span>
 
-            <div className="pl-1">
-                <span
-                    className={[
-                        "font-black tabular-nums tracking-tight",
-                        isTopThree
-                            ? "text-xl text-[#ff729f]"
-                            : "text-lg text-white/45",
-                    ].join(" ")}
-                >
-                    {String(driver.position).padStart(2, "0")}
-                </span>
-            </div>
+            <DriverAvatar driver={driver} />
 
-            <div className="flex min-w-0 items-center gap-3">
-                <DriverImage driver={driver} />
-
-                <div className="min-w-0">
-                    <div className="flex min-w-0 items-center gap-2">
-                        <CountryFlag
-                            countryCode={driver.countryCode}
-                        />
-
-                        <span className="text-[10px] font-black uppercase tracking-[0.12em] text-[#ff729f]">
-                            {driver.acronym}
-                        </span>
-
-                        {isLeader && (
-                            <span className="hidden border border-[#ee8434]/25 bg-[#ee8434]/5 px-1.5 py-0.5 text-[7px] font-black uppercase tracking-[0.16em] text-[#ee8434] sm:inline-block">
-                                Leader
-                            </span>
-                        )}
-                    </div>
-
-                    <p className="mt-0.5 truncate text-sm font-black uppercase tracking-tight text-white sm:text-base">
+            <div className="min-w-0">
+                <div className="flex min-w-0 items-center gap-2">
+                    <span className="truncate text-sm font-bold text-white md:text-base">
                         {driver.name}
-                    </p>
+                    </span>
 
-                    <p className="truncate text-[9px] font-bold uppercase tracking-[0.14em] text-white/25 sm:hidden">
+                    <span className="hidden text-[10px] font-black tracking-[0.12em] text-white/30 sm:inline">
+                        {driver.acronym}
+                    </span>
+                </div>
+
+                <div className="mt-1 flex items-center gap-2">
+                    <span
+                        className="h-1.5 w-1.5 shrink-0"
+                        style={{
+                            backgroundColor:
+                                driver.teamColour
+                                    ? `#${driver.teamColour}`
+                                    : "#ffffff",
+                        }}
+                    />
+
+                    <span className="truncate text-xs font-medium text-white/50">
                         {driver.team}
-                    </p>
+                    </span>
                 </div>
             </div>
 
-            <div className="hidden min-w-0 sm:block">
-                <p className="truncate text-xs font-bold uppercase tracking-[0.1em] text-white/50">
-                    {driver.team}
-                </p>
-            </div>
+            <div className="hidden items-center gap-2 sm:flex">
+                <span className="text-base">
+                    {countryCodeToEmoji(
+                        driver.countryCode,
+                    )}
+                </span>
 
-            <div className="hidden sm:block">
-                <GapDisplay
-                    driver={driver}
-                    isLive={isLive}
-                />
+                <span className="text-xs font-medium text-white/50">
+                    {driver.nationality}
+                </span>
             </div>
 
             <div className="text-right">
-                {driver.fastestLap ? (
-                    <div className="inline-flex flex-col items-end">
-                        <p className="text-xs font-black tabular-nums tracking-tight text-white sm:text-sm">
-                            {driver.fastestLap}
-                        </p>
+                <p className="text-sm font-bold text-white/85 md:text-base">
+                    {driver.interval ??
+                        driver.gapToLeader ??
+                        "Leader"}
+                </p>
 
-                        <p className="mt-1 text-[7px] font-bold uppercase tracking-[0.18em] text-white/20">
-                            Lap
-                        </p>
-                    </div>
-                ) : (
-                    <span className="text-xs text-white/20">
-                        —
-                    </span>
-                )}
+                <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-white/30">
+                    {driver.fastestLap ??
+                        "Position"}
+                </p>
             </div>
-
-            {index === 0 && (
-                <span className="pointer-events-none absolute right-0 top-0 h-8 w-8 border-b border-l border-[#ff729f]/15" />
-            )}
         </div>
-    );
-}
-
-function GapDisplay({
-    driver,
-    isLive,
-}: {
-    driver: F1Driver;
-    isLive: boolean;
-}): React.ReactElement {
-    if (
-        driver.position === 1 ||
-        driver.gapToLeader === "LEADER"
-    ) {
-        return (
-            <span className="text-[9px] font-black uppercase tracking-[0.15em] text-[#ff729f]">
-                Leader
-            </span>
-        );
-    }
-
-    if (driver.dsq) {
-        return (
-            <span className="text-[9px] font-black uppercase tracking-[0.15em] text-[#ee8434]">
-                DSQ
-            </span>
-        );
-    }
-
-    if (driver.dnf) {
-        return (
-            <span className="text-[9px] font-black uppercase tracking-[0.15em] text-[#ee8434]">
-                DNF
-            </span>
-        );
-    }
-
-    if (driver.gapToLeader) {
-        return (
-            <span className="text-xs font-bold tabular-nums text-white/55">
-                {driver.gapToLeader}
-            </span>
-        );
-    }
-
-    if (isLive && driver.interval) {
-        return (
-            <span className="text-xs font-bold tabular-nums text-white/55">
-                {driver.interval}
-            </span>
-        );
-    }
-
-    return (
-        <span className="text-xs text-white/20">
-            —
-        </span>
-    );
-}
-
-function DriverImage({
-    driver,
-}: {
-    driver: F1Driver;
-}): React.ReactElement {
-    if (driver.headshotUrl) {
-        return (
-            <div className="relative hidden h-10 w-10 shrink-0 overflow-hidden border border-white/10 bg-white/[0.06] sm:block">
-                <Image
-                    src={driver.headshotUrl}
-                    alt={driver.name}
-                    fill
-                    sizes="40px"
-                    className="object-cover object-top grayscale-[15%] transition-all duration-300 group-hover:scale-105 group-hover:grayscale-0"
-                />
-            </div>
-        );
-    }
-
-    return (
-        <div className="hidden h-10 w-10 shrink-0 items-center justify-center border border-white/10 bg-white/[0.06] sm:flex">
-            <span className="text-[10px] font-black text-white/30">
-                {driver.acronym}
-            </span>
-        </div>
-    );
-}
-
-function CountryFlag({
-    countryCode,
-}: {
-    countryCode: string;
-}): React.ReactElement {
-    const emoji = countryCodeToEmoji(countryCode);
-
-    return (
-        <span
-            className="text-sm leading-none"
-            role="img"
-            aria-label={countryCode}
-        >
-            {emoji}
-        </span>
     );
 }
 
 function LoadingState(): React.ReactElement {
     return (
-        <div className="px-5 py-12 sm:px-8">
-            <div className="space-y-2">
-                {[1, 2, 3, 4, 5].map((item) => (
-                    <div
-                        key={item}
-                        className="flex items-center gap-4 border-b border-white/[0.06] px-2 py-4"
-                    >
-                        <div className="h-5 w-7 bg-white/[0.06]" />
-
-                        <div className="h-10 w-10 bg-white/[0.06]" />
-
-                        <div className="flex-1">
-                            <div className="h-2 w-24 bg-white/[0.06]" />
-
-                            <div className="mt-2 h-3 w-40 bg-white/[0.06]" />
-                        </div>
-
-                        <div className="h-3 w-16 bg-white/[0.06]" />
-                    </div>
-                ))}
+        <div className="border border-white/10 bg-white/[0.025] p-6">
+            <div className="space-y-3">
+                {Array.from({
+                    length: 5,
+                }).map(
+                    (_, index) => (
+                        <div
+                            key={
+                                index
+                            }
+                            className="h-16 animate-pulse bg-white/[0.04]"
+                        />
+                    ),
+                )}
             </div>
+        </div>
+    );
+}
 
-            <p className="mt-8 text-center text-[9px] font-bold uppercase tracking-[0.22em] text-white/25">
-                Loading F1 data...
-            </p>
+function EmptyState(): React.ReactElement {
+    return (
+        <div className="flex h-full min-h-52 items-center justify-center border border-white/10 bg-white/[0.025] p-8 text-center">
+            <div>
+                <CategoryTag accent="white">
+                    No timing
+                </CategoryTag>
+
+                <p className="mt-4 text-base font-semibold text-white/70">
+                    No live driver data is
+                    currently available.
+                </p>
+
+                <p className="mt-2 text-sm text-white/45">
+                    The Grid will continue checking
+                    for the next update.
+                </p>
+            </div>
         </div>
     );
 }
@@ -450,19 +203,13 @@ function ErrorState({
     message: string;
 }): React.ReactElement {
     return (
-        <div className="px-5 py-12 sm:px-8">
-            <div className="border border-[#ff729f]/20 bg-[#ff729f]/5 px-6 py-8 text-center">
-                <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center border border-[#ff729f]/25 bg-[#ff729f]/5">
-                    <span className="text-sm font-black text-[#ff729f]">
-                        !
-                    </span>
-                </div>
-
-                <p className="text-lg font-black uppercase tracking-[-0.02em]">
+        <div className="flex h-full min-h-52 items-center justify-center border border-[#ff729f]/20 bg-[#ff729f]/[0.04] p-8 text-center">
+            <div>
+                <CategoryTag accent="pink">
                     Timing unavailable
-                </p>
+                </CategoryTag>
 
-                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-white/40">
+                <p className="mt-4 text-base font-semibold text-white">
                     {message}
                 </p>
             </div>
@@ -470,18 +217,126 @@ function ErrorState({
     );
 }
 
-function EmptyState(): React.ReactElement {
+export default function LiveTiming({
+    data,
+    loading,
+    error,
+}: LiveTimingProps): React.ReactElement {
+    const [
+        currentPage,
+        setCurrentPage,
+    ] = useState(1);
+
+    const drivers =
+        data?.drivers ?? [];
+
+    const totalPages =
+        Math.max(
+            1,
+            Math.ceil(
+                drivers.length /
+                PAGE_SIZE,
+            ),
+        );
+
+    const safeCurrentPage =
+        Math.min(
+            currentPage,
+            totalPages,
+        );
+
+    const visibleDrivers =
+        useMemo(
+            () =>
+                drivers.slice(
+                    (safeCurrentPage -
+                        1) *
+                    PAGE_SIZE,
+                    safeCurrentPage *
+                    PAGE_SIZE,
+                ),
+            [
+                drivers,
+                safeCurrentPage,
+            ],
+        );
+
+    if (
+        loading &&
+        !data
+    ) {
+        return <LoadingState />;
+    }
+
+    if (error && !data) {
+        return (
+            <ErrorState
+                message={error}
+            />
+        );
+    }
+
+    if (
+        !drivers.length
+    ) {
+        return <EmptyState />;
+    }
+
     return (
-        <div className="px-5 py-16 text-center sm:px-8">
-            <div className="mx-auto mb-5 h-10 w-10 border border-white/10 bg-white/[0.03]" />
+        <div className="flex h-full flex-col overflow-hidden border border-white/10 bg-[#151515]">
+            <div className="grid grid-cols-[2.5rem_1fr_auto] items-center gap-3 border-b border-white/10 bg-white/[0.035] px-4 py-3 md:grid-cols-[3rem_1fr_7rem_6rem] md:px-5">
+                <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/45">
+                    Pos
+                </span>
 
-            <p className="text-xl font-black uppercase tracking-[-0.03em]">
-                No F1 session
-            </p>
+                <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/45">
+                    Driver
+                </span>
 
-            <p className="mt-2 text-sm text-white/40">
-                There is currently no Formula 1 session available.
-            </p>
+                <span className="hidden text-[9px] font-bold uppercase tracking-[0.18em] text-white/45 md:block">
+                    Nation
+                </span>
+
+                <span className="text-right text-[9px] font-bold uppercase tracking-[0.18em] text-white/45">
+                    Gap
+                </span>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-hidden">
+                {visibleDrivers.map(
+                    (
+                        driver,
+                        index,
+                    ) => (
+                        <DriverRow
+                            key={`${driver.driverNumber}-${driver.acronym}`}
+                            driver={
+                                driver
+                            }
+                            isLeader={
+                                driver.position ===
+                                1 ||
+                                (safeCurrentPage ===
+                                    1 &&
+                                    index ===
+                                    0)
+                            }
+                        />
+                    ),
+                )}
+            </div>
+
+            <Pagination
+                currentPage={
+                    safeCurrentPage
+                }
+                totalPages={
+                    totalPages
+                }
+                onPageChange={
+                    setCurrentPage
+                }
+            />
         </div>
     );
 }
