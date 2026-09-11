@@ -6,7 +6,10 @@ import ConstructorStandings from "./ConstructorStandings";
 import DriverStandings from "./DriverStandings";
 import LiveTiming from "./LiveTiming";
 
-import type { F1LiveResponse, F1Tab } from "@/lib/f1/types";
+import type {
+    F1LiveResponse,
+    F1Tab,
+} from "@/lib/f1/types";
 
 const tabs: {
     id: F1Tab;
@@ -56,15 +59,20 @@ export default function F1DataHub(): React.ReactElement {
 
         async function loadLiveData(): Promise<void> {
             try {
+                setLoading(true);
+
                 const response = await fetch("/api/f1/live", {
                     cache: "no-store",
                 });
 
                 if (!response.ok) {
-                    throw new Error("Failed to load F1 live data");
+                    throw new Error(
+                        "Failed to load F1 live data",
+                    );
                 }
 
-                const data: F1LiveResponse = await response.json();
+                const data: F1LiveResponse =
+                    await response.json();
 
                 if (!cancelled) {
                     setLiveData(data);
@@ -74,7 +82,9 @@ export default function F1DataHub(): React.ReactElement {
                 console.error(err);
 
                 if (!cancelled) {
-                    setError("F1 timing is currently unavailable.");
+                    setError(
+                        "F1 timing is currently unavailable.",
+                    );
                 }
             } finally {
                 if (!cancelled) {
@@ -100,7 +110,7 @@ export default function F1DataHub(): React.ReactElement {
     return (
         <section
             id="f1-data"
-            className="scroll-mt-6 relative overflow-hidden bg-[#1c1c1c] px-5 py-16 text-white sm:px-8 sm:py-20 lg:px-12 lg:py-24"
+            className="relative overflow-hidden border-y border-white/10 bg-[#1c1c1c] px-5 py-16 text-white sm:px-8 sm:py-20 lg:px-12 lg:py-24"
         >
             <div className="pointer-events-none absolute inset-0 overflow-hidden">
                 <div className="absolute -right-40 -top-40 h-[420px] w-[420px] rounded-full bg-[#ff729f]/20 blur-[120px]" />
@@ -117,8 +127,8 @@ export default function F1DataHub(): React.ReactElement {
                 />
             </div>
 
-            <div className="relative mx-auto max-w-[1240px]">
-                <div className="mb-5 grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
+            <div className="relative mx-auto max-w-[77.5rem]">
+                <div className="mb-8 grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
                     <div>
                         <div className="mb-4 flex items-center gap-3">
                             <span className="h-[3px] w-10 bg-[#ff729f]" />
@@ -128,17 +138,23 @@ export default function F1DataHub(): React.ReactElement {
                             </p>
                         </div>
 
-                        <h2 className="max-w-3xl text-4xl font-black uppercase leading-[0.95] tracking-[-0.04em] sm:text-5xl lg:text-6xl">
-                            F1 Data
-                            <span className="text-[#ff729f]">
-                                {" "}
-                                Hub
+                        <div className="flex flex-wrap items-end gap-x-5 gap-y-2">
+                            <h2 className="text-5xl font-black uppercase leading-[0.9] tracking-[-0.06em] sm:text-6xl lg:text-7xl">
+                                F1 Data
+                                <span className="text-[#ff729f]">
+                                    {" "}
+                                    Hub
+                                </span>
+                            </h2>
+
+                            <span className="mb-1 border border-[#ee8434]/30 bg-[#ee8434]/10 px-2.5 py-1.5 text-[8px] font-black uppercase tracking-[0.2em] text-[#ee8434]">
+                                Live Data
                             </span>
-                        </h2>
+                        </div>
 
                         <p className="mt-5 max-w-2xl text-sm leading-6 text-white/55 sm:text-base">
                             Live timing, driver standings and constructor
-                            championship data — all in one place.
+                            championship data for the 2026 Formula 1 season.
                         </p>
                     </div>
 
@@ -148,7 +164,7 @@ export default function F1DataHub(): React.ReactElement {
                     />
                 </div>
 
-                <div className="mb-6 border-y border-white/10">
+                <div className="mb-6 overflow-hidden border-y border-white/10">
                     <div className="grid grid-cols-3">
                         {tabs.map((tab) => {
                             const active = activeTab === tab.id;
@@ -158,17 +174,14 @@ export default function F1DataHub(): React.ReactElement {
                                     key={tab.id}
                                     type="button"
                                     onClick={() => setActiveTab(tab.id)}
+                                    aria-pressed={active}
                                     className={[
-                                        "group relative px-2 py-5 text-center text-[10px] font-black uppercase tracking-[0.12em] transition-all duration-300 hover:cursor-pointer underline underline-offset-4 sm:px-4 sm:text-xs sm:tracking-[0.18em]",
+                                        "relative px-2 py-5 text-center text-[9px] font-black uppercase tracking-[0.1em] transition-colors duration-200 sm:px-4 sm:text-xs sm:tracking-[0.16em]",
                                         active
-                                            ? "text-[#1c1c1c]"
-                                            : "text-white/45 hover:text-white",
+                                            ? "bg-[#ff729f] text-[#1c1c1c]"
+                                            : "text-white/40 hover:bg-white/[0.025] hover:text-white",
                                     ].join(" ")}
                                 >
-                                    {active && (
-                                        <span className="absolute inset-0 bg-[#ff729f]" />
-                                    )}
-
                                     <span className="relative">
                                         <span className="hidden sm:inline">
                                             {tab.label}
@@ -189,7 +202,7 @@ export default function F1DataHub(): React.ReactElement {
                 </div>
 
                 <div className="relative overflow-hidden border border-white/10 bg-[#242426]">
-                    <div className="pointer-events-none absolute right-0 top-0 h-24 w-24 border-l border-b border-[#ff729f]/20" />
+                    <div className="pointer-events-none absolute right-0 top-0 h-24 w-24 border-b border-l border-[#ff729f]/20" />
 
                     <div className="pointer-events-none absolute bottom-0 left-0 h-16 w-16 border-r border-t border-[#ee8434]/20" />
 
@@ -201,7 +214,9 @@ export default function F1DataHub(): React.ReactElement {
                         />
                     )}
 
-                    {activeTab === "drivers" && <DriverStandings />}
+                    {activeTab === "drivers" && (
+                        <DriverStandings />
+                    )}
 
                     {activeTab === "constructors" && (
                         <ConstructorStandings />
@@ -225,12 +240,14 @@ function SeasonBadge({
         currentTime <= new Date(session.dateEnd).getTime();
 
     return (
-        <div className="flex w-fit items-center gap-4 border border-white/10 bg-white/4 px-5 py-4">
+        <div className="flex w-fit items-center gap-4 border border-white/10 bg-white/[0.04] px-5 py-4">
             <span
-                className={`h-2.5 w-2.5 rounded-full ${isLive
-                    ? "bg-[#ff729f]"
-                    : "bg-white/25"
-                    }`}
+                className={[
+                    "h-2.5 w-2.5 rounded-full",
+                    isLive
+                        ? "bg-[#ff729f] shadow-[0_0_12px_rgba(255,114,159,0.7)]"
+                        : "bg-white/25",
+                ].join(" ")}
             />
 
             <div>
