@@ -6,6 +6,9 @@ import ConstructorStandings from "./ConstructorStandings";
 import DriverStandings from "./DriverStandings";
 import LiveTiming from "./LiveTiming";
 
+import RaceMap3D from "@/components/3d/RaceMap3D";
+import { getCircuitMap } from "@/lib/f1/circuits";
+
 import type {
     F1LiveResponse,
     F1Tab,
@@ -32,6 +35,8 @@ const tabs: {
             shortLabel: "Teams",
         },
     ];
+
+const activeCircuit = getCircuitMap("monza");
 
 export default function F1DataHub(): React.ReactElement {
     const [activeTab, setActiveTab] = useState<F1Tab>("live");
@@ -207,11 +212,19 @@ export default function F1DataHub(): React.ReactElement {
                     <div className="pointer-events-none absolute bottom-0 left-0 h-16 w-16 border-r border-t border-[#ee8434]/20" />
 
                     {activeTab === "live" && (
-                        <LiveTiming
-                            data={liveData}
-                            loading={loading}
-                            error={error}
-                        />
+                        <div className="grid lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+                            <div className="relative min-h-[420px] border-b border-white/10 lg:border-b-0 lg:border-r">
+                                <RaceMap3D circuit={activeCircuit} />
+                            </div>
+
+                            <div className="min-w-0">
+                                <LiveTiming
+                                    data={liveData}
+                                    loading={loading}
+                                    error={error}
+                                />
+                            </div>
+                        </div>
                     )}
 
                     {activeTab === "drivers" && (

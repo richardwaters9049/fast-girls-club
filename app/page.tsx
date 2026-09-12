@@ -599,7 +599,7 @@ export default function Home(): React.ReactElement {
                     </p>
 
                     <div className="mt-5 grid gap-10 lg:grid-cols-[1fr_0.7fr]">
-                        <h2 className="text-[clamp(3.5rem,8vw,8rem)] font-black uppercase leading-[0.82] tracking-[-0.07em]">
+                        <h2 className="text-[clamp(3.5rem,8vw,8rem)] font-black uppercase leading-[0.82]">
                             Fast
                             <br />
                             Women.
@@ -621,7 +621,7 @@ export default function Home(): React.ReactElement {
                         </div>
                     </div>
                 </div>
-            </section>
+            </section >
 
             <footer
                 id="about"
@@ -647,6 +647,6 @@ export default function Home(): React.ReactElement {
                     </p>
                 </div>
             </footer>
-        </main>
+        </main >
     );
 }

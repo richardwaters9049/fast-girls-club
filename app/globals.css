@@ -76,3 +76,13 @@ button,
 a {
   -webkit-tap-highlight-color: transparent;
 }
+
+h1,
+h2,
+h3,
+p,
+span,
+button,
+a {
+  letter-spacing: 0.1rem;
+}

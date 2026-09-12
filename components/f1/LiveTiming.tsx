@@ -2,6 +2,10 @@
 
 import Image from "next/image";
 import {
+    AnimatePresence,
+    motion,
+} from "framer-motion";
+import {
     useMemo,
     useState,
 } from "react";
@@ -38,10 +42,7 @@ function DriverAvatar({
                         : undefined,
                 }}
             >
-                {driver.acronym.slice(
-                    0,
-                    2,
-                )}
+                {driver.acronym.slice(0, 2)}
             </div>
         );
     }
@@ -56,15 +57,48 @@ function DriverAvatar({
             }}
         >
             <Image
-                src={
-                    driver.headshotUrl
-                }
+                src={driver.headshotUrl}
                 alt={driver.name}
                 fill
                 sizes="40px"
                 className="object-cover"
             />
         </div>
+    );
+}
+
+function AnimatedValue({
+    value,
+    className,
+}: {
+    value: string;
+    className: string;
+}): React.ReactElement {
+    return (
+        <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+                key={value}
+                initial={{
+                    opacity: 0.35,
+                    y: -5,
+                }}
+                animate={{
+                    opacity: 1,
+                    y: 0,
+                }}
+                exit={{
+                    opacity: 0.35,
+                    y: 5,
+                }}
+                transition={{
+                    duration: 0.2,
+                    ease: "easeOut",
+                }}
+                className={`block ${className}`}
+            >
+                {value}
+            </motion.span>
+        </AnimatePresence>
     );
 }
 
@@ -75,26 +109,50 @@ function DriverRow({
     driver: F1Driver;
     isLeader: boolean;
 }): React.ReactElement {
+    const gap = driver.interval ?? driver.gapToLeader ?? "Leader";
+    const secondaryValue = driver.fastestLap ?? "Position";
+
     return (
-        <div
-            className={`grid grid-cols-[2.5rem_2.5rem_1fr_auto] items-center gap-3 border-b border-white/5 px-4 py-3 last:border-b-0 md:grid-cols-[3rem_3rem_1fr_7rem_6rem] md:px-5 ${isLeader
+        <motion.div
+            layout
+            initial={{
+                opacity: 0,
+                y: 12,
+            }}
+            animate={{
+                opacity: 1,
+                y: 0,
+            }}
+            exit={{
+                opacity: 0,
+                y: -12,
+            }}
+            transition={{
+                layout: {
+                    duration: 0.35,
+                    ease: "easeInOut",
+                },
+                opacity: {
+                    duration: 0.25,
+                },
+                y: {
+                    duration: 0.25,
+                },
+            }}
+            className={`grid grid-cols-[2.5rem_2.5rem_1fr_auto] items-center gap-3 border-b border-white/5 px-4 py-4 last:border-b-0 md:grid-cols-[3rem_3rem_1fr_7rem_6rem] md:px-5 md:py-4 ${isLeader
                 ? "bg-[#ff729f]/[0.06]"
                 : "bg-transparent"
                 }`}
         >
-            <span
-                className={`text-sm font-black ${isLeader
+            <motion.span
+                layout
+                className={`text-sm font-black md:text-base ${isLeader
                     ? "text-[#ff729f]"
                     : "text-white/45"
                     }`}
             >
-                {String(
-                    driver.position,
-                ).padStart(
-                    2,
-                    "0",
-                )}
-            </span>
+                {String(driver.position).padStart(2, "0")}
+            </motion.span>
 
             <DriverAvatar driver={driver} />
 
@@ -139,18 +197,17 @@ function DriverRow({
             </div>
 
             <div className="text-right">
-                <p className="text-sm font-bold text-white/85 md:text-base">
-                    {driver.interval ??
-                        driver.gapToLeader ??
-                        "Leader"}
-                </p>
+                <AnimatedValue
+                    value={gap}
+                    className="text-sm font-bold text-white/85 md:text-base"
+                />
 
-                <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-white/30">
-                    {driver.fastestLap ??
-                        "Position"}
-                </p>
+                <AnimatedValue
+                    value={secondaryValue}
+                    className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-white/30"
+                />
             </div>
-        </div>
+        </motion.div>
     );
 }
 
@@ -160,16 +217,22 @@ function LoadingState(): React.ReactElement {
             <div className="space-y-3">
                 {Array.from({
                     length: 5,
-                }).map(
-                    (_, index) => (
-                        <div
-                            key={
-                                index
-                            }
-                            className="h-16 animate-pulse bg-white/[0.04]"
-                        />
-                    ),
-                )}
+                }).map((_, index) => (
+                    <motion.div
+                        key={index}
+                        initial={{
+                            opacity: 0,
+                        }}
+                        animate={{
+                            opacity: 1,
+                        }}
+                        transition={{
+                            duration: 0.25,
+                            delay: index * 0.06,
+                        }}
+                        className="h-16 animate-pulse bg-white/[0.04]"
+                    />
+                ))}
             </div>
         </div>
     );
@@ -184,13 +247,11 @@ function EmptyState(): React.ReactElement {
                 </CategoryTag>
 
                 <p className="mt-4 text-base font-semibold text-white/70">
-                    No live driver data is
-                    currently available.
+                    No live driver data is currently available.
                 </p>
 
                 <p className="mt-2 text-sm text-white/45">
-                    The Grid will continue checking
-                    for the next update.
+                    The Grid will continue checking for the next update.
                 </p>
             </div>
         </div>
@@ -222,68 +283,164 @@ export default function LiveTiming({
     loading,
     error,
 }: LiveTimingProps): React.ReactElement {
-    const [
-        currentPage,
-        setCurrentPage,
-    ] = useState(1);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [selectedTeam, setSelectedTeam] = useState("all");
 
-    const drivers =
-        data?.drivers ?? [];
+    const drivers = data?.drivers ?? [];
 
-    const totalPages =
-        Math.max(
-            1,
-            Math.ceil(
-                drivers.length /
-                PAGE_SIZE,
+    const teams = useMemo(() => {
+        return Array.from(
+            new Set(
+                drivers
+                    .map((driver) => driver.team)
+                    .filter(Boolean),
             ),
-        );
+        ).sort((a, b) => a.localeCompare(b));
+    }, [drivers]);
 
-    const safeCurrentPage =
-        Math.min(
-            currentPage,
-            totalPages,
-        );
+    const filteredDrivers = useMemo(() => {
+        const normalisedQuery = searchQuery
+            .trim()
+            .toLowerCase();
 
-    const visibleDrivers =
-        useMemo(
-            () =>
-                drivers.slice(
-                    (safeCurrentPage -
-                        1) *
-                    PAGE_SIZE,
-                    safeCurrentPage *
-                    PAGE_SIZE,
-                ),
-            [
-                drivers,
-                safeCurrentPage,
-            ],
-        );
+        return drivers.filter((driver) => {
+            const matchesTeam =
+                selectedTeam === "all" ||
+                driver.team === selectedTeam;
 
-    if (
-        loading &&
-        !data
-    ) {
+            if (!matchesTeam) {
+                return false;
+            }
+
+            if (!normalisedQuery) {
+                return true;
+            }
+
+            return [
+                driver.name,
+                driver.acronym,
+                driver.team,
+                driver.nationality,
+            ].some((value) =>
+                value
+                    .toLowerCase()
+                    .includes(normalisedQuery),
+            );
+        });
+    }, [
+        drivers,
+        searchQuery,
+        selectedTeam,
+    ]);
+
+    const totalPages = Math.max(
+        1,
+        Math.ceil(
+            filteredDrivers.length / PAGE_SIZE,
+        ),
+    );
+
+    const safeCurrentPage = Math.min(
+        currentPage,
+        totalPages,
+    );
+
+    const visibleDrivers = useMemo(() => {
+        return filteredDrivers.slice(
+            (safeCurrentPage - 1) * PAGE_SIZE,
+            safeCurrentPage * PAGE_SIZE,
+        );
+    }, [
+        filteredDrivers,
+        safeCurrentPage,
+    ]);
+
+    const handleSearchChange = (
+        event: React.ChangeEvent<HTMLInputElement>,
+    ) => {
+        setSearchQuery(event.target.value);
+        setCurrentPage(1);
+    };
+
+    const handleTeamChange = (
+        event: React.ChangeEvent<HTMLSelectElement>,
+    ) => {
+        setSelectedTeam(event.target.value);
+        setCurrentPage(1);
+    };
+
+    if (loading && !data) {
         return <LoadingState />;
     }
 
     if (error && !data) {
-        return (
-            <ErrorState
-                message={error}
-            />
-        );
+        return <ErrorState message={error} />;
     }
 
-    if (
-        !drivers.length
-    ) {
+    if (!drivers.length) {
         return <EmptyState />;
     }
 
     return (
         <div className="flex h-full flex-col overflow-hidden border border-white/10 bg-[#151515]">
+            <div className="flex flex-col gap-4 border-b border-white/10 bg-white/[0.035] px-4 py-4 md:px-5 md:py-5 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                    <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/40">
+                        Driver field
+                    </p>
+
+                    <p className="mt-1 text-sm font-semibold text-white/70">
+                        {filteredDrivers.length}{" "}
+                        {filteredDrivers.length === 1
+                            ? "driver"
+                            : "drivers"}{" "}
+                        shown
+                    </p>
+                </div>
+
+                <div className="flex flex-col gap-2 sm:flex-row">
+                    <label className="sr-only" htmlFor="driver-search">
+                        Search drivers
+                    </label>
+
+                    <div className="relative">
+                        <input
+                            id="driver-search"
+                            type="search"
+                            value={searchQuery}
+                            onChange={handleSearchChange}
+                            placeholder="Search drivers..."
+                            className="h-10 w-full border border-white/10 bg-[#151515] px-3 text-xs font-semibold text-white outline-none placeholder:text-white/30 focus:border-[#ff729f]/60 sm:w-52"
+                        />
+                    </div>
+
+                    <label className="sr-only" htmlFor="team-filter">
+                        Filter by team
+                    </label>
+
+                    <select
+                        id="team-filter"
+                        value={selectedTeam}
+                        onChange={handleTeamChange}
+                        className="h-10 min-w-40 cursor-pointer border border-white/10 bg-[#151515] px-3 text-xs font-semibold text-white outline-none focus:border-[#ff729f]/60"
+                    >
+                        <option value="all">
+                            All teams
+                        </option>
+
+                        {teams.map((team) => (
+                            <option
+                                key={team}
+                                value={team}
+                            >
+                                {team}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            </div>
+
             <div className="grid grid-cols-[2.5rem_1fr_auto] items-center gap-3 border-b border-white/10 bg-white/[0.035] px-4 py-3 md:grid-cols-[3rem_1fr_7rem_6rem] md:px-5">
                 <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/45">
                     Pos
@@ -303,39 +460,39 @@ export default function LiveTiming({
             </div>
 
             <div className="min-h-0 flex-1 overflow-hidden">
-                {visibleDrivers.map(
-                    (
-                        driver,
-                        index,
-                    ) => (
+                <AnimatePresence mode="popLayout" initial={false}>
+                    {visibleDrivers.map((driver, index) => (
                         <DriverRow
                             key={`${driver.driverNumber}-${driver.acronym}`}
-                            driver={
-                                driver
-                            }
+                            driver={driver}
                             isLeader={
-                                driver.position ===
-                                1 ||
-                                (safeCurrentPage ===
-                                    1 &&
-                                    index ===
-                                    0)
+                                driver.position === 1 ||
+                                (safeCurrentPage === 1 &&
+                                    index === 0)
                             }
                         />
-                    ),
+                    ))}
+                </AnimatePresence>
+
+                {!visibleDrivers.length && (
+                    <div className="flex min-h-52 items-center justify-center px-6 text-center">
+                        <div>
+                            <CategoryTag accent="white">
+                                No matches
+                            </CategoryTag>
+
+                            <p className="mt-4 text-sm font-semibold text-white/65">
+                                No drivers match the current filters.
+                            </p>
+                        </div>
+                    </div>
                 )}
             </div>
 
             <Pagination
-                currentPage={
-                    safeCurrentPage
-                }
-                totalPages={
-                    totalPages
-                }
-                onPageChange={
-                    setCurrentPage
-                }
+                currentPage={safeCurrentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
             />
         </div>
     );

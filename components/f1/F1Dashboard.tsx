@@ -28,7 +28,7 @@ import type { F1LiveResponse } from "@/lib/f1/types";
 function getRaceStatus(
     race: F1Race,
     now: number,
-): "completed" | "next" | "upcoming" {
+): "completed" | "live" | "upcoming" {
     const start = new Date(
         `${race.startDate}T00:00:00`,
     ).getTime();
@@ -42,7 +42,7 @@ function getRaceStatus(
     }
 
     if (now >= start && now <= end) {
-        return "next";
+        return "live";
     }
 
     return "upcoming";
@@ -78,6 +78,7 @@ const panelMotion: Record<
             ease: [0.22, 1, 0.36, 1],
         },
     },
+
     race: {
         initial: {
             opacity: 0,
@@ -96,6 +97,7 @@ const panelMotion: Record<
             ease: [0.22, 1, 0.36, 1],
         },
     },
+
     live: {
         initial: {
             opacity: 0,
@@ -114,6 +116,7 @@ const panelMotion: Record<
             ease: [0.22, 1, 0.36, 1],
         },
     },
+
     drivers: {
         initial: {
             opacity: 0,
@@ -132,6 +135,7 @@ const panelMotion: Record<
             ease: [0.22, 1, 0.36, 1],
         },
     },
+
     teams: {
         initial: {
             opacity: 0,
@@ -150,6 +154,7 @@ const panelMotion: Record<
             ease: [0.22, 1, 0.36, 1],
         },
     },
+
     calendar: {
         initial: {
             opacity: 0,
@@ -300,7 +305,7 @@ export default function F1Dashboard(): React.ReactElement {
                             getRaceStatus(
                                 race,
                                 currentTime,
-                            ) === "next",
+                            ) === "live",
                     );
 
                 if (currentRace) {
@@ -486,7 +491,8 @@ export default function F1Dashboard(): React.ReactElement {
                             )}
 
                         {activePanel ===
-                            "race" && (
+                            "race" &&
+                            displayedRace && (
                                 <RaceWeekendPanel
                                     race={
                                         displayedRace
