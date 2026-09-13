@@ -1463,7 +1463,7 @@ export default function RaceMap3D({
 }: RaceMap3DProps): React.ReactElement {
     return (
         <div className="relative h-full overflow-hidden rounded-2xl border border-[#ff729f]/30 bg-[#08080a] shadow-[0_0_35px_rgba(255,114,159,0.08)]">
-            <div className="pointer-events-none absolute inset-0 z-10 rounded-2xl border border-white/5" />
+            <div className="pointer-events-none absolute inset-0 z-10 rounded-6xl border border-white/5" />
 
             <Canvas
                 camera={{

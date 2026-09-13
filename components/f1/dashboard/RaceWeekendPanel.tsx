@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import RaceMap3D from "@/components/3d/RaceMap3D";
+
 import { countryCodeToEmoji } from "@/lib/f1/countries";
+
 import { getCircuitMap } from "@/lib/f1/circuits";
+
 import type { F1Race } from "@/lib/f1/calendar";
 
 interface RaceWeekendPanelProps {
@@ -22,21 +25,53 @@ interface RaceSession {
 
 interface RaceResult {
     position?: number | string;
-    driver?: string;
+    gridPosition?: number | string;
+    driver?: {
+        id?: string;
+        name?: string;
+        shortName?: string;
+        nationality?: string;
+        number?: number | string;
+    } | string;
     driverName?: string;
     name?: string;
     fullName?: string;
-    team?: string;
+    team?: {
+        id?: string;
+        name?: string;
+    } | string;
     teamName?: string;
     constructor?: string;
     time?: string;
     gap?: string;
     status?: string;
+    retired?: string | null;
     points?: number | string;
+    fastLap?: string;
 }
 
-interface RaceApiResult {
+interface RaceApiData {
+    round?: number;
+    raceId?: string;
+    raceName?: string;
+    date?: string;
+    time?: string;
     status?: string;
+    resultsAvailable?: boolean;
+    winner?: {
+        name?: string;
+        shortName?: string;
+        driverId?: string;
+    };
+    teamWinner?: {
+        name?: string;
+        teamId?: string;
+    };
+    results?: RaceResult[];
+    topDrivers?: RaceResult[];
+    races?: {
+        results?: RaceResult[];
+    };
     race?: {
         winner?: string;
         winnerTeam?: string;
@@ -47,25 +82,51 @@ interface RaceApiResult {
         results?: RaceResult[];
         topDrivers?: RaceResult[];
     };
-    results?: RaceResult[];
-    topDrivers?: RaceResult[];
     circuit?: {
+        id?: string;
         name?: string;
         location?: string;
         country?: string;
+        city?: string;
         length?: number;
+        lengthKm?: number;
         corners?: number;
         laps?: number;
+        lapRecord?: string;
+        fastestLap?: string;
     };
     sessions?: RaceSession[];
-}
-
-interface RaceApiData {
-    race?: RaceApiResult["race"];
-    results?: RaceResult[];
-    topDrivers?: RaceResult[];
-    circuit?: RaceApiResult["circuit"];
-    sessions?: RaceSession[];
+    schedule?: {
+        practice1?: {
+            date?: string | null;
+            time?: string | null;
+        };
+        practice2?: {
+            date?: string | null;
+            time?: string | null;
+        };
+        practice3?: {
+            date?: string | null;
+            time?: string | null;
+        };
+        qualifying?: {
+            date?: string | null;
+            time?: string | null;
+        };
+        sprintQualifying?: {
+            date?: string | null;
+            time?: string | null;
+        };
+        sprintRace?: {
+            date?: string | null;
+            time?: string | null;
+        };
+        race?: {
+            date?: string | null;
+            time?: string | null;
+        };
+    };
+    laps?: number;
 }
 
 interface RaceDataState {
@@ -128,15 +189,27 @@ function formatTime(value: string): string {
     });
 }
 
-function formatDistance(value?: number): string {
+function formatDistance(
+    value?: number,
+    valueIsKm = false,
+): string {
     if (typeof value !== "number" || Number.isNaN(value)) {
         return "—";
     }
 
-    return `${value.toFixed(3)} km`;
+    const kilometres = valueIsKm
+        ? value
+        : value > 100
+            ? value / 1000
+            : value;
+
+    return `${kilometres.toFixed(3)} km`;
 }
 
-function getCountdown(targetDate: string, now: number): string {
+function getCountdown(
+    targetDate: string,
+    now: number,
+): string {
     const target = new Date(targetDate).getTime();
 
     if (Number.isNaN(target)) {
@@ -144,11 +217,15 @@ function getCountdown(targetDate: string, now: number): string {
     }
 
     const difference = Math.max(0, target - now);
-
     const totalSeconds = Math.floor(difference / 1000);
+
     const days = Math.floor(totalSeconds / 86400);
-    const hours = Math.floor((totalSeconds % 86400) / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const hours = Math.floor(
+        (totalSeconds % 86400) / 3600,
+    );
+    const minutes = Math.floor(
+        (totalSeconds % 3600) / 60,
+    );
     const seconds = totalSeconds % 60;
 
     return [
@@ -159,37 +236,25 @@ function getCountdown(targetDate: string, now: number): string {
     ].join(":");
 }
 
-function getRaceStartDate(race: F1Race): string {
-    return race.startDate;
+function createRaceSession(
+    name: string,
+    date?: string | null,
+    time?: string | null,
+): RaceSession | null {
+    if (!date || !time) {
+        return null;
+    }
+
+    return {
+        name,
+        date,
+        time,
+    };
 }
 
-function getSessionLabel(sessionName: string): string {
-    const normalised = sessionName.toLowerCase();
-
-    if (normalised.includes("practice 1")) {
-        return "Practice 1";
-    }
-
-    if (normalised.includes("practice 2")) {
-        return "Practice 2";
-    }
-
-    if (normalised.includes("practice 3")) {
-        return "Practice 3";
-    }
-
-    if (normalised.includes("qualifying")) {
-        return "Qualifying";
-    }
-
-    if (normalised.includes("race")) {
-        return "Race";
-    }
-
-    return sessionName;
-}
-
-function buildFallbackSessions(race: F1Race): RaceSession[] {
+function buildFallbackSessions(
+    race: F1Race,
+): RaceSession[] {
     const start = new Date(race.startDate);
 
     if (Number.isNaN(start.getTime())) {
@@ -223,38 +288,252 @@ function buildFallbackSessions(race: F1Race): RaceSession[] {
     ];
 }
 
-function getRaceResults(data: RaceApiData | null): RaceResult[] {
+function getSessionLabel(
+    sessionName: string,
+): string {
+    const normalised = sessionName.toLowerCase();
+
+    if (normalised.includes("practice 1")) {
+        return "Practice 1";
+    }
+
+    if (normalised.includes("practice 2")) {
+        return "Practice 2";
+    }
+
+    if (normalised.includes("practice 3")) {
+        return "Practice 3";
+    }
+
+    if (
+        normalised.includes("qualifying") &&
+        normalised.includes("sprint")
+    ) {
+        return "Sprint Qualifying";
+    }
+
+    if (normalised.includes("qualifying")) {
+        return "Qualifying";
+    }
+
+    if (
+        normalised.includes("sprint") &&
+        normalised.includes("race")
+    ) {
+        return "Sprint Race";
+    }
+
+    if (normalised.includes("race")) {
+        return "Race";
+    }
+
+    return sessionName;
+}
+
+function getSessions(
+    data: RaceApiData | null,
+    race: F1Race,
+): RaceSession[] {
+    if (data?.sessions?.length) {
+        return data.sessions;
+    }
+
+    const schedule = data?.schedule;
+
+    if (schedule) {
+        const sessions = [
+            createRaceSession(
+                "Practice 1",
+                schedule.practice1?.date,
+                schedule.practice1?.time,
+            ),
+            createRaceSession(
+                "Practice 2",
+                schedule.practice2?.date,
+                schedule.practice2?.time,
+            ),
+            createRaceSession(
+                "Practice 3",
+                schedule.practice3?.date,
+                schedule.practice3?.time,
+            ),
+            createRaceSession(
+                "Qualifying",
+                schedule.qualifying?.date,
+                schedule.qualifying?.time,
+            ),
+            createRaceSession(
+                "Sprint Qualifying",
+                schedule.sprintQualifying?.date,
+                schedule.sprintQualifying?.time,
+            ),
+            createRaceSession(
+                "Sprint Race",
+                schedule.sprintRace?.date,
+                schedule.sprintRace?.time,
+            ),
+            createRaceSession(
+                "Race",
+                schedule.race?.date,
+                schedule.race?.time,
+            ),
+        ].filter(
+            (session): session is RaceSession =>
+                session !== null,
+        );
+
+        if (sessions.length > 0) {
+            return sessions;
+        }
+    }
+
+    return buildFallbackSessions(race);
+}
+
+function getRaceDateTime(
+    date?: string | null,
+    time?: string | null,
+): string | null {
+    if (!date) {
+        return null;
+    }
+
+    if (!time) {
+        return date;
+    }
+
+    return `${date}T${time.replace("Z", "")}`;
+}
+
+function getRaceResults(
+    data: RaceApiData | null,
+): RaceResult[] {
     if (!data) {
         return [];
     }
 
     const candidates = [
         data.results,
+        data.races?.results,
         data.topDrivers,
         data.race?.results,
         data.race?.topDrivers,
     ];
 
     for (const results of candidates) {
-        if (Array.isArray(results) && results.length > 0) {
-            return results.slice(0, 3);
+        if (
+            Array.isArray(results) &&
+            results.length > 0
+        ) {
+            return [...results]
+                .sort((a, b) => {
+                    const positionA =
+                        typeof a.position === "number"
+                            ? a.position
+                            : Number(a.position);
+
+                    const positionB =
+                        typeof b.position === "number"
+                            ? b.position
+                            : Number(b.position);
+
+                    if (
+                        Number.isFinite(positionA) &&
+                        Number.isFinite(positionB)
+                    ) {
+                        return positionA - positionB;
+                    }
+
+                    return 0;
+                })
+                .slice(0, 3);
         }
     }
 
     return [];
 }
 
-function getDriverName(result: RaceResult): string {
+function hasRaceResults(
+    data: RaceApiData | null,
+): boolean {
+    if (!data) {
+        return false;
+    }
+
+    const candidates = [
+        data.results,
+        data.races?.results,
+        data.topDrivers,
+        data.race?.results,
+        data.race?.topDrivers,
+    ];
+
+    return candidates.some(
+        (results) =>
+            Array.isArray(results) &&
+            results.length > 0,
+    );
+}
+
+function isRaceCompleted(
+    data: RaceApiData | null,
+): boolean {
+    if (!data) {
+        return false;
+    }
+
+    if (data.resultsAvailable === true) {
+        return true;
+    }
+
+    if (hasRaceResults(data)) {
+        return true;
+    }
+
+    if (
+        data.status === "completed" ||
+        data.status === "Complete" ||
+        data.status === "COMPLETED"
+    ) {
+        return true;
+    }
+
+    return false;
+}
+
+function getDriverName(
+    result: RaceResult,
+): string {
+    if (
+        typeof result.driver === "object" &&
+        result.driver !== null
+    ) {
+        return (
+            result.driver.name ??
+            result.driver.shortName ??
+            "—"
+        );
+    }
+
     return (
         result.driver ??
         result.driverName ??
         result.fullName ??
         result.name ??
-        "Unknown"
+        "—"
     );
 }
 
-function getTeamName(result: RaceResult): string {
+function getTeamName(
+    result: RaceResult,
+): string {
+    if (
+        typeof result.team === "object" &&
+        result.team !== null
+    ) {
+        return result.team.name ?? "—";
+    }
+
     return (
         result.team ??
         result.teamName ??
@@ -263,7 +542,9 @@ function getTeamName(result: RaceResult): string {
     );
 }
 
-function getResultTime(result: RaceResult): string {
+function getResultTime(
+    result: RaceResult,
+): string {
     if (result.time) {
         return result.time;
     }
@@ -283,11 +564,155 @@ function getResultPosition(
         return String(result.position).padStart(2, "0");
     }
 
-    if (typeof result.position === "string" && result.position) {
+    if (
+        typeof result.position === "string" &&
+        result.position.trim()
+    ) {
         return result.position.padStart(2, "0");
     }
 
     return String(fallback).padStart(2, "0");
+}
+
+function getRaceWinner(
+    data: RaceApiData | null,
+    results: RaceResult[],
+): string {
+    if (data?.winner?.name) {
+        return data.winner.name;
+    }
+
+    if (data?.race?.winner) {
+        return data.race.winner;
+    }
+
+    if (results.length > 0) {
+        return getDriverName(results[0]);
+    }
+
+    return "—";
+}
+
+function getFastestLap(
+    data: RaceApiData | null,
+): string {
+    if (data?.circuit?.lapRecord) {
+        return data.circuit.lapRecord;
+    }
+
+    if (data?.circuit?.fastestLap) {
+        return data.circuit.fastestLap;
+    }
+
+    if (data?.race?.fastestLap) {
+        return data.race.fastestLap;
+    }
+
+    return "—";
+}
+
+function getRaceLaps(
+    data: RaceApiData | null,
+): number | string | undefined {
+    return (
+        data?.laps ??
+        data?.race?.laps ??
+        data?.circuit?.laps
+    );
+}
+
+function getRoundNumber(
+    value: unknown,
+): number | null {
+    if (
+        typeof value === "number" &&
+        Number.isFinite(value)
+    ) {
+        return value;
+    }
+
+    const match = String(value ?? "").match(/\d+/);
+
+    if (!match) {
+        return null;
+    }
+
+    const round = Number(match[0]);
+
+    if (!Number.isFinite(round) || round < 1) {
+        return null;
+    }
+
+    return round;
+}
+
+async function fetchRaceData(
+    round: number | null,
+): Promise<RaceApiData | null> {
+    if (
+        round === null ||
+        !Number.isFinite(round) ||
+        round < 1
+    ) {
+        return null;
+    }
+
+    try {
+        const response = await fetch(
+            `/api/f1/race/${round}?panel=${Date.now()}`,
+            {
+                cache: "no-store",
+            },
+        );
+
+        if (!response.ok) {
+            return null;
+        }
+
+        const json =
+            (await response.json()) as RaceApiData;
+
+        if (
+            typeof json.round === "number" &&
+            json.round !== round
+        ) {
+            return null;
+        }
+
+        return json;
+    } catch {
+        return null;
+    }
+}
+
+async function findPreviousCompletedRace(
+    currentRound: number | null,
+): Promise<RaceApiData | null> {
+    if (
+        currentRound === null ||
+        !Number.isFinite(currentRound) ||
+        currentRound <= 1
+    ) {
+        return null;
+    }
+
+    for (
+        let round = currentRound - 1;
+        round >= 1;
+        round -= 1
+    ) {
+        const candidate =
+            await fetchRaceData(round);
+
+        if (
+            candidate &&
+            isRaceCompleted(candidate)
+        ) {
+            return candidate;
+        }
+    }
+
+    return null;
 }
 
 export default function RaceWeekendPanel({
@@ -296,57 +721,72 @@ export default function RaceWeekendPanel({
     nextRace,
     status,
 }: RaceWeekendPanelProps): React.ReactElement {
-    const [data, setData] = useState<RaceDataState>({
-        current: null,
-        previous: null,
-        next: null,
-    });
+    const [data, setData] =
+        useState<RaceDataState>({
+            current: null,
+            previous: null,
+            next: null,
+        });
 
-    const [now, setNow] = useState(() => Date.now());
+    const [now, setNow] = useState(
+        () => Date.now(),
+    );
 
     useEffect(() => {
-        const interval = window.setInterval(() => {
-            setNow(Date.now());
-        }, 1000);
+        const interval =
+            window.setInterval(() => {
+                setNow(Date.now());
+            }, 1000);
 
         return () => {
             window.clearInterval(interval);
         };
     }, []);
 
+    const currentRound =
+        getRoundNumber(race.round);
+
+    const nextRoundFromProp =
+        nextRace?.round !== undefined
+            ? getRoundNumber(nextRace.round)
+            : null;
+
+    const nextRound =
+        nextRoundFromProp !== null
+            ? nextRoundFromProp
+            : currentRound !== null
+                ? currentRound + 1
+                : null;
+
     useEffect(() => {
         let cancelled = false;
 
-        const loadRaceData = async (): Promise<void> => {
-            const requests = [
-                race?.round
-                    ? fetch(`/api/f1/race/${race.round}`, {
-                        cache: "no-store",
-                    }).then((response) =>
-                        response.ok ? response.json() : null,
-                    )
-                    : Promise.resolve(null),
+        const loadRaceData =
+            async (): Promise<void> => {
+                const currentPromise =
+                    fetchRaceData(
+                        currentRound,
+                    );
 
-                previousRace?.round
-                    ? fetch(`/api/f1/race/${previousRace.round}`, {
-                        cache: "no-store",
-                    }).then((response) =>
-                        response.ok ? response.json() : null,
-                    )
-                    : Promise.resolve(null),
+                const previousPromise =
+                    findPreviousCompletedRace(
+                        currentRound,
+                    );
 
-                nextRace?.round
-                    ? fetch(`/api/f1/race/${nextRace.round}`, {
-                        cache: "no-store",
-                    }).then((response) =>
-                        response.ok ? response.json() : null,
-                    )
-                    : Promise.resolve(null),
-            ];
+                const nextPromise =
+                    fetchRaceData(
+                        nextRound,
+                    );
 
-            try {
-                const [current, previous, next] =
-                    await Promise.all(requests);
+                const [
+                    current,
+                    previous,
+                    next,
+                ] = await Promise.all([
+                    currentPromise,
+                    previousPromise,
+                    nextPromise,
+                ]);
 
                 if (cancelled) {
                     return;
@@ -357,63 +797,69 @@ export default function RaceWeekendPanel({
                     previous,
                     next,
                 });
-            } catch {
-                if (cancelled) {
-                    return;
-                }
-
-                setData({
-                    current: null,
-                    previous: null,
-                    next: null,
-                });
-            }
-        };
+            };
 
         void loadRaceData();
 
         return () => {
             cancelled = true;
         };
-    }, [nextRace?.round, previousRace?.round, race?.round]);
+    }, [
+        currentRound,
+        nextRound,
+    ]);
 
-    const currentData = data.current;
-    const previousData = data.previous;
-    const nextData = data.next;
+    const currentData =
+        data.current;
 
-    const currentSessions = useMemo(() => {
-        if (currentData?.sessions?.length) {
-            return currentData.sessions;
-        }
+    const previousData =
+        data.previous;
 
-        return buildFallbackSessions(race);
-    }, [currentData?.sessions, race]);
+    const nextData =
+        data.next;
 
-    const previousResults = useMemo(
-        () => getRaceResults(previousData),
-        [previousData],
-    );
+    const currentSessions =
+        getSessions(
+            currentData,
+            race,
+        );
 
-    const nextCircuit = nextData?.circuit ?? null;
+    const previousResults =
+        getRaceResults(
+            previousData,
+        );
 
-    const nextCircuitMap = useMemo(() => {
-        return getCircuitMap(
+    const nextCircuit =
+        nextData?.circuit ?? null;
+
+    const nextCircuitMap =
+        getCircuitMap(
             nextCircuit?.country ??
             nextRace?.country ??
             nextCircuit?.name ??
             nextRace?.circuit ??
             "Singapore",
         );
-    }, [
-        nextCircuit?.country,
-        nextCircuit?.name,
-        nextRace?.circuit,
-        nextRace?.country,
-    ]);
 
-    const nextRaceCountdown = nextRace
-        ? getCountdown(getRaceStartDate(nextRace), now)
-        : "—";
+    const nextRaceStart =
+        getRaceDateTime(
+            nextData?.schedule?.race?.date ??
+            nextData?.date ??
+            nextRace?.startDate ??
+            null,
+            nextData?.schedule?.race?.time ??
+            nextData?.time ??
+            null,
+        );
+
+    const nextRaceCountdown =
+        nextRace
+            ? getCountdown(
+                nextRaceStart ??
+                nextRace.startDate,
+                now,
+            )
+            : "—";
 
     return (
         <div className="h-full overflow-hidden">
@@ -433,9 +879,11 @@ export default function RaceWeekendPanel({
                                         </span>
 
                                         <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#ff729f]">
-                                            {status === "live"
+                                            {status ===
+                                                "live"
                                                 ? "Live race"
-                                                : status === "completed"
+                                                : status ===
+                                                    "completed"
                                                     ? "Completed race"
                                                     : "Race weekend"}
                                         </span>
@@ -446,7 +894,8 @@ export default function RaceWeekendPanel({
                                     </h2>
 
                                     <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-white/40">
-                                        {race.circuit} • {race.country}
+                                        {race.circuit} •{" "}
+                                        {race.country}
                                     </p>
                                 </div>
 
@@ -456,7 +905,13 @@ export default function RaceWeekendPanel({
                                     </p>
 
                                     <p className="mt-1 text-2xl font-semibold text-white">
-                                        {String(race.round).padStart(2, "0")}
+                                        {String(
+                                            currentRound ??
+                                            race.round,
+                                        ).padStart(
+                                            2,
+                                            "0",
+                                        )}
                                     </p>
                                 </div>
                             </div>
@@ -481,45 +936,53 @@ export default function RaceWeekendPanel({
                                 </div>
 
                                 <div className="mt-4 grid gap-2 sm:grid-cols-5">
-                                    {currentSessions.map((session, index) => {
-                                        const isRace =
-                                            getSessionLabel(session.name) ===
-                                            "Race";
+                                    {currentSessions.map(
+                                        (
+                                            session,
+                                            index,
+                                        ) => {
+                                            const isRace =
+                                                getSessionLabel(
+                                                    session.name,
+                                                ) ===
+                                                "Race";
 
-                                        return (
-                                            <div
-                                                key={`${session.name}-${session.date}-${index}`}
-                                                className={`border px-3 py-3 ${isRace
-                                                    ? "border-[#ff729f]/50 bg-[#ff729f]/5"
-                                                    : "border-white/10 bg-white/[0.015]"
-                                                    }`}
-                                            >
-                                                <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
-                                                    {getSessionLabel(
-                                                        session.name,
-                                                    )}
-                                                </p>
+                                            return (
+                                                <div
+                                                    key={`${session.name}-${session.date}-${index}`}
+                                                    className={`border px-3 py-3 ${isRace
+                                                        ? "border-[#ff729f]/50 bg-[#ff729f]/5"
+                                                        : "border-white/10 bg-white/[0.015]"
+                                                        }`}
+                                                >
+                                                    <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
+                                                        {getSessionLabel(
+                                                            session.name,
+                                                        )}
+                                                    </p>
 
-                                                <p className="mt-2 text-xs font-semibold uppercase tracking-[0.06em] text-white">
-                                                    {formatShortDate(
-                                                        session.date,
-                                                    )}
-                                                </p>
+                                                    <p className="mt-2 text-xs font-semibold uppercase tracking-[0.06em] text-white">
+                                                        {formatShortDate(
+                                                            session.date,
+                                                        )}
+                                                    </p>
 
-                                                <p className="mt-1 text-[8px] font-medium uppercase tracking-[0.16em] text-white/35">
-                                                    {formatTime(session.time)}
-                                                    {" UTC"}
-                                                </p>
-                                            </div>
-                                        );
-                                    })}
+                                                    <p className="mt-1 text-[8px] font-medium uppercase tracking-[0.16em] text-white/35">
+                                                        {formatTime(
+                                                            session.time,
+                                                        )}{" "}
+                                                        UTC
+                                                    </p>
+                                                </div>
+                                            );
+                                        },
+                                    )}
                                 </div>
                             </div>
                         </div>
                     </section>
 
                     <PreviousRaceCard
-                        race={previousRace}
                         data={previousData}
                         results={previousResults}
                     />
@@ -529,8 +992,12 @@ export default function RaceWeekendPanel({
                     <NextRaceCard
                         race={nextRace}
                         data={nextData}
-                        circuitMap={nextCircuitMap}
-                        countdown={nextRaceCountdown}
+                        circuitMap={
+                            nextCircuitMap
+                        }
+                        countdown={
+                            nextRaceCountdown
+                        }
                     />
                 )}
             </div>
@@ -539,29 +1006,35 @@ export default function RaceWeekendPanel({
 }
 
 function PreviousRaceCard({
-    race,
     data,
     results,
 }: {
-    race: F1Race | null;
     data: RaceApiData | null;
     results: RaceResult[];
 }): React.ReactElement {
-    if (!race) {
-        return (
-            <section className="border border-white/10 bg-[#242426] p-6">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/30">
-                    Previous race
-                </p>
+    const resolvedRaceName =
+        data?.raceName ??
+        "Previous race";
 
-                <p className="mt-4 text-sm text-white/40">
-                    No previous race available.
-                </p>
-            </section>
+    const resolvedCircuit =
+        data?.circuit?.name ??
+        "—";
+
+    const resolvedCountry =
+        data?.circuit?.country ??
+        "";
+
+    const winner =
+        getRaceWinner(
+            data,
+            results,
         );
-    }
 
-    const raceResult = data?.race;
+    const fastestLap =
+        getFastestLap(data);
+
+    const laps =
+        getRaceLaps(data);
 
     return (
         <section className="overflow-hidden border border-white/10 bg-[#242426]">
@@ -573,17 +1046,20 @@ function PreviousRaceCard({
                         </p>
 
                         <h3 className="mt-2 text-xl font-semibold uppercase tracking-[-0.035em] text-white sm:text-2xl">
-                            {race.name}
+                            {resolvedRaceName}
                         </h3>
 
                         <p className="mt-1 text-[9px] font-medium uppercase tracking-[0.18em] text-white/35">
-                            {race.circuit} • {race.country}
+                            {resolvedCircuit}
+                            {resolvedCountry
+                                ? ` • ${resolvedCountry}`
+                                : ""}
                         </p>
                     </div>
 
                     <span className="text-lg">
                         {countryCodeToEmoji(
-                            race.countryCode ?? race.country ?? "",
+                            resolvedCountry,
                         )}
                     </span>
                 </div>
@@ -605,35 +1081,49 @@ function PreviousRaceCard({
                 </div>
 
                 {results.length > 0 ? (
-                    results.map((result, index) => (
-                        <div
-                            key={`${getDriverName(result)}-${index}`}
-                            className="grid grid-cols-[42px_minmax(0,1fr)_auto] items-center border-b border-white/5 px-4 py-3 last:border-b-0"
-                        >
-                            <p
-                                className={`text-sm font-semibold ${index === 0
-                                    ? "text-[#ff729f]"
-                                    : "text-white/45"
-                                    }`}
+                    results.map(
+                        (
+                            result,
+                            index,
+                        ) => (
+                            <div
+                                key={`${getDriverName(result)}-${index}`}
+                                className="grid grid-cols-[42px_minmax(0,1fr)_auto] items-center border-b border-white/5 px-4 py-3 last:border-b-0"
                             >
-                                {getResultPosition(result, index + 1)}
-                            </p>
-
-                            <div className="min-w-0">
-                                <p className="truncate text-xs font-semibold uppercase tracking-[0.04em] text-white">
-                                    {getDriverName(result)}
+                                <p
+                                    className={`text-sm font-semibold ${index === 0
+                                        ? "text-[#ff729f]"
+                                        : "text-white/45"
+                                        }`}
+                                >
+                                    {getResultPosition(
+                                        result,
+                                        index + 1,
+                                    )}
                                 </p>
 
-                                <p className="mt-1 truncate text-[8px] font-medium uppercase tracking-[0.14em] text-white/25">
-                                    {getTeamName(result)}
+                                <div className="min-w-0">
+                                    <p className="truncate text-xs font-semibold uppercase tracking-[0.04em] text-white">
+                                        {getDriverName(
+                                            result,
+                                        )}
+                                    </p>
+
+                                    <p className="mt-1 truncate text-[8px] font-medium uppercase tracking-[0.14em] text-white/25">
+                                        {getTeamName(
+                                            result,
+                                        )}
+                                    </p>
+                                </div>
+
+                                <p className="pl-3 text-right text-[10px] font-semibold uppercase tracking-[0.04em] text-white/60">
+                                    {getResultTime(
+                                        result,
+                                    )}
                                 </p>
                             </div>
-
-                            <p className="pl-3 text-right text-[10px] font-semibold uppercase tracking-[0.04em] text-white/60">
-                                {getResultTime(result)}
-                            </p>
-                        </div>
-                    ))
+                        ),
+                    )
                 ) : (
                     <div className="px-4 py-5">
                         <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/25">
@@ -641,7 +1131,7 @@ function PreviousRaceCard({
                         </p>
 
                         <p className="mt-2 text-xs text-white/40">
-                            {raceResult?.winner ?? "Results unavailable"}
+                            Loading race results…
                         </p>
                     </div>
                 )}
@@ -654,25 +1144,17 @@ function PreviousRaceCard({
                     </p>
 
                     <p className="mt-2 truncate text-[10px] font-semibold uppercase tracking-[0.04em] text-white">
-                        {raceResult?.winner ?? results[0]
-                            ? getDriverName(
-                                results[0] ?? {
-                                    driver: raceResult?.winner,
-                                },
-                            )
-                            : "—"}
+                        {winner}
                     </p>
                 </div>
 
                 <div className="border-r border-white/10 p-4">
                     <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/25">
-                        Fastest lap
+                        Lap record
                     </p>
 
                     <p className="mt-2 truncate text-[10px] font-semibold uppercase tracking-[0.04em] text-white">
-                        {raceResult?.fastestLapDriver ??
-                            raceResult?.fastestLap ??
-                            "—"}
+                        {fastestLap}
                     </p>
                 </div>
 
@@ -682,9 +1164,7 @@ function PreviousRaceCard({
                     </p>
 
                     <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.04em] text-white">
-                        {raceResult?.laps ??
-                            data?.circuit?.laps ??
-                            "—"}
+                        {laps ?? "—"}
                     </p>
                 </div>
             </div>
@@ -700,26 +1180,53 @@ function NextRaceCard({
 }: {
     race: F1Race;
     data: RaceApiData | null;
-    circuitMap: ReturnType<typeof getCircuitMap>;
+    circuitMap: ReturnType<
+        typeof getCircuitMap
+    >;
     countdown: string;
 }): React.ReactElement {
-    const circuit = data?.circuit ?? null;
+    const circuit =
+        data?.circuit ?? null;
 
-    const country = circuit?.country ?? race.country ?? "";
-    const circuitName = circuit?.name ?? race.circuit ?? "Circuit";
-    const location = circuit?.location ?? country;
+    const country =
+        circuit?.country ??
+        race.country ??
+        "";
+
+    const circuitName =
+        circuit?.name ??
+        race.circuit ??
+        "Circuit";
+
+    const location =
+        circuit?.city ??
+        circuit?.location ??
+        country;
 
     const length =
-        typeof circuit?.length === "number"
-            ? circuit.length
-            : undefined;
+        typeof circuit?.lengthKm ===
+            "number"
+            ? circuit.lengthKm
+            : typeof circuit?.length ===
+                "number"
+                ? circuit.length
+                : undefined;
 
-    const corners = circuit?.corners;
-    const laps = circuit?.laps ?? data?.race?.laps;
+    const lengthIsKm =
+        typeof circuit?.lengthKm ===
+        "number";
+
+    const corners =
+        circuit?.corners;
+
+    const laps =
+        circuit?.laps ??
+        data?.race?.laps ??
+        data?.laps;
 
     return (
         <section className="overflow-hidden border border-white/10 bg-[#242426] p-3">
-            <div className="grid lg:grid-cols-[0.95fr_1.05fr] gap-8">
+            <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
                 <div className="order-2 flex flex-col lg:order-1">
                     <div className="border-b border-white/10 p-5 sm:p-6 lg:p-7">
                         <div className="flex items-start justify-between gap-6">
@@ -735,7 +1242,8 @@ function NextRaceCard({
                                 <div className="mt-3 flex items-start gap-3">
                                     <span className="text-lg">
                                         {countryCodeToEmoji(
-                                            race.countryCode ?? country,
+                                            race.countryCode ??
+                                            country,
                                         )}
                                     </span>
 
@@ -745,15 +1253,12 @@ function NextRaceCard({
                                         </p>
 
                                         <p className="mt-1 text-[9px] font-medium uppercase tracking-[0.18em] text-white/25">
-                                            {location} • {country}
+                                            {location} •{" "}
+                                            {country}
                                         </p>
                                     </div>
                                 </div>
                             </div>
-
-                            <span className="hidden text-xl sm:block">
-                                🏁
-                            </span>
                         </div>
                     </div>
 
@@ -764,7 +1269,9 @@ function NextRaceCard({
                             </p>
 
                             <p className="mt-2 text-xs font-semibold uppercase tracking-[0.06em] text-white">
-                                {formatDate(race.startDate)}
+                                {formatDate(
+                                    race.startDate,
+                                )}
                             </p>
                         </div>
 
@@ -774,7 +1281,15 @@ function NextRaceCard({
                             </p>
 
                             <p className="mt-2 text-xs font-semibold text-white">
-                                {String(race.round).padStart(2, "0")}
+                                {String(
+                                    getRoundNumber(
+                                        race.round,
+                                    ) ??
+                                    race.round,
+                                ).padStart(
+                                    2,
+                                    "0",
+                                )}
                             </p>
                         </div>
 
@@ -784,7 +1299,10 @@ function NextRaceCard({
                             </p>
 
                             <p className="mt-2 truncate text-xs font-semibold text-white">
-                                {formatDistance(length)}
+                                {formatDistance(
+                                    length,
+                                    lengthIsKm,
+                                )}
                             </p>
                         </div>
 
@@ -845,7 +1363,9 @@ function NextRaceCard({
                 </div>
 
                 <div className="relative order-1 h-[280px] overflow-hidden bg-black lg:order-2 lg:h-[390px]">
-                    <RaceMap3D circuit={circuitMap} />
+                    <RaceMap3D
+                        circuit={circuitMap}
+                    />
 
                     <div className="pointer-events-none absolute left-5 top-5 z-10">
                         <p className="text-[8px] font-semibold uppercase tracking-[0.28em] text-white/40">

@@ -3,48 +3,32 @@ import { NextResponse } from "next/server";
 const API_BASE = "https://f1api.dev/api";
 const SEASON = 2026;
 
+interface ApiSession {
+  date?: string | null;
+  time?: string | null;
+}
+
 interface ApiRace {
   round?: number | string;
   date?: string | null;
   time?: string | null;
-  raceId?: string;
+  raceId?: string | null;
   raceName?: string | null;
   schedule?: {
-    race?: {
-      date?: string | null;
-      time?: string | null;
-    };
-    qualy?: {
-      date?: string | null;
-      time?: string | null;
-    };
-    fp1?: {
-      date?: string | null;
-      time?: string | null;
-    };
-    fp2?: {
-      date?: string | null;
-      time?: string | null;
-    };
-    fp3?: {
-      date?: string | null;
-      time?: string | null;
-    };
-    sprintQualy?: {
-      date?: string | null;
-      time?: string | null;
-    };
-    sprintRace?: {
-      date?: string | null;
-      time?: string | null;
-    };
+    race?: ApiSession;
+    qualy?: ApiSession;
+    fp1?: ApiSession;
+    fp2?: ApiSession;
+    fp3?: ApiSession;
+    sprintQualy?: ApiSession;
+    sprintRace?: ApiSession;
   };
   laps?: number | null;
   circuit?: {
-    circuitId?: string;
-    circuitName?: string;
-    country?: string;
-    city?: string;
+    circuitId?: string | null;
+    circuitName?: string | null;
+    country?: string | null;
+    city?: string | null;
     circuitLength?: string | number | null;
     lapRecord?: string | null;
     corners?: number | null;
@@ -58,49 +42,50 @@ interface ApiRace {
     fast_lap_team_id?: string | null;
   };
   winner?: {
-    driverId?: string;
-    name?: string;
-    surname?: string;
-    shortName?: string;
+    driverId?: string | null;
+    name?: string | null;
+    surname?: string | null;
+    shortName?: string | null;
     number?: number | null;
   } | null;
   teamWinner?: {
-    teamId?: string;
-    teamName?: string;
+    teamId?: string | null;
+    teamName?: string | null;
   } | null;
 }
 
+interface ApiRaceResponse {
+  race?: ApiRace[];
+}
+
 interface ApiRaceResult {
-  position?: number;
-  grid?: number;
-  points?: number;
+  position?: number | null;
+  grid?: number | null;
+  points?: number | null;
   time?: string | null;
   fastLap?: string | null;
   retired?: string | null;
   driver?: {
-    driverId?: string;
-    name?: string;
-    surname?: string;
-    shortName?: string;
-    nationality?: string;
-    number?: number;
-  };
+    driverId?: string | null;
+    name?: string | null;
+    surname?: string | null;
+    shortName?: string | null;
+    nationality?: string | null;
+    number?: number | null;
+  } | null;
   team?: {
-    teamId?: string;
-    teamName?: string;
-  };
-}
-
-interface ApiRaceResponse {
-  race?: ApiRace[] | ApiRace;
-  races?: ApiRace;
+    teamId?: string | null;
+    teamName?: string | null;
+  } | null;
 }
 
 interface ApiResultsResponse {
   races?: {
+    round?: number | string;
+    raceId?: string | null;
+    raceName?: string | null;
     results?: ApiRaceResult[];
   };
-  results?: ApiRaceResult[];
 }
 
 interface NormalisedSession {
@@ -120,9 +105,9 @@ interface NormalisedSchedule {
 
 interface NormalisedCircuit {
   id: string | null;
-  name: string;
-  country: string;
-  city: string;
+  name: string | null;
+  country: string | null;
+  city: string | null;
   lengthKm: number | null;
   corners: number | null;
   laps: number | null;
@@ -135,29 +120,25 @@ interface NormalisedCircuit {
 interface NormalisedResult {
   position: number;
   gridPosition: number | null;
-  points: number;
+  points: number | null;
   time: string | null;
   fastLap: string | null;
   retired: string | null;
   driver: {
     id: string | null;
-    name: string;
-    shortName: string;
-    nationality: string;
+    name: string | null;
+    shortName: string | null;
+    nationality: string | null;
     number: number | null;
   };
   team: {
     id: string | null;
-    name: string;
+    name: string | null;
   };
 }
 
 function asRace(payload: ApiRaceResponse): ApiRace | null {
-  if (Array.isArray(payload.race)) {
-    return payload.race[0] ?? null;
-  }
-
-  return payload.race ?? null;
+  return payload.race?.[0] ?? null;
 }
 
 function normaliseLength(
@@ -167,19 +148,22 @@ function normaliseLength(
     return null;
   }
 
-  const numeric = Number.parseFloat(String(value).replace(/[^\d.]/g, ""));
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
+  }
+
+  const match = value.trim().match(/^([\d.]+)\s*km$/i);
+
+  if (!match) {
+    return null;
+  }
+
+  const numeric = Number.parseFloat(match[1]);
 
   return Number.isFinite(numeric) ? numeric : null;
 }
 
-function normaliseSession(
-  session:
-    | {
-        date?: string | null;
-        time?: string | null;
-      }
-    | undefined,
-): NormalisedSession {
+function normaliseSession(session: ApiSession | undefined): NormalisedSession {
   return {
     date: session?.date ?? null,
     time: session?.time ?? null,
@@ -198,53 +182,109 @@ function normaliseSchedule(race: ApiRace): NormalisedSchedule {
   };
 }
 
-function normaliseRace(race: ApiRace, results: ApiRaceResult[]) {
-  const circuit = race.circuit ?? {};
+function getRaceDate(race: ApiRace): string | null {
+  return race.date ?? race.schedule?.race?.date ?? null;
+}
 
-  const raceResults = results
-    .map((result) => ({
-      position: Number(result.position ?? 0),
-      gridPosition:
-        result.grid === undefined || result.grid === null
+function hasRaceCompleted(race: ApiRace): boolean {
+  const raceDate = getRaceDate(race);
+
+  if (!raceDate) {
+    return false;
+  }
+
+  const parsedDate = new Date(`${raceDate}T23:59:59Z`);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return false;
+  }
+
+  return parsedDate.getTime() < Date.now();
+}
+
+function normaliseResults(results: ApiRaceResult[]): NormalisedResult[] {
+  return results
+    .map((result) => {
+      const position =
+        result.position === null || result.position === undefined
           ? null
-          : Number(result.grid),
-      points: Number(result.points ?? 0),
-      time: result.time ?? null,
-      fastLap: result.fastLap ?? null,
-      retired: result.retired ?? null,
-      driver: {
-        id: result.driver?.driverId ?? null,
-        name:
-          [result.driver?.name, result.driver?.surname]
-            .filter(Boolean)
-            .join(" ") || "Unknown driver",
-        shortName: result.driver?.shortName ?? "—",
-        nationality: result.driver?.nationality ?? "Unknown",
-        number:
-          result.driver?.number === undefined ? null : result.driver.number,
-      },
-      team: {
-        id: result.team?.teamId ?? null,
-        name: result.team?.teamName ?? "Unknown team",
-      },
-    }))
-    .filter((result) => result.position > 0)
+          : Number(result.position);
+
+      if (position === null || !Number.isInteger(position) || position < 1) {
+        return null;
+      }
+
+      return {
+        position,
+        gridPosition:
+          result.grid === null || result.grid === undefined
+            ? null
+            : Number(result.grid),
+        points:
+          result.points === null || result.points === undefined
+            ? null
+            : Number(result.points),
+        time: result.time ?? null,
+        fastLap: result.fastLap ?? null,
+        retired: result.retired ?? null,
+        driver: {
+          id: result.driver?.driverId ?? null,
+          name:
+            [result.driver?.name, result.driver?.surname]
+              .filter(Boolean)
+              .join(" ") || null,
+          shortName: result.driver?.shortName ?? null,
+          nationality: result.driver?.nationality ?? null,
+          number:
+            result.driver?.number === undefined ? null : result.driver.number,
+        },
+        team: {
+          id: result.team?.teamId ?? null,
+          name: result.team?.teamName ?? null,
+        },
+      };
+    })
+    .filter((result): result is NormalisedResult => result !== null)
     .sort((a, b) => a.position - b.position);
+}
+
+function normaliseRace(
+  race: ApiRace,
+  results: ApiRaceResult[],
+  resultsAvailable: boolean,
+) {
+  const circuit = race.circuit ?? {};
+  const schedule = normaliseSchedule(race);
+  const completed = hasRaceCompleted(race);
 
   return {
-    round: Number(race.round ?? 0),
+    round:
+      race.round === undefined || race.round === null
+        ? null
+        : Number(race.round),
+
     raceId: race.raceId ?? null,
-    raceName: race.raceName ?? "Formula 1 Grand Prix",
-    date: race.date ?? race.schedule?.race?.date ?? null,
+
+    raceName: race.raceName ?? null,
+
+    date: getRaceDate(race),
+
     time: race.time ?? race.schedule?.race?.time ?? null,
-    schedule: normaliseSchedule(race),
+
+    status: completed ? "completed" : "upcoming",
+
+    resultsAvailable,
+
+    schedule,
+
     laps:
       race.laps === undefined || race.laps === null ? null : Number(race.laps),
+
     circuit: {
       id: circuit.circuitId ?? null,
-      name: circuit.circuitName ?? "Circuit",
-      country: circuit.country ?? "",
-      city: circuit.city ?? "",
+      name: circuit.circuitName ?? null,
+      country: circuit.country ?? null,
+      city: circuit.city ?? null,
       lengthKm: normaliseLength(circuit.circuitLength),
       corners:
         circuit.corners === undefined || circuit.corners === null
@@ -254,29 +294,35 @@ function normaliseRace(race: ApiRace, results: ApiRaceResult[]) {
         race.laps === undefined || race.laps === null
           ? null
           : Number(race.laps),
-      lapRecord: circuit.lapRecord ?? race.fast_lap?.fast_lap ?? null,
+      lapRecord: circuit.lapRecord ?? null,
       fastestLapDriverId:
         circuit.fastestLapDriverId ?? race.fast_lap?.fast_lap_driver_id ?? null,
       fastestLapTeamId:
         circuit.fastestLapTeamId ?? race.fast_lap?.fast_lap_team_id ?? null,
       fastestLapYear: circuit.fastestLapYear ?? null,
-    },
-    winner: race.winner
-      ? {
-          name: [race.winner.name, race.winner.surname]
-            .filter(Boolean)
-            .join(" "),
-          shortName: race.winner.shortName ?? "—",
-          driverId: race.winner.driverId ?? null,
-        }
-      : null,
-    teamWinner: race.teamWinner
-      ? {
-          name: race.teamWinner.teamName ?? "Unknown team",
-          teamId: race.teamWinner.teamId ?? null,
-        }
-      : null,
-    results: raceResults,
+    } satisfies NormalisedCircuit,
+
+    winner:
+      completed && race.winner
+        ? {
+            name:
+              [race.winner.name, race.winner.surname]
+                .filter(Boolean)
+                .join(" ") || null,
+            shortName: race.winner.shortName ?? null,
+            driverId: race.winner.driverId ?? null,
+          }
+        : null,
+
+    teamWinner:
+      completed && race.teamWinner
+        ? {
+            name: race.teamWinner.teamName ?? null,
+            teamId: race.teamWinner.teamId ?? null,
+          }
+        : null,
+
+    results: completed && resultsAvailable ? normaliseResults(results) : [],
   };
 }
 
@@ -290,9 +336,10 @@ export async function GET(
 ): Promise<Response> {
   try {
     const { round } = await context.params;
+
     const roundNumber = Number.parseInt(round, 10);
 
-    if (!Number.isInteger(roundNumber) || roundNumber < 1 || roundNumber > 30) {
+    if (!Number.isInteger(roundNumber) || roundNumber < 1) {
       return NextResponse.json(
         {
           error: "Invalid race round.",
@@ -308,6 +355,17 @@ export async function GET(
         revalidate: 600,
       },
     });
+
+    if (raceResponse.status === 404) {
+      return NextResponse.json(
+        {
+          error: "Race round was not found in the season calendar.",
+        },
+        {
+          status: 404,
+        },
+      );
+    }
 
     if (!raceResponse.ok) {
       return NextResponse.json(
@@ -335,25 +393,62 @@ export async function GET(
       );
     }
 
-    let results: ApiRaceResult[] = [];
+    const returnedRound =
+      race.round === undefined || race.round === null
+        ? null
+        : Number(race.round);
 
-    const resultsResponse = await fetch(
-      `${API_BASE}/${SEASON}/${roundNumber}/race?limit=30`,
-      {
-        next: {
-          revalidate: 600,
+    if (returnedRound !== roundNumber) {
+      return NextResponse.json(
+        {
+          error: "Race calendar data did not match the requested round.",
         },
-      },
-    );
-
-    if (resultsResponse.ok) {
-      const resultsPayload =
-        (await resultsResponse.json()) as ApiResultsResponse;
-
-      results = resultsPayload.races?.results ?? resultsPayload.results ?? [];
+        {
+          status: 502,
+        },
+      );
     }
 
-    const data = normaliseRace(race, results);
+    const completed = hasRaceCompleted(race);
+
+    let results: ApiRaceResult[] = [];
+    let resultsAvailable = false;
+
+    if (completed) {
+      const resultsResponse = await fetch(
+        `${API_BASE}/${SEASON}/${roundNumber}/race?limit=30`,
+        {
+          next: {
+            revalidate: 600,
+          },
+        },
+      );
+
+      if (resultsResponse.ok) {
+        const resultsPayload =
+          (await resultsResponse.json()) as ApiResultsResponse;
+
+        const resultRace = resultsPayload.races;
+
+        const resultRound =
+          resultRace?.round === undefined || resultRace.round === null
+            ? null
+            : Number(resultRace.round);
+
+        const resultMatchesRace =
+          resultRound === roundNumber &&
+          (resultRace?.raceId === null ||
+            resultRace?.raceId === undefined ||
+            resultRace.raceId === race.raceId);
+
+        if (resultMatchesRace) {
+          results = resultRace?.results ?? [];
+          resultsAvailable = results.length > 0;
+        }
+      }
+    }
+
+    const data = normaliseRace(race, results, resultsAvailable);
 
     return NextResponse.json(data, {
       headers: {

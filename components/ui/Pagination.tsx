@@ -23,7 +23,7 @@ export default function Pagination({
   );
 
   return (
-    <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-5">
+    <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 p-5">
       <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/25">
         Page {currentPage} of {totalPages}
       </p>
