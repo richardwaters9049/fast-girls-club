@@ -86,6 +86,7 @@ interface ApiResultsResponse {
     raceName?: string | null;
     results?: ApiRaceResult[];
   };
+  results?: ApiRaceResult[];
 }
 
 interface NormalisedSession {
@@ -112,6 +113,7 @@ interface NormalisedCircuit {
   corners: number | null;
   laps: number | null;
   lapRecord: string | null;
+  fastestLap: string | null;
   fastestLapDriverId: string | null;
   fastestLapTeamId: string | null;
   fastestLapYear: number | null;
@@ -154,11 +156,13 @@ function normaliseLength(
 
   const match = value.trim().match(/^([\d.]+)\s*km$/i);
 
-  if (!match) {
-    return null;
+  if (match) {
+    const numeric = Number.parseFloat(match[1]);
+
+    return Number.isFinite(numeric) ? numeric : null;
   }
 
-  const numeric = Number.parseFloat(match[1]);
+  const numeric = Number.parseFloat(value.replace(/[^\d.]/g, ""));
 
   return Number.isFinite(numeric) ? numeric : null;
 }
@@ -186,6 +190,10 @@ function getRaceDate(race: ApiRace): string | null {
   return race.date ?? race.schedule?.race?.date ?? null;
 }
 
+function getRaceTime(race: ApiRace): string | null {
+  return race.time ?? race.schedule?.race?.time ?? null;
+}
+
 function hasRaceCompleted(race: ApiRace): boolean {
   const raceDate = getRaceDate(race);
 
@@ -193,7 +201,13 @@ function hasRaceCompleted(race: ApiRace): boolean {
     return false;
   }
 
-  const parsedDate = new Date(`${raceDate}T23:59:59Z`);
+  const raceTime = getRaceTime(race);
+
+  const dateTime = raceTime
+    ? `${raceDate}T${raceTime}`
+    : `${raceDate}T23:59:59Z`;
+
+  const parsedDate = new Date(dateTime);
 
   if (Number.isNaN(parsedDate.getTime())) {
     return false;
@@ -269,7 +283,7 @@ function normaliseRace(
 
     date: getRaceDate(race),
 
-    time: race.time ?? race.schedule?.race?.time ?? null,
+    time: getRaceTime(race),
 
     status: completed ? "completed" : "upcoming",
 
@@ -282,23 +296,35 @@ function normaliseRace(
 
     circuit: {
       id: circuit.circuitId ?? null,
+
       name: circuit.circuitName ?? null,
+
       country: circuit.country ?? null,
+
       city: circuit.city ?? null,
+
       lengthKm: normaliseLength(circuit.circuitLength),
+
       corners:
         circuit.corners === undefined || circuit.corners === null
           ? null
           : Number(circuit.corners),
+
       laps:
         race.laps === undefined || race.laps === null
           ? null
           : Number(race.laps),
+
       lapRecord: circuit.lapRecord ?? null,
+
+      fastestLap: race.fast_lap?.fast_lap ?? null,
+
       fastestLapDriverId:
-        circuit.fastestLapDriverId ?? race.fast_lap?.fast_lap_driver_id ?? null,
+        race.fast_lap?.fast_lap_driver_id ?? circuit.fastestLapDriverId ?? null,
+
       fastestLapTeamId:
-        circuit.fastestLapTeamId ?? race.fast_lap?.fast_lap_team_id ?? null,
+        race.fast_lap?.fast_lap_team_id ?? circuit.fastestLapTeamId ?? null,
+
       fastestLapYear: circuit.fastestLapYear ?? null,
     } satisfies NormalisedCircuit,
 
@@ -309,7 +335,9 @@ function normaliseRace(
               [race.winner.name, race.winner.surname]
                 .filter(Boolean)
                 .join(" ") || null,
+
             shortName: race.winner.shortName ?? null,
+
             driverId: race.winner.driverId ?? null,
           }
         : null,
@@ -318,6 +346,7 @@ function normaliseRace(
       completed && race.teamWinner
         ? {
             name: race.teamWinner.teamName ?? null,
+
             teamId: race.teamWinner.teamId ?? null,
           }
         : null,
@@ -428,22 +457,12 @@ export async function GET(
         const resultsPayload =
           (await resultsResponse.json()) as ApiResultsResponse;
 
-        const resultRace = resultsPayload.races;
+        const apiResults =
+          resultsPayload.races?.results ?? resultsPayload.results ?? [];
 
-        const resultRound =
-          resultRace?.round === undefined || resultRace.round === null
-            ? null
-            : Number(resultRace.round);
-
-        const resultMatchesRace =
-          resultRound === roundNumber &&
-          (resultRace?.raceId === null ||
-            resultRace?.raceId === undefined ||
-            resultRace.raceId === race.raceId);
-
-        if (resultMatchesRace) {
-          results = resultRace?.results ?? [];
-          resultsAvailable = results.length > 0;
+        if (apiResults.length > 0) {
+          results = apiResults;
+          resultsAvailable = true;
         }
       }
     }

@@ -11,6 +11,7 @@ export interface F1Session {
   location: string;
   dateStart: string;
   dateEnd: string;
+  status?: string;
 }
 
 export interface F1Driver {
@@ -29,6 +30,13 @@ export interface F1Driver {
   dnf?: boolean;
   dns?: boolean;
   dsq?: boolean;
+  stopped?: boolean;
+  inPit?: boolean;
+  lastLap?: string | null;
+  bestLap?: string | null;
+  sector1?: string | null;
+  sector2?: string | null;
+  sector3?: string | null;
 }
 
 export interface F1DriverStanding {
@@ -54,11 +62,39 @@ export interface F1ConstructorStanding {
   teamColour: string;
 }
 
+export interface F1TrackStatus {
+  status: string;
+  message: string | null;
+}
+
+export interface F1Weather {
+  airTemp: number | null;
+  humidity: number | null;
+  pressure: number | null;
+  rainfall: number | null;
+  trackTemp: number | null;
+  windDirection: number | null;
+  windSpeed: number | null;
+}
+
+export interface F1RaceControlMessage {
+  utc: string;
+  lap: number | null;
+  category: string | null;
+  message: string;
+}
+
 export interface F1LiveResponse {
   session: F1Session | null;
   drivers: F1Driver[];
   isLive: boolean;
+  currentLap: number | null;
+  totalLaps: number | null;
+  trackStatus: F1TrackStatus | null;
+  weather: F1Weather | null;
+  raceControl: F1RaceControlMessage[];
   lastUpdated: string | null;
+  connected: boolean;
 }
 
 export interface F1DriverStandingsResponse {

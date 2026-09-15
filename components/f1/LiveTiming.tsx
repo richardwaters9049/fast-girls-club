@@ -75,7 +75,10 @@ function AnimatedValue({
     className: string;
 }): React.ReactElement {
     return (
-        <AnimatePresence mode="wait" initial={false}>
+        <AnimatePresence
+            mode="wait"
+            initial={false}
+        >
             <motion.span
                 key={value}
                 initial={{
@@ -104,13 +107,32 @@ function AnimatedValue({
 
 function DriverRow({
     driver,
-    isLeader,
 }: {
     driver: F1Driver;
-    isLeader: boolean;
 }): React.ReactElement {
-    const gap = driver.interval ?? driver.gapToLeader ?? "Leader";
-    const secondaryValue = driver.fastestLap ?? "Position";
+    let status: string | null = null;
+
+    if (driver.dsq) {
+        status = "DSQ";
+    } else if (driver.dnf) {
+        status = "DNF";
+    } else if (driver.dns) {
+        status = "DNS";
+    } else if (driver.stopped) {
+        status = "STOPPED";
+    } else if (driver.inPit) {
+        status = "PIT";
+    }
+
+    const gap =
+        driver.position === 1
+            ? "LEADER"
+            : driver.interval ??
+            driver.gapToLeader;
+
+    const secondaryValue =
+        driver.bestLap ??
+        driver.fastestLap;
 
     return (
         <motion.div
@@ -139,19 +161,22 @@ function DriverRow({
                     duration: 0.25,
                 },
             }}
-            className={`grid grid-cols-[2.5rem_2.5rem_1fr_auto] items-center gap-3 border-b border-white/5 px-4 py-4 last:border-b-0 md:grid-cols-[3rem_3rem_1fr_7rem_6rem] md:px-5 md:py-4 ${isLeader
+            className={`grid grid-cols-[2.5rem_2.5rem_1fr_auto] items-center gap-3 border-b border-white/5 px-4 py-4 last:border-b-0 md:grid-cols-[3rem_3rem_1fr_7rem_6rem] md:px-5 md:py-4 ${driver.position === 1
                 ? "bg-[#ff729f]/[0.06]"
                 : "bg-transparent"
                 }`}
         >
             <motion.span
                 layout
-                className={`text-sm font-black md:text-base ${isLeader
+                className={`text-sm font-black md:text-base ${driver.position === 1
                     ? "text-[#ff729f]"
                     : "text-white/45"
                     }`}
             >
-                {String(driver.position).padStart(2, "0")}
+                {String(driver.position).padStart(
+                    2,
+                    "0",
+                )}
             </motion.span>
 
             <DriverAvatar driver={driver} />
@@ -162,50 +187,70 @@ function DriverRow({
                         {driver.name}
                     </span>
 
-                    <span className="hidden text-[10px] font-black tracking-[0.12em] text-white/30 sm:inline">
-                        {driver.acronym}
-                    </span>
+                    {driver.acronym && (
+                        <span className="hidden text-[10px] font-black tracking-[0.12em] text-white/30 sm:inline">
+                            {driver.acronym}
+                        </span>
+                    )}
                 </div>
 
                 <div className="mt-1 flex items-center gap-2">
-                    <span
-                        className="h-1.5 w-1.5 shrink-0"
-                        style={{
-                            backgroundColor:
-                                driver.teamColour
-                                    ? `#${driver.teamColour}`
-                                    : "#ffffff",
-                        }}
-                    />
+                    {driver.teamColour && (
+                        <span
+                            className="h-1.5 w-1.5 shrink-0"
+                            style={{
+                                backgroundColor: `#${driver.teamColour}`,
+                            }}
+                        />
+                    )}
 
-                    <span className="truncate text-xs font-medium text-white/50">
-                        {driver.team}
-                    </span>
+                    {driver.team && (
+                        <span className="truncate text-xs font-medium text-white/50">
+                            {driver.team}
+                        </span>
+                    )}
+
+                    {status && (
+                        <span className="shrink-0 text-[9px] font-black uppercase tracking-[0.12em] text-[#ff729f]">
+                            {status}
+                        </span>
+                    )}
                 </div>
             </div>
 
             <div className="hidden items-center gap-2 sm:flex">
-                <span className="text-base">
-                    {countryCodeToEmoji(
-                        driver.countryCode,
-                    )}
-                </span>
+                {driver.countryCode && (
+                    <span className="text-base">
+                        {countryCodeToEmoji(
+                            driver.countryCode,
+                        )}
+                    </span>
+                )}
 
-                <span className="text-xs font-medium text-white/50">
-                    {driver.nationality}
-                </span>
+                {driver.nationality && (
+                    <span className="text-xs font-medium text-white/50">
+                        {driver.nationality}
+                    </span>
+                )}
             </div>
 
             <div className="text-right">
-                <AnimatedValue
-                    value={gap}
-                    className="text-sm font-bold text-white/85 md:text-base"
-                />
+                {gap && (
+                    <AnimatedValue
+                        value={gap}
+                        className={`text-sm font-bold md:text-base ${driver.position === 1
+                            ? "text-[#ff729f]"
+                            : "text-white/85"
+                            }`}
+                    />
+                )}
 
-                <AnimatedValue
-                    value={secondaryValue}
-                    className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-white/30"
-                />
+                {secondaryValue && (
+                    <AnimatedValue
+                        value={secondaryValue}
+                        className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-white/30"
+                    />
+                )}
             </div>
         </motion.div>
     );
@@ -240,14 +285,14 @@ function LoadingState(): React.ReactElement {
 
 function EmptyState(): React.ReactElement {
     return (
-        <div className="flex h-full min-h-52 items-center justify-center border border-white/10 bg-white/[0.025] p-8 text-center">
+        <div className="flex h-full items-center justify-center border border-white/10 bg-white/[0.025] p-8 text-center">
             <div>
                 <CategoryTag accent="white">
                     No timing
                 </CategoryTag>
 
                 <p className="mt-4 text-base font-semibold text-white/70">
-                    No live driver data is currently available.
+                    No driver timing data is currently available.
                 </p>
 
                 <p className="mt-2 text-sm text-white/45">
@@ -264,7 +309,7 @@ function ErrorState({
     message: string;
 }): React.ReactElement {
     return (
-        <div className="flex h-full min-h-52 items-center justify-center border border-[#ff729f]/20 bg-[#ff729f]/[0.04] p-8 text-center">
+        <div className="flex h-full items-center justify-center border border-[#ff729f]/20 bg-[#ff729f]/[0.04] p-8 text-center">
             <div>
                 <CategoryTag accent="pink">
                     Timing unavailable
@@ -278,14 +323,187 @@ function ErrorState({
     );
 }
 
+function SessionSummary({
+    data,
+}: {
+    data: F1LiveResponse;
+}): React.ReactElement {
+    const session = data.session;
+
+    let sessionStatus = "CONNECTED";
+
+    if (data.isLive) {
+        sessionStatus = "LIVE";
+    } else if (
+        session?.status?.toLowerCase() ===
+        "ends"
+    ) {
+        sessionStatus = "FINISHED";
+    } else if (session?.status) {
+        sessionStatus =
+            session.status.toUpperCase();
+    }
+
+    let lapText: string | null = null;
+
+    if (
+        data.currentLap !== null &&
+        data.totalLaps !== null
+    ) {
+        lapText = `${data.currentLap} / ${data.totalLaps}`;
+    } else if (
+        data.currentLap !== null
+    ) {
+        lapText = String(
+            data.currentLap,
+        );
+    }
+
+    return (
+        <div className="grid grid-cols-2 border-b border-white/10 bg-white/[0.02] md:grid-cols-4">
+            <div className="border-b border-r border-white/5 px-4 py-3 md:border-b-0 md:px-5">
+                <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/35">
+                    Session
+                </p>
+
+                <p className="mt-1 text-xs font-bold text-white/80">
+                    {session?.sessionName ??
+                        "Formula 1"}
+                </p>
+            </div>
+
+            <div className="border-b border-white/5 px-4 py-3 md:border-b-0 md:border-r md:px-5">
+                <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/35">
+                    Status
+                </p>
+
+                <p
+                    className={`mt-1 text-xs font-black ${data.isLive
+                        ? "text-[#ff729f]"
+                        : "text-white/70"
+                        }`}
+                >
+                    {sessionStatus}
+                </p>
+            </div>
+
+            <div className="border-r border-white/5 px-4 py-3 md:px-5">
+                <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/35">
+                    Lap
+                </p>
+
+                <p className="mt-1 text-xs font-bold text-white/80">
+                    {lapText ?? "—"}
+                </p>
+            </div>
+
+            <div className="px-4 py-3 md:px-5">
+                <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/35">
+                    Location
+                </p>
+
+                <p className="truncate mt-1 text-xs font-bold text-white/80">
+                    {session?.location || "—"}
+                </p>
+            </div>
+        </div>
+    );
+}
+
+function WeatherSummary({
+    data,
+}: {
+    data: F1LiveResponse;
+}): React.ReactElement | null {
+    if (!data.weather) {
+        return null;
+    }
+
+    const weatherItems = [
+        {
+            label: "Air",
+            value:
+                data.weather.airTemp !== null
+                    ? `${data.weather.airTemp.toFixed(1)}°C`
+                    : null,
+        },
+        {
+            label: "Track",
+            value:
+                data.weather.trackTemp !== null
+                    ? `${data.weather.trackTemp.toFixed(1)}°C`
+                    : null,
+        },
+        {
+            label: "Humidity",
+            value:
+                data.weather.humidity !== null
+                    ? `${data.weather.humidity.toFixed(1)}%`
+                    : null,
+        },
+        {
+            label: "Wind",
+            value:
+                data.weather.windSpeed !== null
+                    ? `${data.weather.windSpeed.toFixed(1)} m/s`
+                    : null,
+        },
+    ].filter(
+        (
+            item,
+        ): item is {
+            label: string;
+            value: string;
+        } => item.value !== null,
+    );
+
+    if (!weatherItems.length) {
+        return null;
+    }
+
+    return (
+        <div className="grid grid-cols-2 border-b border-white/10 bg-white/[0.015] sm:grid-cols-4">
+            {weatherItems.map(
+                (
+                    item,
+                    index,
+                ) => (
+                    <div
+                        key={item.label}
+                        className={`px-4 py-3 md:px-5 ${index <
+                            weatherItems.length -
+                            1
+                            ? "border-r border-white/5"
+                            : ""
+                            }`}
+                    >
+                        <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/30">
+                            {item.label}
+                        </p>
+
+                        <p className="mt-1 text-xs font-bold text-white/70">
+                            {item.value}
+                        </p>
+                    </div>
+                ),
+            )}
+        </div>
+    );
+}
+
 export default function LiveTiming({
     data,
     loading,
     error,
 }: LiveTimingProps): React.ReactElement {
-    const [currentPage, setCurrentPage] = useState(1);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [selectedTeam, setSelectedTeam] = useState("all");
+    const [currentPage, setCurrentPage] =
+        useState(1);
+
+    const [searchQuery, setSearchQuery] =
+        useState("");
+
+    const [selectedTeam, setSelectedTeam] =
+        useState("all");
 
     const drivers = data?.drivers ?? [];
 
@@ -293,41 +511,58 @@ export default function LiveTiming({
         return Array.from(
             new Set(
                 drivers
-                    .map((driver) => driver.team)
+                    .map(
+                        (driver) =>
+                            driver.team,
+                    )
                     .filter(Boolean),
             ),
-        ).sort((a, b) => a.localeCompare(b));
+        ).sort((a, b) =>
+            a.localeCompare(b),
+        );
     }, [drivers]);
 
     const filteredDrivers = useMemo(() => {
-        const normalisedQuery = searchQuery
-            .trim()
-            .toLowerCase();
+        const normalisedQuery =
+            searchQuery
+                .trim()
+                .toLowerCase();
 
-        return drivers.filter((driver) => {
-            const matchesTeam =
-                selectedTeam === "all" ||
-                driver.team === selectedTeam;
+        return drivers.filter(
+            (driver) => {
+                const matchesTeam =
+                    selectedTeam ===
+                    "all" ||
+                    driver.team ===
+                    selectedTeam;
 
-            if (!matchesTeam) {
-                return false;
-            }
+                if (!matchesTeam) {
+                    return false;
+                }
 
-            if (!normalisedQuery) {
-                return true;
-            }
+                if (
+                    !normalisedQuery
+                ) {
+                    return true;
+                }
 
-            return [
-                driver.name,
-                driver.acronym,
-                driver.team,
-                driver.nationality,
-            ].some((value) =>
-                value
-                    .toLowerCase()
-                    .includes(normalisedQuery),
-            );
-        });
+                return [
+                    driver.name,
+                    driver.acronym,
+                    driver.team,
+                    driver.nationality,
+                ]
+                    .filter(Boolean)
+                    .some(
+                        (value) =>
+                            value
+                                .toLowerCase()
+                                .includes(
+                                    normalisedQuery,
+                                ),
+                    );
+            },
+        );
     }, [
         drivers,
         searchQuery,
@@ -337,36 +572,46 @@ export default function LiveTiming({
     const totalPages = Math.max(
         1,
         Math.ceil(
-            filteredDrivers.length / PAGE_SIZE,
+            filteredDrivers.length /
+            PAGE_SIZE,
         ),
     );
 
-    const safeCurrentPage = Math.min(
-        currentPage,
-        totalPages,
-    );
-
-    const visibleDrivers = useMemo(() => {
-        return filteredDrivers.slice(
-            (safeCurrentPage - 1) * PAGE_SIZE,
-            safeCurrentPage * PAGE_SIZE,
+    const safeCurrentPage =
+        Math.min(
+            currentPage,
+            totalPages,
         );
-    }, [
-        filteredDrivers,
-        safeCurrentPage,
-    ]);
+
+    const visibleDrivers =
+        useMemo(() => {
+            return filteredDrivers.slice(
+                (safeCurrentPage -
+                    1) *
+                PAGE_SIZE,
+                safeCurrentPage *
+                PAGE_SIZE,
+            );
+        }, [
+            filteredDrivers,
+            safeCurrentPage,
+        ]);
 
     const handleSearchChange = (
         event: React.ChangeEvent<HTMLInputElement>,
     ) => {
-        setSearchQuery(event.target.value);
+        setSearchQuery(
+            event.target.value,
+        );
         setCurrentPage(1);
     };
 
     const handleTeamChange = (
         event: React.ChangeEvent<HTMLSelectElement>,
     ) => {
-        setSelectedTeam(event.target.value);
+        setSelectedTeam(
+            event.target.value,
+        );
         setCurrentPage(1);
     };
 
@@ -375,7 +620,11 @@ export default function LiveTiming({
     }
 
     if (error && !data) {
-        return <ErrorState message={error} />;
+        return (
+            <ErrorState
+                message={error}
+            />
+        );
     }
 
     if (!drivers.length) {
@@ -386,13 +635,25 @@ export default function LiveTiming({
         <div className="flex h-full flex-col overflow-hidden border border-white/10 bg-[#151515]">
             <div className="flex flex-col gap-4 border-b border-white/10 bg-white/[0.035] px-4 py-4 md:px-5 md:py-5 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                    <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/40">
-                        Driver field
-                    </p>
+                    <div className="flex items-center gap-3">
+                        <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/40">
+                            Driver field
+                        </p>
+
+                        <span
+                            className={`h-1.5 w-1.5 rounded-full ${data?.connected
+                                ? data.isLive
+                                    ? "bg-[#ff729f]"
+                                    : "bg-white/35"
+                                : "bg-white/15"
+                                }`}
+                        />
+                    </div>
 
                     <p className="mt-1 text-sm font-semibold text-white/70">
                         {filteredDrivers.length}{" "}
-                        {filteredDrivers.length === 1
+                        {filteredDrivers.length ===
+                            1
                             ? "driver"
                             : "drivers"}{" "}
                         shown
@@ -400,7 +661,10 @@ export default function LiveTiming({
                 </div>
 
                 <div className="flex flex-col gap-2 sm:flex-row">
-                    <label className="sr-only" htmlFor="driver-search">
+                    <label
+                        className="sr-only"
+                        htmlFor="driver-search"
+                    >
                         Search drivers
                     </label>
 
@@ -408,38 +672,63 @@ export default function LiveTiming({
                         <input
                             id="driver-search"
                             type="search"
-                            value={searchQuery}
-                            onChange={handleSearchChange}
+                            value={
+                                searchQuery
+                            }
+                            onChange={
+                                handleSearchChange
+                            }
                             placeholder="Search drivers..."
                             className="h-10 w-full border border-white/10 bg-[#151515] px-3 text-xs font-semibold text-white outline-none placeholder:text-white/30 focus:border-[#ff729f]/60 sm:w-52"
                         />
                     </div>
 
-                    <label className="sr-only" htmlFor="team-filter">
+                    <label
+                        className="sr-only"
+                        htmlFor="team-filter"
+                    >
                         Filter by team
                     </label>
 
                     <select
                         id="team-filter"
-                        value={selectedTeam}
-                        onChange={handleTeamChange}
+                        value={
+                            selectedTeam
+                        }
+                        onChange={
+                            handleTeamChange
+                        }
                         className="h-10 min-w-40 cursor-pointer border border-white/10 bg-[#151515] px-3 text-xs font-semibold text-white outline-none focus:border-[#ff729f]/60"
                     >
                         <option value="all">
                             All teams
                         </option>
 
-                        {teams.map((team) => (
-                            <option
-                                key={team}
-                                value={team}
-                            >
-                                {team}
-                            </option>
-                        ))}
+                        {teams.map(
+                            (team) => (
+                                <option
+                                    key={
+                                        team
+                                    }
+                                    value={
+                                        team
+                                    }
+                                >
+                                    {team}
+                                </option>
+                            ),
+                        )}
                     </select>
                 </div>
             </div>
+
+            {data && (
+                <>
+                    <SessionSummary data={data} />
+
+                    <WeatherSummary data={data} />
+                </>
+            )}
 
             <div className="grid grid-cols-[2.5rem_1fr_auto] items-center gap-3 border-b border-white/10 bg-white/[0.035] px-4 py-3 md:grid-cols-[3rem_1fr_7rem_6rem] md:px-5">
                 <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/45">
@@ -460,22 +749,24 @@ export default function LiveTiming({
             </div>
 
             <div className="min-h-0 flex-1 overflow-hidden">
-                <AnimatePresence mode="popLayout" initial={false}>
-                    {visibleDrivers.map((driver, index) => (
-                        <DriverRow
-                            key={`${driver.driverNumber}-${driver.acronym}`}
-                            driver={driver}
-                            isLeader={
-                                driver.position === 1 ||
-                                (safeCurrentPage === 1 &&
-                                    index === 0)
-                            }
-                        />
-                    ))}
+                <AnimatePresence
+                    mode="popLayout"
+                    initial={false}
+                >
+                    {visibleDrivers.map(
+                        (driver) => (
+                            <DriverRow
+                                key={`${driver.driverNumber}-${driver.acronym}`}
+                                driver={
+                                    driver
+                                }
+                            />
+                        ),
+                    )}
                 </AnimatePresence>
 
                 {!visibleDrivers.length && (
-                    <div className="flex min-h-52 items-center justify-center px-6 text-center">
+                    <div className="flex items-center justify-center px-6 py-16 text-center">
                         <div>
                             <CategoryTag accent="white">
                                 No matches
@@ -490,9 +781,15 @@ export default function LiveTiming({
             </div>
 
             <Pagination
-                currentPage={safeCurrentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
+                currentPage={
+                    safeCurrentPage
+                }
+                totalPages={
+                    totalPages
+                }
+                onPageChange={
+                    setCurrentPage
+                }
             />
         </div>
     );
