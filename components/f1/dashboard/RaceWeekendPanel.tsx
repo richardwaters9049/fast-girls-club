@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import RaceMap3D from "@/components/3d/RaceMap3D";
 
 import { countryCodeToEmoji } from "@/lib/f1/countries";
-
 import { getCircuitMap } from "@/lib/f1/circuits";
 
 import type { F1Race } from "@/lib/f1/calendar";
@@ -241,51 +240,15 @@ function createRaceSession(
     date?: string | null,
     time?: string | null,
 ): RaceSession | null {
-    if (!date || !time) {
+    if (!date) {
         return null;
     }
 
     return {
         name,
         date,
-        time,
+        time: time ?? "",
     };
-}
-
-function buildFallbackSessions(
-    race: F1Race,
-): RaceSession[] {
-    const start = new Date(race.startDate);
-
-    if (Number.isNaN(start.getTime())) {
-        return [];
-    }
-
-    const createSession = (
-        name: string,
-        dayOffset: number,
-        hour: number,
-        minute: number,
-    ): RaceSession => {
-        const date = new Date(start);
-
-        date.setDate(date.getDate() + dayOffset);
-        date.setHours(hour, minute, 0, 0);
-
-        return {
-            name,
-            date: date.toISOString(),
-            time: date.toISOString(),
-        };
-    };
-
-    return [
-        createSession("Practice 1", -2, 9, 30),
-        createSession("Practice 2", -2, 13, 0),
-        createSession("Practice 3", -1, 9, 30),
-        createSession("Qualifying", -1, 13, 0),
-        createSession("Race", 0, 12, 0),
-    ];
 }
 
 function getSessionLabel(
@@ -332,7 +295,6 @@ function getSessionLabel(
 
 function getSessions(
     data: RaceApiData | null,
-    race: F1Race,
 ): RaceSession[] {
     if (data?.sessions?.length) {
         return data.sessions;
@@ -340,54 +302,50 @@ function getSessions(
 
     const schedule = data?.schedule;
 
-    if (schedule) {
-        const sessions = [
-            createRaceSession(
-                "Practice 1",
-                schedule.practice1?.date,
-                schedule.practice1?.time,
-            ),
-            createRaceSession(
-                "Practice 2",
-                schedule.practice2?.date,
-                schedule.practice2?.time,
-            ),
-            createRaceSession(
-                "Practice 3",
-                schedule.practice3?.date,
-                schedule.practice3?.time,
-            ),
-            createRaceSession(
-                "Qualifying",
-                schedule.qualifying?.date,
-                schedule.qualifying?.time,
-            ),
-            createRaceSession(
-                "Sprint Qualifying",
-                schedule.sprintQualifying?.date,
-                schedule.sprintQualifying?.time,
-            ),
-            createRaceSession(
-                "Sprint Race",
-                schedule.sprintRace?.date,
-                schedule.sprintRace?.time,
-            ),
-            createRaceSession(
-                "Race",
-                schedule.race?.date,
-                schedule.race?.time,
-            ),
-        ].filter(
-            (session): session is RaceSession =>
-                session !== null,
-        );
-
-        if (sessions.length > 0) {
-            return sessions;
-        }
+    if (!schedule) {
+        return [];
     }
 
-    return buildFallbackSessions(race);
+    return [
+        createRaceSession(
+            "Practice 1",
+            schedule.practice1?.date,
+            schedule.practice1?.time,
+        ),
+        createRaceSession(
+            "Practice 2",
+            schedule.practice2?.date,
+            schedule.practice2?.time,
+        ),
+        createRaceSession(
+            "Practice 3",
+            schedule.practice3?.date,
+            schedule.practice3?.time,
+        ),
+        createRaceSession(
+            "Qualifying",
+            schedule.qualifying?.date,
+            schedule.qualifying?.time,
+        ),
+        createRaceSession(
+            "Sprint Qualifying",
+            schedule.sprintQualifying?.date,
+            schedule.sprintQualifying?.time,
+        ),
+        createRaceSession(
+            "Sprint Race",
+            schedule.sprintRace?.date,
+            schedule.sprintRace?.time,
+        ),
+        createRaceSession(
+            "Race",
+            schedule.race?.date,
+            schedule.race?.time,
+        ),
+    ].filter(
+        (session): session is RaceSession =>
+            session !== null,
+    );
 }
 
 function getRaceDateTime(
@@ -490,15 +448,10 @@ function isRaceCompleted(
         return true;
     }
 
-    if (
-        data.status === "completed" ||
-        data.status === "Complete" ||
-        data.status === "COMPLETED"
-    ) {
-        return true;
-    }
-
-    return false;
+    return (
+        data.status?.toLowerCase() ===
+        "completed"
+    );
 }
 
 function getDriverName(
@@ -821,7 +774,6 @@ export default function RaceWeekendPanel({
     const currentSessions =
         getSessions(
             currentData,
-            race,
         );
 
     const previousResults =
@@ -834,11 +786,10 @@ export default function RaceWeekendPanel({
 
     const nextCircuitMap =
         getCircuitMap(
-            nextCircuit?.country ??
-            nextRace?.country ??
+            nextCircuit?.id ??
             nextCircuit?.name ??
             nextRace?.circuit ??
-            "Singapore",
+            "",
         );
 
     const nextRaceStart =
@@ -935,49 +886,62 @@ export default function RaceWeekendPanel({
                                     </p>
                                 </div>
 
-                                <div className="mt-4 grid gap-2 sm:grid-cols-5">
-                                    {currentSessions.map(
-                                        (
-                                            session,
-                                            index,
-                                        ) => {
-                                            const isRace =
-                                                getSessionLabel(
-                                                    session.name,
-                                                ) ===
-                                                "Race";
+                                {currentSessions.length > 0 ? (
+                                    <div className="mt-4 grid gap-2 sm:grid-cols-5">
+                                        {currentSessions.map(
+                                            (
+                                                session,
+                                                index,
+                                            ) => {
+                                                const isRace =
+                                                    getSessionLabel(
+                                                        session.name,
+                                                    ) ===
+                                                    "Race";
 
-                                            return (
-                                                <div
-                                                    key={`${session.name}-${session.date}-${index}`}
-                                                    className={`border px-3 py-3 ${isRace
-                                                        ? "border-[#ff729f]/50 bg-[#ff729f]/5"
-                                                        : "border-white/10 bg-white/[0.015]"
-                                                        }`}
-                                                >
-                                                    <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
-                                                        {getSessionLabel(
-                                                            session.name,
-                                                        )}
-                                                    </p>
+                                                return (
+                                                    <div
+                                                        key={`${session.name}-${session.date}-${index}`}
+                                                        className={`border px-3 py-3 ${isRace
+                                                            ? "border-[#ff729f]/50 bg-[#ff729f]/5"
+                                                            : "border-white/10 bg-white/[0.015]"
+                                                            }`}
+                                                    >
+                                                        <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
+                                                            {getSessionLabel(
+                                                                session.name,
+                                                            )}
+                                                        </p>
 
-                                                    <p className="mt-2 text-xs font-semibold uppercase tracking-[0.06em] text-white">
-                                                        {formatShortDate(
-                                                            session.date,
-                                                        )}
-                                                    </p>
+                                                        <p className="mt-2 text-xs font-semibold uppercase tracking-[0.06em] text-white">
+                                                            {formatShortDate(
+                                                                session.date,
+                                                            )}
+                                                        </p>
 
-                                                    <p className="mt-1 text-[8px] font-medium uppercase tracking-[0.16em] text-white/35">
-                                                        {formatTime(
-                                                            session.time,
-                                                        )}{" "}
-                                                        UTC
-                                                    </p>
-                                                </div>
-                                            );
-                                        },
-                                    )}
-                                </div>
+                                                        <p className="mt-1 text-[8px] font-medium uppercase tracking-[0.16em] text-white/35">
+                                                            {session.time
+                                                                ? formatTime(
+                                                                    session.time,
+                                                                )
+                                                                : "Time TBC"}
+                                                        </p>
+                                                    </div>
+                                                );
+                                            },
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="mt-4 border border-white/10 bg-white/[0.015] px-4 py-5">
+                                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/25">
+                                            Weekend schedule
+                                        </p>
+
+                                        <p className="mt-2 text-xs text-white/40">
+                                            Session schedule not available yet.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </section>
@@ -1131,7 +1095,7 @@ function PreviousRaceCard({
                         </p>
 
                         <p className="mt-2 text-xs text-white/40">
-                            Loading race results…
+                            Race results not available.
                         </p>
                     </div>
                 )}
@@ -1224,6 +1188,13 @@ function NextRaceCard({
         data?.race?.laps ??
         data?.laps;
 
+    const isBahrainInMalaysia =
+        race.name
+            .toLowerCase()
+            .includes("bahrain") &&
+        country.toLowerCase() ===
+        "malaysia";
+
     return (
         <section className="overflow-hidden border border-white/10 bg-[#242426] p-3">
             <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
@@ -1238,6 +1209,12 @@ function NextRaceCard({
                                 <h3 className="mt-2 text-2xl font-semibold uppercase leading-[0.95] tracking-[-0.045em] text-white sm:text-3xl lg:text-4xl">
                                     {race.name}
                                 </h3>
+
+                                {isBahrainInMalaysia && (
+                                    <p className="mt-3 text-[9px] font-semibold uppercase tracking-[0.2em] text-[#ee8434]">
+                                        Bahrain Grand Prix hosted at Sepang
+                                    </p>
+                                )}
 
                                 <div className="mt-3 flex items-start gap-3">
                                     <span className="text-lg">
@@ -1334,7 +1311,9 @@ function NextRaceCard({
                             </p>
 
                             <p className="mt-2 text-xs font-semibold uppercase tracking-[0.06em] text-[#ee8434]">
-                                Counting down
+                                {countdown === "—"
+                                    ? "Time TBC"
+                                    : "Counting down"}
                             </p>
                         </div>
                     </div>
