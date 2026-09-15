@@ -3,10 +3,8 @@
 import { useEffect, useState } from "react";
 
 import RaceMap3D from "@/components/3d/RaceMap3D";
-
 import { countryCodeToEmoji } from "@/lib/f1/countries";
 import { getCircuitMap } from "@/lib/f1/circuits";
-
 import type { F1Race } from "@/lib/f1/calendar";
 
 interface RaceWeekendPanelProps {
@@ -177,22 +175,33 @@ function formatTime(value: string): string {
 
     const date = new Date(value);
 
-    if (Number.isNaN(date.getTime())) {
-        return value;
+    if (!Number.isNaN(date.getTime())) {
+        return date.toLocaleTimeString("en-GB", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+        });
     }
 
-    return date.toLocaleTimeString("en-GB", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-    });
+    const timeMatch = value.match(
+        /^(\d{2}):(\d{2})/,
+    );
+
+    if (timeMatch) {
+        return `${timeMatch[1]}:${timeMatch[2]}`;
+    }
+
+    return value;
 }
 
 function formatDistance(
     value?: number,
     valueIsKm = false,
 ): string {
-    if (typeof value !== "number" || Number.isNaN(value)) {
+    if (
+        typeof value !== "number" ||
+        Number.isNaN(value)
+    ) {
         return "—";
     }
 
@@ -215,16 +224,27 @@ function getCountdown(
         return "—";
     }
 
-    const difference = Math.max(0, target - now);
-    const totalSeconds = Math.floor(difference / 1000);
+    const difference = Math.max(
+        0,
+        target - now,
+    );
 
-    const days = Math.floor(totalSeconds / 86400);
+    const totalSeconds = Math.floor(
+        difference / 1000,
+    );
+
+    const days = Math.floor(
+        totalSeconds / 86400,
+    );
+
     const hours = Math.floor(
         (totalSeconds % 86400) / 3600,
     );
+
     const minutes = Math.floor(
         (totalSeconds % 3600) / 60,
     );
+
     const seconds = totalSeconds % 60;
 
     return [
@@ -254,7 +274,8 @@ function createRaceSession(
 function getSessionLabel(
     sessionName: string,
 ): string {
-    const normalised = sessionName.toLowerCase();
+    const normalised =
+        sessionName.toLowerCase();
 
     if (normalised.includes("practice 1")) {
         return "Practice 1";
@@ -343,7 +364,9 @@ function getSessions(
             schedule.race?.time,
         ),
     ].filter(
-        (session): session is RaceSession =>
+        (
+            session,
+        ): session is RaceSession =>
             session !== null,
     );
 }
@@ -360,7 +383,10 @@ function getRaceDateTime(
         return date;
     }
 
-    return `${date}T${time.replace("Z", "")}`;
+    return `${date}T${time.replace(
+        "Z",
+        "",
+    )}`;
 }
 
 function getRaceResults(
@@ -498,15 +524,11 @@ function getTeamName(
 function getResultTime(
     result: RaceResult,
 ): string {
-    if (result.time) {
-        return result.time;
-    }
-
-    if (result.gap) {
-        return result.gap;
-    }
-
-    return "—";
+    return (
+        result.time ??
+        result.gap ??
+        "—"
+    );
 }
 
 function getResultPosition(
@@ -514,17 +536,25 @@ function getResultPosition(
     fallback: number,
 ): string {
     if (typeof result.position === "number") {
-        return String(result.position).padStart(2, "0");
+        return String(
+            result.position,
+        ).padStart(2, "0");
     }
 
     if (
         typeof result.position === "string" &&
         result.position.trim()
     ) {
-        return result.position.padStart(2, "0");
+        return result.position.padStart(
+            2,
+            "0",
+        );
     }
 
-    return String(fallback).padStart(2, "0");
+    return String(fallback).padStart(
+        2,
+        "0",
+    );
 }
 
 function getRaceWinner(
@@ -540,7 +570,9 @@ function getRaceWinner(
     }
 
     if (results.length > 0) {
-        return getDriverName(results[0]);
+        return getDriverName(
+            results[0],
+        );
     }
 
     return "—";
@@ -549,19 +581,12 @@ function getRaceWinner(
 function getFastestLap(
     data: RaceApiData | null,
 ): string {
-    if (data?.circuit?.lapRecord) {
-        return data.circuit.lapRecord;
-    }
-
-    if (data?.circuit?.fastestLap) {
-        return data.circuit.fastestLap;
-    }
-
-    if (data?.race?.fastestLap) {
-        return data.race.fastestLap;
-    }
-
-    return "—";
+    return (
+        data?.circuit?.lapRecord ??
+        data?.circuit?.fastestLap ??
+        data?.race?.fastestLap ??
+        "—"
+    );
 }
 
 function getRaceLaps(
@@ -584,7 +609,9 @@ function getRoundNumber(
         return value;
     }
 
-    const match = String(value ?? "").match(/\d+/);
+    const match = String(
+        value ?? "",
+    ).match(/\d+/);
 
     if (!match) {
         return null;
@@ -592,7 +619,10 @@ function getRoundNumber(
 
     const round = Number(match[0]);
 
-    if (!Number.isFinite(round) || round < 1) {
+    if (
+        !Number.isFinite(round) ||
+        round < 1
+    ) {
         return null;
     }
 
@@ -670,9 +700,7 @@ async function findPreviousCompletedRace(
 
 export default function RaceWeekendPanel({
     race,
-    previousRace,
     nextRace,
-    status,
 }: RaceWeekendPanelProps): React.ReactElement {
     const [data, setData] =
         useState<RaceDataState>({
@@ -685,6 +713,18 @@ export default function RaceWeekendPanel({
         () => Date.now(),
     );
 
+    const currentRound =
+        getRoundNumber(race.round);
+
+    const nextRound =
+        nextRace
+            ? getRoundNumber(
+                nextRace.round,
+            )
+            : currentRound !== null
+                ? currentRound + 1
+                : null;
+
     useEffect(() => {
         const interval =
             window.setInterval(() => {
@@ -696,49 +736,25 @@ export default function RaceWeekendPanel({
         };
     }, []);
 
-    const currentRound =
-        getRoundNumber(race.round);
-
-    const nextRoundFromProp =
-        nextRace?.round !== undefined
-            ? getRoundNumber(nextRace.round)
-            : null;
-
-    const nextRound =
-        nextRoundFromProp !== null
-            ? nextRoundFromProp
-            : currentRound !== null
-                ? currentRound + 1
-                : null;
-
     useEffect(() => {
         let cancelled = false;
 
         const loadRaceData =
             async (): Promise<void> => {
-                const currentPromise =
-                    fetchRaceData(
-                        currentRound,
-                    );
-
-                const previousPromise =
-                    findPreviousCompletedRace(
-                        currentRound,
-                    );
-
-                const nextPromise =
-                    fetchRaceData(
-                        nextRound,
-                    );
-
                 const [
                     current,
                     previous,
                     next,
                 ] = await Promise.all([
-                    currentPromise,
-                    previousPromise,
-                    nextPromise,
+                    fetchRaceData(
+                        currentRound,
+                    ),
+                    findPreviousCompletedRace(
+                        currentRound,
+                    ),
+                    fetchRaceData(
+                        nextRound,
+                    ),
                 ]);
 
                 if (cancelled) {
@@ -762,27 +778,16 @@ export default function RaceWeekendPanel({
         nextRound,
     ]);
 
-    const currentData =
-        data.current;
-
-    const previousData =
-        data.previous;
-
-    const nextData =
-        data.next;
-
     const currentSessions =
-        getSessions(
-            currentData,
-        );
+        getSessions(data.current);
 
     const previousResults =
         getRaceResults(
-            previousData,
+            data.previous,
         );
 
     const nextCircuit =
-        nextData?.circuit ?? null;
+        data.next?.circuit ?? null;
 
     const nextCircuitMap =
         getCircuitMap(
@@ -794,68 +799,47 @@ export default function RaceWeekendPanel({
 
     const nextRaceStart =
         getRaceDateTime(
-            nextData?.schedule?.race?.date ??
-            nextData?.date ??
+            data.next?.schedule?.race?.date ??
+            data.next?.date ??
             nextRace?.startDate ??
             null,
-            nextData?.schedule?.race?.time ??
-            nextData?.time ??
+            data.next?.schedule?.race?.time ??
+            data.next?.time ??
             null,
         );
 
-    const nextRaceCountdown =
-        nextRace
+    const countdown =
+        nextRaceStart
             ? getCountdown(
-                nextRaceStart ??
-                nextRace.startDate,
+                nextRaceStart,
                 now,
             )
             : "—";
 
     return (
-        <div className="h-full overflow-hidden">
-            <div className="grid gap-4 p-4 sm:p-6 lg:p-8">
-                <div className="grid gap-4 lg:grid-cols-[1.65fr_0.85fr]">
-                    <section className="relative overflow-hidden border border-white/10 bg-[#242426]">
-                        <div className="p-5 sm:p-6 lg:p-7">
-                            <div className="flex items-start justify-between gap-6">
-                                <div>
-                                    <div className="mb-3 flex items-center gap-3">
-                                        <span className="text-lg">
-                                            {countryCodeToEmoji(
-                                                race.countryCode ??
-                                                race.country ??
-                                                "",
-                                            )}
-                                        </span>
+        <div className="overflow-hidden">
+            <div className="space-y-4 p-4 sm:p-6 lg:p-8">
+                <section className="overflow-hidden border border-white/10 bg-[#242426]">
+                    <div className="relative grid lg:grid-cols-[1fr_1.15fr]">
+                        <div className="relative z-10 flex flex-col justify-between p-6 sm:p-8 lg:p-10">
+                            <div>
+                                <div className="flex items-center gap-3">
+                                    <span className="text-xl">
+                                        {countryCodeToEmoji(
+                                            race.countryCode ??
+                                            race.country ??
+                                            "",
+                                        )}
+                                    </span>
 
-                                        <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#ff729f]">
-                                            {status ===
-                                                "live"
-                                                ? "Live race"
-                                                : status ===
-                                                    "completed"
-                                                    ? "Completed race"
-                                                    : "Race weekend"}
-                                        </span>
-                                    </div>
-
-                                    <h2 className="text-3xl font-semibold uppercase tracking-[-0.04em] text-white sm:text-4xl">
-                                        {race.name}
-                                    </h2>
-
-                                    <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-white/40">
-                                        {race.circuit} •{" "}
-                                        {race.country}
-                                    </p>
+                                    <span className="text-[9px] font-semibold uppercase tracking-[0.3em] text-[#ff729f]">
+                                        Race weekend
+                                    </span>
                                 </div>
 
-                                <div className="hidden text-right sm:block">
-                                    <p className="text-[9px] font-semibold uppercase tracking-[0.28em] text-white/30">
-                                        Round
-                                    </p>
-
-                                    <p className="mt-1 text-2xl font-semibold text-white">
+                                <div className="mt-6">
+                                    <p className="text-[9px] font-semibold uppercase tracking-[0.25em] text-white/25">
+                                        Round{" "}
                                         {String(
                                             currentRound ??
                                             race.round,
@@ -864,30 +848,36 @@ export default function RaceWeekendPanel({
                                             "0",
                                         )}
                                     </p>
+
+                                    <h2 className="mt-3 max-w-xl text-4xl font-semibold uppercase leading-[0.9] tracking-[-0.055em] text-white sm:text-5xl">
+                                        {race.name}
+                                    </h2>
+
+                                    <p className="mt-4 text-[10px] font-medium uppercase tracking-[0.2em] text-white/35">
+                                        {race.circuit}{" "}
+                                        <span className="text-[#ff729f]">
+                                            /
+                                        </span>{" "}
+                                        {race.country}
+                                    </p>
                                 </div>
                             </div>
 
-                            <div className="my-6 border-t border-white/10" />
-
-                            <div>
-                                <div className="flex items-end justify-between gap-4">
+                            <div className="mt-10">
+                                <div className="mb-4 flex items-end justify-between">
                                     <div>
-                                        <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#ff729f]">
+                                        <p className="text-[9px] font-semibold uppercase tracking-[0.28em] text-[#ff729f]">
                                             Weekend schedule
                                         </p>
 
-                                        <p className="mt-2 text-xs tracking-[0.12em] text-white/35">
-                                            Session times and race day information
+                                        <p className="mt-2 text-[9px] uppercase tracking-[0.15em] text-white/25">
+                                            Official session data
                                         </p>
                                     </div>
-
-                                    <p className="hidden text-[9px] font-semibold uppercase tracking-[0.2em] text-white/25 sm:block">
-                                        2026 Season
-                                    </p>
                                 </div>
 
                                 {currentSessions.length > 0 ? (
-                                    <div className="mt-4 grid gap-2 sm:grid-cols-5">
+                                    <div className="space-y-1.5">
                                         {currentSessions.map(
                                             (
                                                 session,
@@ -902,24 +892,35 @@ export default function RaceWeekendPanel({
                                                 return (
                                                     <div
                                                         key={`${session.name}-${session.date}-${index}`}
-                                                        className={`border px-3 py-3 ${isRace
-                                                            ? "border-[#ff729f]/50 bg-[#ff729f]/5"
-                                                            : "border-white/10 bg-white/[0.015]"
+                                                        className={`flex items-center justify-between border px-4 py-3 ${isRace
+                                                            ? "border-[#ff729f]/40 bg-[#ff729f]/[0.06]"
+                                                            : "border-white/5 bg-white/[0.015]"
                                                             }`}
                                                     >
-                                                        <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
-                                                            {getSessionLabel(
-                                                                session.name,
-                                                            )}
-                                                        </p>
+                                                        <div className="flex items-center gap-4">
+                                                            <span
+                                                                className={`h-1.5 w-1.5 rounded-full ${isRace
+                                                                    ? "bg-[#ff729f]"
+                                                                    : "bg-white/20"
+                                                                    }`}
+                                                            />
 
-                                                        <p className="mt-2 text-xs font-semibold uppercase tracking-[0.06em] text-white">
-                                                            {formatShortDate(
-                                                                session.date,
-                                                            )}
-                                                        </p>
+                                                            <div>
+                                                                <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-white">
+                                                                    {getSessionLabel(
+                                                                        session.name,
+                                                                    )}
+                                                                </p>
 
-                                                        <p className="mt-1 text-[8px] font-medium uppercase tracking-[0.16em] text-white/35">
+                                                                <p className="mt-1 text-[8px] uppercase tracking-[0.15em] text-white/25">
+                                                                    {formatShortDate(
+                                                                        session.date,
+                                                                    )}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+
+                                                        <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-white/50">
                                                             {session.time
                                                                 ? formatTime(
                                                                     session.time,
@@ -932,38 +933,68 @@ export default function RaceWeekendPanel({
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="mt-4 border border-white/10 bg-white/[0.015] px-4 py-5">
-                                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/25">
-                                            Weekend schedule
-                                        </p>
-
-                                        <p className="mt-2 text-xs text-white/40">
+                                    <div className="border border-white/5 bg-white/[0.015] px-4 py-5">
+                                        <p className="text-[9px] uppercase tracking-[0.18em] text-white/30">
                                             Session schedule not available yet.
                                         </p>
                                     </div>
                                 )}
                             </div>
                         </div>
-                    </section>
 
+                        <div className="relative min-h-[340px] overflow-hidden bg-black lg:min-h-[500px]">
+                            <div className="absolute inset-0">
+                                <RaceMap3D
+                                    circuit={getCircuitMap(
+                                        race.circuit ?? "",
+                                    )}
+                                />
+                            </div>
+
+                            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#242426] via-transparent to-transparent opacity-80" />
+
+                            <div className="pointer-events-none absolute right-6 top-6 text-right sm:right-8 sm:top-8">
+                                <p className="text-[8px] font-semibold uppercase tracking-[0.28em] text-white/30">
+                                    Circuit
+                                </p>
+
+                                <p className="mt-2 text-xs font-semibold uppercase tracking-[0.1em] text-white/70">
+                                    {race.circuit}
+                                </p>
+                            </div>
+
+                            <div className="pointer-events-none absolute bottom-6 right-6 text-right sm:bottom-8 sm:right-8">
+                                <p className="text-[8px] font-semibold uppercase tracking-[0.24em] text-white/25">
+                                    Interactive circuit
+                                </p>
+
+                                <p className="mt-2 text-[8px] font-semibold uppercase tracking-[0.18em] text-[#ff729f]">
+                                    Drag to rotate • Scroll to zoom
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div className="grid gap-4 lg:grid-cols-[0.7fr_1.3fr]">
                     <PreviousRaceCard
-                        data={previousData}
+                        data={data.previous}
                         results={previousResults}
                     />
-                </div>
 
-                {nextRace && (
-                    <NextRaceCard
-                        race={nextRace}
-                        data={nextData}
-                        circuitMap={
-                            nextCircuitMap
-                        }
-                        countdown={
-                            nextRaceCountdown
-                        }
-                    />
-                )}
+                    {nextRace && (
+                        <NextRaceCard
+                            race={nextRace}
+                            data={data.next}
+                            circuitMap={
+                                nextCircuitMap
+                            }
+                            countdown={
+                                countdown
+                            }
+                        />
+                    )}
+                </div>
             </div>
         </div>
     );
@@ -976,74 +1007,46 @@ function PreviousRaceCard({
     data: RaceApiData | null;
     results: RaceResult[];
 }): React.ReactElement {
-    const resolvedRaceName =
+    const raceName =
         data?.raceName ??
         "Previous race";
 
-    const resolvedCircuit =
+    const circuit =
         data?.circuit?.name ??
         "—";
 
-    const resolvedCountry =
+    const country =
         data?.circuit?.country ??
         "";
 
-    const winner =
-        getRaceWinner(
-            data,
-            results,
-        );
-
-    const fastestLap =
-        getFastestLap(data);
-
-    const laps =
-        getRaceLaps(data);
-
     return (
         <section className="overflow-hidden border border-white/10 bg-[#242426]">
-            <div className="border-b border-white/10 p-5 sm:p-6">
-                <div className="flex items-start justify-between gap-4">
-                    <div>
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.28em] text-[#ff729f]">
-                            Previous race
-                        </p>
+            <div className="flex items-start justify-between border-b border-white/10 p-5 sm:p-6">
+                <div>
+                    <p className="text-[9px] font-semibold uppercase tracking-[0.28em] text-white/30">
+                        Previous race
+                    </p>
 
-                        <h3 className="mt-2 text-xl font-semibold uppercase tracking-[-0.035em] text-white sm:text-2xl">
-                            {resolvedRaceName}
-                        </h3>
+                    <h3 className="mt-3 text-xl font-semibold uppercase leading-none tracking-[-0.04em] text-white">
+                        {raceName}
+                    </h3>
 
-                        <p className="mt-1 text-[9px] font-medium uppercase tracking-[0.18em] text-white/35">
-                            {resolvedCircuit}
-                            {resolvedCountry
-                                ? ` • ${resolvedCountry}`
-                                : ""}
-                        </p>
-                    </div>
-
-                    <span className="text-lg">
-                        {countryCodeToEmoji(
-                            resolvedCountry,
-                        )}
-                    </span>
+                    <p className="mt-2 text-[9px] uppercase tracking-[0.16em] text-white/30">
+                        {circuit}
+                        {country
+                            ? ` • ${country}`
+                            : ""}
+                    </p>
                 </div>
+
+                <span className="text-lg">
+                    {countryCodeToEmoji(
+                        country,
+                    )}
+                </span>
             </div>
 
-            <div className="border-b border-white/10">
-                <div className="grid grid-cols-[42px_minmax(0,1fr)_auto] border-b border-white/10 px-4 py-2">
-                    <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-white/25">
-                        Pos
-                    </p>
-
-                    <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-white/25">
-                        Driver
-                    </p>
-
-                    <p className="text-right text-[8px] font-semibold uppercase tracking-[0.18em] text-white/25">
-                        Time
-                    </p>
-                </div>
-
+            <div className="divide-y divide-white/5">
                 {results.length > 0 ? (
                     results.map(
                         (
@@ -1052,35 +1055,35 @@ function PreviousRaceCard({
                         ) => (
                             <div
                                 key={`${getDriverName(result)}-${index}`}
-                                className="grid grid-cols-[42px_minmax(0,1fr)_auto] items-center border-b border-white/5 px-4 py-3 last:border-b-0"
+                                className="flex items-center gap-4 px-5 py-4 sm:px-6"
                             >
-                                <p
-                                    className={`text-sm font-semibold ${index === 0
+                                <span
+                                    className={`w-7 text-sm font-semibold ${index === 0
                                         ? "text-[#ff729f]"
-                                        : "text-white/45"
+                                        : "text-white/25"
                                         }`}
                                 >
                                     {getResultPosition(
                                         result,
                                         index + 1,
                                     )}
-                                </p>
+                                </span>
 
-                                <div className="min-w-0">
-                                    <p className="truncate text-xs font-semibold uppercase tracking-[0.04em] text-white">
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-[10px] font-semibold uppercase tracking-[0.06em] text-white">
                                         {getDriverName(
                                             result,
                                         )}
                                     </p>
 
-                                    <p className="mt-1 truncate text-[8px] font-medium uppercase tracking-[0.14em] text-white/25">
+                                    <p className="mt-1 truncate text-[8px] uppercase tracking-[0.14em] text-white/25">
                                         {getTeamName(
                                             result,
                                         )}
                                     </p>
                                 </div>
 
-                                <p className="pl-3 text-right text-[10px] font-semibold uppercase tracking-[0.04em] text-white/60">
+                                <p className="text-[9px] font-semibold uppercase tracking-[0.04em] text-white/40">
                                     {getResultTime(
                                         result,
                                     )}
@@ -1089,46 +1092,46 @@ function PreviousRaceCard({
                         ),
                     )
                 ) : (
-                    <div className="px-4 py-5">
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/25">
-                            Race results
-                        </p>
-
-                        <p className="mt-2 text-xs text-white/40">
+                    <div className="px-5 py-6 sm:px-6">
+                        <p className="text-[9px] uppercase tracking-[0.18em] text-white/30">
                             Race results not available.
                         </p>
                     </div>
                 )}
             </div>
 
-            <div className="grid grid-cols-3">
+            <div className="grid grid-cols-3 border-t border-white/10">
                 <div className="border-r border-white/10 p-4">
-                    <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/25">
+                    <p className="text-[7px] font-semibold uppercase tracking-[0.2em] text-white/25">
                         Winner
                     </p>
 
-                    <p className="mt-2 truncate text-[10px] font-semibold uppercase tracking-[0.04em] text-white">
-                        {winner}
+                    <p className="mt-2 truncate text-[9px] font-semibold uppercase text-white/70">
+                        {getRaceWinner(
+                            data,
+                            results,
+                        )}
                     </p>
                 </div>
 
                 <div className="border-r border-white/10 p-4">
-                    <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/25">
+                    <p className="text-[7px] font-semibold uppercase tracking-[0.2em] text-white/25">
                         Lap record
                     </p>
 
-                    <p className="mt-2 truncate text-[10px] font-semibold uppercase tracking-[0.04em] text-white">
-                        {fastestLap}
+                    <p className="mt-2 truncate text-[9px] font-semibold uppercase text-white/70">
+                        {getFastestLap(data)}
                     </p>
                 </div>
 
                 <div className="p-4">
-                    <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/25">
+                    <p className="text-[7px] font-semibold uppercase tracking-[0.2em] text-white/25">
                         Laps
                     </p>
 
-                    <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.04em] text-white">
-                        {laps ?? "—"}
+                    <p className="mt-2 text-[9px] font-semibold text-white/70">
+                        {getRaceLaps(data) ??
+                            "—"}
                     </p>
                 </div>
             </div>
@@ -1188,76 +1191,49 @@ function NextRaceCard({
         data?.race?.laps ??
         data?.laps;
 
-    const isBahrainInMalaysia =
-        race.name
-            .toLowerCase()
-            .includes("bahrain") &&
-        country.toLowerCase() ===
-        "malaysia";
-
     return (
-        <section className="overflow-hidden border border-white/10 bg-[#242426] p-3">
-            <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
-                <div className="order-2 flex flex-col lg:order-1">
-                    <div className="border-b border-white/10 p-5 sm:p-6 lg:p-7">
-                        <div className="flex items-start justify-between gap-6">
-                            <div>
-                                <p className="text-[9px] font-semibold uppercase tracking-[0.28em] text-[#ff729f]">
-                                    Next race
-                                </p>
+        <section className="overflow-hidden border border-white/10 bg-[#242426]">
+            <div className="grid lg:grid-cols-[1fr_1.1fr]">
+                <div className="flex flex-col p-6 sm:p-7 lg:p-8">
+                    <div className="flex items-start justify-between gap-6">
+                        <div>
+                            <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-[#ee8434]">
+                                Next race
+                            </p>
 
-                                <h3 className="mt-2 text-2xl font-semibold uppercase leading-[0.95] tracking-[-0.045em] text-white sm:text-3xl lg:text-4xl">
-                                    {race.name}
-                                </h3>
+                            <h3 className="mt-3 text-3xl font-semibold uppercase leading-[0.92] tracking-[-0.05em] text-white sm:text-4xl">
+                                {race.name}
+                            </h3>
 
-                                {isBahrainInMalaysia && (
-                                    <p className="mt-3 text-[9px] font-semibold uppercase tracking-[0.2em] text-[#ee8434]">
-                                        Bahrain Grand Prix hosted at Sepang
+                            <div className="mt-4 flex items-center gap-3">
+                                <span className="text-xl">
+                                    {countryCodeToEmoji(
+                                        race.countryCode ??
+                                        country,
+                                    )}
+                                </span>
+
+                                <div>
+                                    <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/55">
+                                        {circuitName}
                                     </p>
-                                )}
 
-                                <div className="mt-3 flex items-start gap-3">
-                                    <span className="text-lg">
-                                        {countryCodeToEmoji(
-                                            race.countryCode ??
-                                            country,
-                                        )}
-                                    </span>
-
-                                    <div>
-                                        <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-white/45">
-                                            {circuitName}
-                                        </p>
-
-                                        <p className="mt-1 text-[9px] font-medium uppercase tracking-[0.18em] text-white/25">
-                                            {location} •{" "}
-                                            {country}
-                                        </p>
-                                    </div>
+                                    <p className="mt-1 text-[8px] uppercase tracking-[0.16em] text-white/25">
+                                        {location}
+                                        {country
+                                            ? ` • ${country}`
+                                            : ""}
+                                    </p>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="grid grid-cols-2 border-b border-white/10 sm:grid-cols-4">
-                        <div className="border-r border-white/10 p-4 sm:p-5">
-                            <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
-                                Lights out
-                            </p>
-
-                            <p className="mt-2 text-xs font-semibold uppercase tracking-[0.06em] text-white">
-                                {formatDate(
-                                    race.startDate,
-                                )}
-                            </p>
-                        </div>
-
-                        <div className="border-b border-white/10 p-4 sm:border-b-0 sm:border-r sm:p-5">
-                            <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
+                        <div className="hidden text-right sm:block">
+                            <p className="text-[8px] uppercase tracking-[0.2em] text-white/25">
                                 Round
                             </p>
 
-                            <p className="mt-2 text-xs font-semibold text-white">
+                            <p className="mt-1 text-2xl font-semibold text-white">
                                 {String(
                                     getRoundNumber(
                                         race.round,
@@ -1269,94 +1245,107 @@ function NextRaceCard({
                                 )}
                             </p>
                         </div>
+                    </div>
 
-                        <div className="border-r border-white/10 p-4 sm:p-5">
-                            <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
-                                Length
-                            </p>
+                    <div className="mt-8 border-y border-white/10">
+                        <div className="grid grid-cols-2">
+                            <div className="border-r border-white/10 p-4 sm:p-5">
+                                <p className="text-[7px] font-semibold uppercase tracking-[0.22em] text-white/25">
+                                    Race date
+                                </p>
 
-                            <p className="mt-2 truncate text-xs font-semibold text-white">
-                                {formatDistance(
-                                    length,
-                                    lengthIsKm,
-                                )}
-                            </p>
+                                <p className="mt-2 text-xs font-semibold uppercase text-white">
+                                    {formatDate(
+                                        race.startDate,
+                                    )}
+                                </p>
+                            </div>
+
+                            <div className="p-4 sm:p-5">
+                                <p className="text-[7px] font-semibold uppercase tracking-[0.22em] text-white/25">
+                                    Countdown
+                                </p>
+
+                                <p className="mt-2 text-xs font-semibold tracking-[0.04em] text-[#ff729f]">
+                                    {countdown}
+                                </p>
+                            </div>
                         </div>
 
-                        <div className="p-4 sm:p-5">
-                            <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
-                                Corners
-                            </p>
+                        <div className="grid grid-cols-3 border-t border-white/10">
+                            <div className="border-r border-white/10 p-4">
+                                <p className="text-[7px] font-semibold uppercase tracking-[0.2em] text-white/25">
+                                    Length
+                                </p>
 
-                            <p className="mt-2 text-xs font-semibold text-white">
-                                {corners ?? "—"}
-                            </p>
+                                <p className="mt-2 text-[10px] font-semibold text-white/70">
+                                    {formatDistance(
+                                        length,
+                                        lengthIsKm,
+                                    )}
+                                </p>
+                            </div>
+
+                            <div className="border-r border-white/10 p-4">
+                                <p className="text-[7px] font-semibold uppercase tracking-[0.2em] text-white/25">
+                                    Corners
+                                </p>
+
+                                <p className="mt-2 text-[10px] font-semibold text-white/70">
+                                    {corners ??
+                                        "—"}
+                                </p>
+                            </div>
+
+                            <div className="p-4">
+                                <p className="text-[7px] font-semibold uppercase tracking-[0.2em] text-white/25">
+                                    Laps
+                                </p>
+
+                                <p className="mt-2 text-[10px] font-semibold text-white/70">
+                                    {laps ??
+                                        "—"}
+                                </p>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 border-b border-white/10">
-                        <div className="border-r border-white/10 p-4 sm:p-5">
-                            <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
-                                Laps
-                            </p>
+                    <div className="mt-auto pt-8">
+                        <p className="text-[8px] font-semibold uppercase tracking-[0.25em] text-white/20">
+                            Circuit destination
+                        </p>
 
-                            <p className="mt-2 text-xs font-semibold text-white">
-                                {laps ?? "—"}
-                            </p>
-                        </div>
+                        <p className="mt-2 text-xs font-semibold uppercase tracking-[0.08em] text-white/60">
+                            {circuitName}
+                        </p>
 
-                        <div className="p-4 sm:p-5">
-                            <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
-                                Until lights out
-                            </p>
-
-                            <p className="mt-2 text-xs font-semibold uppercase tracking-[0.06em] text-[#ee8434]">
-                                {countdown === "—"
-                                    ? "Time TBC"
-                                    : "Counting down"}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-end justify-between gap-6 p-5 sm:p-6">
-                        <div>
-                            <p className="text-[8px] font-semibold uppercase tracking-[0.28em] text-white/30">
-                                Countdown
-                            </p>
-
-                            <p className="mt-2 whitespace-nowrap text-2xl font-semibold tracking-[-0.04em] text-white sm:text-3xl">
-                                {countdown}
-                            </p>
-                        </div>
-
-                        <div className="hidden text-right sm:block">
-                            <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/25">
-                                Next destination
-                            </p>
-
-                            <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.06em] text-white/60">
-                                {country}
-                            </p>
-                        </div>
+                        <p className="mt-1 text-[8px] uppercase tracking-[0.16em] text-white/25">
+                            {location}
+                            {country
+                                ? ` • ${country}`
+                                : ""}
+                        </p>
                     </div>
                 </div>
 
-                <div className="relative order-1 h-[280px] overflow-hidden bg-black lg:order-2 lg:h-[390px]">
+                <div className="relative min-h-[320px] overflow-hidden bg-black lg:min-h-[470px]">
                     <RaceMap3D
                         circuit={circuitMap}
                     />
 
-                    <div className="pointer-events-none absolute left-5 top-5 z-10">
-                        <p className="text-[8px] font-semibold uppercase tracking-[0.28em] text-white/40">
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/10" />
+
+                    <div className="pointer-events-none absolute left-5 top-5 sm:left-7 sm:top-7">
+                        <p className="text-[8px] font-semibold uppercase tracking-[0.28em] text-white/35">
                             Circuit map
                         </p>
 
-                        <p className="mt-2 max-w-[220px] text-[10px] font-medium uppercase tracking-[0.12em] text-white/70">
+                        <p className="mt-2 max-w-[220px] text-[10px] font-semibold uppercase tracking-[0.1em] text-white/75">
                             {circuitName}
                         </p>
                     </div>
 
-                    <div className="pointer-events-none absolute bottom-5 left-5 z-10">
+                    <div className="pointer-events-none absolute bottom-5 left-5 sm:bottom-7 sm:left-7">
                         <p className="text-[8px] font-semibold uppercase tracking-[0.24em] text-white/30">
                             Interactive circuit
                         </p>
