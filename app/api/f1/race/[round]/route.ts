@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 const BACKEND_API_BASE_URL =
   process.env.F1_BACKEND_API_BASE_URL ?? "http://localhost:8787/api";
 
+export const revalidate = 1_800;
+
 interface BackendScheduleSession {
   date: string | null;
   time: string | null;
@@ -117,7 +119,7 @@ function normaliseTeamWinner(teamWinner: BackendConstructorWinner | null) {
 }
 
 export async function GET(
-  request: Request,
+  _request: Request,
   {
     params,
   }: {
@@ -147,7 +149,9 @@ export async function GET(
       headers: {
         Accept: "application/json",
       },
-      cache: "no-store",
+      next: {
+        revalidate: 1_800,
+      },
       signal: AbortSignal.timeout(10_000),
     });
 
@@ -236,7 +240,8 @@ export async function GET(
 
     return NextResponse.json(result, {
       headers: {
-        "Cache-Control": "no-store",
+        "Cache-Control":
+          "public, max-age=0, s-maxage=1800, stale-while-revalidate=300",
       },
     });
   } catch (error) {

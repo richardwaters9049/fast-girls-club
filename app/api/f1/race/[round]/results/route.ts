@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 const BACKEND_API_BASE_URL =
   process.env.F1_BACKEND_API_BASE_URL ?? "http://localhost:8787/api";
 
+export const revalidate = 60;
+
 interface BackendResult {
   position: number | null;
   number: number | null;
@@ -109,7 +111,9 @@ export async function GET(
       headers: {
         Accept: "application/json",
       },
-      cache: "no-store",
+      next: {
+        revalidate: 60,
+      },
       signal: AbortSignal.timeout(10_000),
     });
 
@@ -124,7 +128,8 @@ export async function GET(
         {
           status: 200,
           headers: {
-            "Cache-Control": "no-store",
+            "Cache-Control":
+              "public, max-age=0, s-maxage=60, stale-while-revalidate=30",
           },
         },
       );
@@ -151,16 +156,20 @@ export async function GET(
       );
     }
 
+    const results = data.results.map(normaliseResult);
+
+    const cacheSeconds = results.length > 0 ? 43_200 : 60;
+
     return NextResponse.json(
       {
         season: data.season,
         round: data.round,
         raceName: data.raceName,
-        results: data.results.map(normaliseResult),
+        results,
       },
       {
         headers: {
-          "Cache-Control": "no-store",
+          "Cache-Control": `public, max-age=0, s-maxage=${cacheSeconds}, stale-while-revalidate=300`,
         },
       },
     );
