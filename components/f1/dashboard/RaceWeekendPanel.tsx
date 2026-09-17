@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import RaceMap3D from "@/components/3d/RaceMap3D";
 import { countryCodeToEmoji } from "@/lib/f1/countries";
@@ -16,266 +16,245 @@ interface RaceWeekendPanelProps {
 
 interface RaceSession {
     name: string;
-    date: string;
-    time: string;
+    date: string | null;
+    time: string | null;
 }
 
 interface RaceResult {
-    position?: number | string;
-    gridPosition?: number | string;
-    driver?: {
-        id?: string;
-        name?: string;
-        shortName?: string;
-        nationality?: string;
-        number?: number | string;
-    } | string;
-    driverName?: string;
-    name?: string;
-    fullName?: string;
-    team?: {
-        id?: string;
-        name?: string;
-    } | string;
-    teamName?: string;
-    constructor?: string;
-    time?: string;
-    gap?: string;
-    status?: string;
-    retired?: string | null;
-    points?: number | string;
-    fastLap?: string;
+    position?: number | string | null;
+    driver?: string | RaceDriver | null;
+    driverName?: string | null;
+    name?: string | null;
+    fullName?: string | null;
+    team?: string | RaceConstructor | null;
+    teamName?: string | null;
+    constructor?: string | RaceConstructor | null;
+    time?: string | null;
+    gap?: string | null;
+    status?: string | null;
+    points?: number | string | null;
 }
 
-interface RaceApiData {
-    round?: number;
-    raceId?: string;
-    raceName?: string;
-    date?: string;
-    time?: string;
-    status?: string;
-    resultsAvailable?: boolean;
+interface RaceDriver {
+    givenName?: string | null;
+    familyName?: string | null;
+    name?: string | null;
+}
+
+interface RaceConstructor {
+    name?: string | null;
+}
+
+interface RaceCircuit {
+    id?: string | null;
+    circuitId?: string | null;
+    name?: string | null;
+    circuitName?: string | null;
+    country?: string | null;
+    city?: string | null;
+    lengthKm?: number | string | null;
+    circuitLength?: number | string | null;
+    length?: number | string | null;
+    corners?: number | string | null;
+    lapRecord?: string | null;
+    fastestLapDriverId?: string | null;
+    fastestLapTeamId?: string | null;
+    fastestLapYear?: number | string | null;
+}
+
+interface RaceScheduleSession {
+    date?: string | null;
+    time?: string | null;
+}
+
+interface RaceSchedule {
+    practice1?: RaceScheduleSession | null;
+    practice2?: RaceScheduleSession | null;
+    practice3?: RaceScheduleSession | null;
+    qualifying?: RaceScheduleSession | null;
+    sprintQualifying?: RaceScheduleSession | null;
+    sprintRace?: RaceScheduleSession | null;
+    race?: RaceScheduleSession | null;
+}
+
+interface RawRaceResponse {
+    round?: number | string | null;
+    raceId?: string | null;
+    raceName?: string | null;
+    season?: number | string | null;
+    date?: string | null;
+    time?: string | null;
+    schedule?: RaceSchedule | null;
+    circuit?: RaceCircuit | null;
+    laps?: number | string | null;
     winner?: {
-        name?: string;
-        shortName?: string;
-        driverId?: string;
-    };
+        fullName?: string | null;
+        firstName?: string | null;
+        lastName?: string | null;
+    } | null;
+    constructorWinner?: {
+        name?: string | null;
+    } | null;
     teamWinner?: {
-        name?: string;
-        teamId?: string;
-    };
-    results?: RaceResult[];
-    topDrivers?: RaceResult[];
-    races?: {
-        results?: RaceResult[];
-    };
+        name?: string | null;
+    } | null;
+}
+
+interface RaceResultsResponse {
+    results?: RaceResult[] | null;
     race?: {
-        winner?: string;
-        winnerTeam?: string;
-        fastestLap?: string;
-        fastestLapDriver?: string;
-        distance?: number;
-        laps?: number;
-        results?: RaceResult[];
-        topDrivers?: RaceResult[];
+        results?: RaceResult[] | null;
+    } | null;
+}
+
+interface NormalisedRaceData {
+    race: {
+        name: string | null;
+        date: string | null;
+        time: string | null;
+        winner: string | null;
+        teamWinner: string | null;
+        fastestLap: string | null;
+        fastestLapDriver: string | null;
+        laps: number | null;
     };
-    circuit?: {
-        id?: string;
-        name?: string;
-        location?: string;
-        country?: string;
-        city?: string;
-        length?: number;
-        lengthKm?: number;
-        corners?: number;
-        laps?: number;
-        lapRecord?: string;
-        fastestLap?: string;
+    circuit: {
+        id: string | null;
+        name: string | null;
+        country: string | null;
+        city: string | null;
+        length: number | null;
+        corners: number | null;
+        lapRecord: string | null;
     };
-    sessions?: RaceSession[];
-    schedule?: {
-        practice1?: {
-            date?: string | null;
-            time?: string | null;
-        };
-        practice2?: {
-            date?: string | null;
-            time?: string | null;
-        };
-        practice3?: {
-            date?: string | null;
-            time?: string | null;
-        };
-        qualifying?: {
-            date?: string | null;
-            time?: string | null;
-        };
-        sprintQualifying?: {
-            date?: string | null;
-            time?: string | null;
-        };
-        sprintRace?: {
-            date?: string | null;
-            time?: string | null;
-        };
-        race?: {
-            date?: string | null;
-            time?: string | null;
-        };
-    };
-    laps?: number;
+    sessions: RaceSession[];
+    results: RaceResult[];
 }
 
 interface RaceDataState {
-    current: RaceApiData | null;
-    previous: RaceApiData | null;
-    next: RaceApiData | null;
+    current: NormalisedRaceData | null;
+    previous: NormalisedRaceData | null;
+    next: NormalisedRaceData | null;
 }
 
-function formatDate(value: string): string {
-    if (!value) {
-        return "—";
-    }
-
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) {
+function toNumber(value: unknown): number | null {
+    if (typeof value === "number" && Number.isFinite(value)) {
         return value;
     }
 
-    return date.toLocaleDateString("en-GB", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-    });
+    if (typeof value === "string" && value.trim() !== "") {
+        const parsed = Number(value);
+
+        if (Number.isFinite(parsed)) {
+            return parsed;
+        }
+    }
+
+    return null;
 }
 
-function formatShortDate(value: string): string {
-    if (!value) {
-        return "—";
+function firstNumber(...values: unknown[]): number | null {
+    for (const value of values) {
+        const result = toNumber(value);
+
+        if (result !== null) {
+            return result;
+        }
     }
 
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) {
-        return value;
-    }
-
-    return date.toLocaleDateString("en-GB", {
-        weekday: "short",
-        day: "numeric",
-        month: "short",
-    });
+    return null;
 }
 
-function formatTime(value: string): string {
-    if (!value) {
-        return "—";
+function firstString(...values: unknown[]): string | null {
+    for (const value of values) {
+        if (typeof value === "string" && value.trim() !== "") {
+            return value;
+        }
     }
 
-    const date = new Date(value);
+    return null;
+}
 
-    if (!Number.isNaN(date.getTime())) {
-        return date.toLocaleTimeString("en-GB", {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false,
-        });
+function getDriverName(result: RaceResult): string {
+    if (typeof result.driver === "string") {
+        return result.driver;
     }
 
-    const timeMatch = value.match(
-        /^(\d{2}):(\d{2})/,
+    if (result.driver && typeof result.driver === "object") {
+        const fullName = [
+            result.driver.givenName,
+            result.driver.familyName,
+        ]
+            .filter(Boolean)
+            .join(" ");
+
+        if (fullName) {
+            return fullName;
+        }
+
+        if (result.driver.name) {
+            return result.driver.name;
+        }
+    }
+
+    return (
+        firstString(
+            result.driverName,
+            result.fullName,
+            result.name,
+        ) ?? "Unknown"
     );
-
-    if (timeMatch) {
-        return `${timeMatch[1]}:${timeMatch[2]}`;
-    }
-
-    return value;
 }
 
-function formatDistance(
-    value?: number,
-    valueIsKm = false,
-): string {
+function getTeamName(result: RaceResult): string {
+    if (typeof result.team === "string") {
+        return result.team;
+    }
+
+    if (result.team && typeof result.team === "object") {
+        if (result.team.name) {
+            return result.team.name;
+        }
+    }
+
+    if (typeof result.constructor === "string") {
+        return result.constructor;
+    }
+
     if (
-        typeof value !== "number" ||
-        Number.isNaN(value)
+        result.constructor &&
+        typeof result.constructor === "object" &&
+        result.constructor.name
     ) {
-        return "—";
+        return result.constructor.name;
     }
 
-    const kilometres = valueIsKm
-        ? value
-        : value > 100
-            ? value / 1000
-            : value;
-
-    return `${kilometres.toFixed(3)} km`;
+    return firstString(result.teamName) ?? "Unknown";
 }
 
-function getCountdown(
-    targetDate: string,
-    now: number,
+function getResultTime(result: RaceResult): string {
+    return firstString(
+        result.time,
+        result.gap,
+        result.status,
+    ) ?? "Unavailable";
+}
+
+function getResultPosition(
+    result: RaceResult,
+    fallback: number,
 ): string {
-    const target = new Date(targetDate).getTime();
+    const position = toNumber(result.position);
 
-    if (Number.isNaN(target)) {
-        return "—";
+    if (position !== null) {
+        return String(position).padStart(2, "0");
     }
 
-    const difference = Math.max(
-        0,
-        target - now,
-    );
-
-    const totalSeconds = Math.floor(
-        difference / 1000,
-    );
-
-    const days = Math.floor(
-        totalSeconds / 86400,
-    );
-
-    const hours = Math.floor(
-        (totalSeconds % 86400) / 3600,
-    );
-
-    const minutes = Math.floor(
-        (totalSeconds % 3600) / 60,
-    );
-
-    const seconds = totalSeconds % 60;
-
-    return [
-        String(days).padStart(2, "0"),
-        String(hours).padStart(2, "0"),
-        String(minutes).padStart(2, "0"),
-        String(seconds).padStart(2, "0"),
-    ].join(":");
+    return String(fallback).padStart(2, "0");
 }
 
-function createRaceSession(
-    name: string,
-    date?: string | null,
-    time?: string | null,
-): RaceSession | null {
-    if (!date) {
-        return null;
-    }
-
-    return {
-        name,
-        date,
-        time: time ?? "",
-    };
-}
-
-function getSessionLabel(
-    sessionName: string,
-): string {
-    const normalised =
-        sessionName.toLowerCase();
+function getSessionLabel(name: string): string {
+    const normalised = name.toLowerCase();
 
     if (normalised.includes("practice 1")) {
         return "Practice 1";
@@ -289,447 +268,256 @@ function getSessionLabel(
         return "Practice 3";
     }
 
-    if (
-        normalised.includes("qualifying") &&
-        normalised.includes("sprint")
-    ) {
+    if (normalised.includes("sprint qualifying")) {
         return "Sprint Qualifying";
+    }
+
+    if (normalised.includes("sprint")) {
+        return "Sprint";
     }
 
     if (normalised.includes("qualifying")) {
         return "Qualifying";
     }
 
-    if (
-        normalised.includes("sprint") &&
-        normalised.includes("race")
-    ) {
-        return "Sprint Race";
-    }
-
     if (normalised.includes("race")) {
         return "Race";
     }
 
-    return sessionName;
+    return name;
 }
 
-function getSessions(
-    data: RaceApiData | null,
-): RaceSession[] {
-    if (data?.sessions?.length) {
-        return data.sessions;
+function formatDate(value: string | null): string {
+    if (!value) {
+        return "Unavailable";
     }
 
-    const schedule = data?.schedule;
+    const date = new Date(`${value}T00:00:00`);
+
+    if (Number.isNaN(date.getTime())) {
+        return value;
+    }
+
+    return date.toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+    });
+}
+
+function formatShortDate(value: string | null): string {
+    if (!value) {
+        return "Unavailable";
+    }
+
+    const date = new Date(`${value}T00:00:00`);
+
+    if (Number.isNaN(date.getTime())) {
+        return value;
+    }
+
+    return date.toLocaleDateString("en-GB", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+    });
+}
+
+function formatTime(
+    date: string | null,
+    time: string | null,
+): string {
+    if (!time) {
+        return "Time TBC";
+    }
+
+    const value = date
+        ? `${date}T${time}`
+        : time;
+
+    const parsed = new Date(value);
+
+    if (Number.isNaN(parsed.getTime())) {
+        return time;
+    }
+
+    return parsed.toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+    });
+}
+
+function formatDistance(value: number | null): string {
+    if (value === null) {
+        return "Unavailable";
+    }
+
+    return `${value.toFixed(3)} km`;
+}
+
+function getCountdown(
+    targetDate: string | null,
+    now: number,
+): string {
+    if (!targetDate) {
+        return "Unavailable";
+    }
+
+    const target = new Date(`${targetDate}T00:00:00`).getTime();
+
+    if (Number.isNaN(target)) {
+        return "Unavailable";
+    }
+
+    const difference = Math.max(0, target - now);
+
+    const totalSeconds = Math.floor(difference / 1000);
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    return [
+        String(days).padStart(2, "0"),
+        String(hours).padStart(2, "0"),
+        String(minutes).padStart(2, "0"),
+        String(seconds).padStart(2, "0"),
+    ].join(":");
+}
+
+function buildSessions(
+    response: RawRaceResponse,
+): RaceSession[] {
+    const schedule = response.schedule;
 
     if (!schedule) {
         return [];
     }
 
-    return [
-        createRaceSession(
-            "Practice 1",
-            schedule.practice1?.date,
-            schedule.practice1?.time,
-        ),
-        createRaceSession(
-            "Practice 2",
-            schedule.practice2?.date,
-            schedule.practice2?.time,
-        ),
-        createRaceSession(
-            "Practice 3",
-            schedule.practice3?.date,
-            schedule.practice3?.time,
-        ),
-        createRaceSession(
-            "Qualifying",
-            schedule.qualifying?.date,
-            schedule.qualifying?.time,
-        ),
-        createRaceSession(
-            "Sprint Qualifying",
-            schedule.sprintQualifying?.date,
-            schedule.sprintQualifying?.time,
-        ),
-        createRaceSession(
-            "Sprint Race",
-            schedule.sprintRace?.date,
-            schedule.sprintRace?.time,
-        ),
-        createRaceSession(
-            "Race",
-            schedule.race?.date,
-            schedule.race?.time,
-        ),
-    ].filter(
-        (
-            session,
-        ): session is RaceSession =>
-            session !== null,
-    );
+    const entries: Array<
+        [string, RaceScheduleSession | null | undefined]
+    > = [
+            ["Practice 1", schedule.practice1],
+            ["Practice 2", schedule.practice2],
+            ["Practice 3", schedule.practice3],
+            ["Sprint Qualifying", schedule.sprintQualifying],
+            ["Sprint Race", schedule.sprintRace],
+            ["Qualifying", schedule.qualifying],
+            ["Race", schedule.race],
+        ];
+
+    return entries
+        .filter(([, session]) => session?.date)
+        .map(([name, session]) => ({
+            name,
+            date: session?.date ?? null,
+            time: session?.time ?? null,
+        }));
 }
 
-function getRaceDateTime(
-    date?: string | null,
-    time?: string | null,
-): string | null {
-    if (!date) {
+function normaliseRaceResponse(
+    input: unknown,
+): NormalisedRaceData | null {
+    if (!input || typeof input !== "object") {
         return null;
     }
 
-    if (!time) {
-        return date;
-    }
+    const response = input as RawRaceResponse;
 
-    return `${date}T${time.replace(
-        "Z",
-        "",
-    )}`;
+    const circuit = response.circuit ?? null;
+
+    const winnerName = response.winner
+        ? firstString(
+            response.winner.fullName,
+            [
+                response.winner.firstName,
+                response.winner.lastName,
+            ]
+                .filter(Boolean)
+                .join(" "),
+        )
+        : null;
+
+    return {
+        race: {
+            name: response.raceName ?? null,
+            date: response.date ?? null,
+            time: response.time ?? null,
+            winner: winnerName,
+            teamWinner:
+                response.constructorWinner?.name ??
+                response.teamWinner?.name ??
+                null,
+            fastestLap: null,
+            fastestLapDriver: null,
+            laps: toNumber(response.laps),
+        },
+        circuit: {
+            id:
+                circuit?.id ??
+                circuit?.circuitId ??
+                null,
+            name:
+                circuit?.name ??
+                circuit?.circuitName ??
+                null,
+            country: circuit?.country ?? null,
+            city: circuit?.city ?? null,
+            length: firstNumber(
+                circuit?.lengthKm,
+                circuit?.circuitLength,
+                circuit?.length,
+            ),
+            corners: toNumber(circuit?.corners),
+            lapRecord: circuit?.lapRecord ?? null,
+        },
+        sessions: buildSessions(response),
+        results: [],
+    };
 }
 
-function getRaceResults(
-    data: RaceApiData | null,
+function normaliseResults(
+    input: unknown,
 ): RaceResult[] {
-    if (!data) {
+    if (!input || typeof input !== "object") {
         return [];
     }
 
-    const candidates = [
-        data.results,
-        data.races?.results,
-        data.topDrivers,
-        data.race?.results,
-        data.race?.topDrivers,
-    ];
+    const response = input as RaceResultsResponse;
 
-    for (const results of candidates) {
-        if (
-            Array.isArray(results) &&
-            results.length > 0
-        ) {
-            return [...results]
-                .sort((a, b) => {
-                    const positionA =
-                        typeof a.position === "number"
-                            ? a.position
-                            : Number(a.position);
+    if (Array.isArray(response.results)) {
+        return response.results;
+    }
 
-                    const positionB =
-                        typeof b.position === "number"
-                            ? b.position
-                            : Number(b.position);
-
-                    if (
-                        Number.isFinite(positionA) &&
-                        Number.isFinite(positionB)
-                    ) {
-                        return positionA - positionB;
-                    }
-
-                    return 0;
-                })
-                .slice(0, 3);
-        }
+    if (
+        response.race &&
+        Array.isArray(response.race.results)
+    ) {
+        return response.race.results;
     }
 
     return [];
 }
 
-function hasRaceResults(
-    data: RaceApiData | null,
-): boolean {
-    if (!data) {
-        return false;
-    }
-
-    const candidates = [
-        data.results,
-        data.races?.results,
-        data.topDrivers,
-        data.race?.results,
-        data.race?.topDrivers,
-    ];
-
-    return candidates.some(
-        (results) =>
-            Array.isArray(results) &&
-            results.length > 0,
-    );
-}
-
-function isRaceCompleted(
-    data: RaceApiData | null,
-): boolean {
-    if (!data) {
-        return false;
-    }
-
-    if (data.resultsAvailable === true) {
-        return true;
-    }
-
-    if (hasRaceResults(data)) {
-        return true;
-    }
-
-    return (
-        data.status?.toLowerCase() ===
-        "completed"
-    );
-}
-
-function getDriverName(
-    result: RaceResult,
-): string {
-    if (
-        typeof result.driver === "object" &&
-        result.driver !== null
-    ) {
-        return (
-            result.driver.name ??
-            result.driver.shortName ??
-            "—"
-        );
-    }
-
-    return (
-        result.driver ??
-        result.driverName ??
-        result.fullName ??
-        result.name ??
-        "—"
-    );
-}
-
-function getTeamName(
-    result: RaceResult,
-): string {
-    if (
-        typeof result.team === "object" &&
-        result.team !== null
-    ) {
-        return result.team.name ?? "—";
-    }
-
-    return (
-        result.team ??
-        result.teamName ??
-        result.constructor ??
-        "—"
-    );
-}
-
-function getResultTime(
-    result: RaceResult,
-): string {
-    return (
-        result.time ??
-        result.gap ??
-        "—"
-    );
-}
-
-function getResultPosition(
-    result: RaceResult,
-    fallback: number,
-): string {
-    if (typeof result.position === "number") {
-        return String(
-            result.position,
-        ).padStart(2, "0");
-    }
-
-    if (
-        typeof result.position === "string" &&
-        result.position.trim()
-    ) {
-        return result.position.padStart(
-            2,
-            "0",
-        );
-    }
-
-    return String(fallback).padStart(
-        2,
-        "0",
-    );
-}
-
-function getRaceWinner(
-    data: RaceApiData | null,
-    results: RaceResult[],
-): string {
-    if (data?.winner?.name) {
-        return data.winner.name;
-    }
-
-    if (data?.race?.winner) {
-        return data.race.winner;
-    }
-
-    if (results.length > 0) {
-        return getDriverName(
-            results[0],
-        );
-    }
-
-    return "—";
-}
-
-function getFastestLap(
-    data: RaceApiData | null,
-): string {
-    return (
-        data?.circuit?.lapRecord ??
-        data?.circuit?.fastestLap ??
-        data?.race?.fastestLap ??
-        "—"
-    );
-}
-
-function getRaceLaps(
-    data: RaceApiData | null,
-): number | string | undefined {
-    return (
-        data?.laps ??
-        data?.race?.laps ??
-        data?.circuit?.laps
-    );
-}
-
-function getRoundNumber(
-    value: unknown,
-): number | null {
-    if (
-        typeof value === "number" &&
-        Number.isFinite(value)
-    ) {
-        return value;
-    }
-
-    const match = String(
-        value ?? "",
-    ).match(/\d+/);
-
-    if (!match) {
-        return null;
-    }
-
-    const round = Number(match[0]);
-
-    if (
-        !Number.isFinite(round) ||
-        round < 1
-    ) {
-        return null;
-    }
-
-    return round;
-}
-
-async function fetchRaceData(
-    round: number | null,
-): Promise<RaceApiData | null> {
-    if (
-        round === null ||
-        !Number.isFinite(round) ||
-        round < 1
-    ) {
-        return null;
-    }
-
-    try {
-        const response = await fetch(
-            `/api/f1/race/${round}?panel=${Date.now()}`,
-            {
-                cache: "no-store",
-            },
-        );
-
-        if (!response.ok) {
-            return null;
-        }
-
-        const json =
-            (await response.json()) as RaceApiData;
-
-        if (
-            typeof json.round === "number" &&
-            json.round !== round
-        ) {
-            return null;
-        }
-
-        return json;
-    } catch {
-        return null;
-    }
-}
-
-async function findPreviousCompletedRace(
-    currentRound: number | null,
-): Promise<RaceApiData | null> {
-    if (
-        currentRound === null ||
-        !Number.isFinite(currentRound) ||
-        currentRound <= 1
-    ) {
-        return null;
-    }
-
-    for (
-        let round = currentRound - 1;
-        round >= 1;
-        round -= 1
-    ) {
-        const candidate =
-            await fetchRaceData(round);
-
-        if (
-            candidate &&
-            isRaceCompleted(candidate)
-        ) {
-            return candidate;
-        }
-    }
-
-    return null;
-}
-
 export default function RaceWeekendPanel({
     race,
+    previousRace,
     nextRace,
+    status,
 }: RaceWeekendPanelProps): React.ReactElement {
-    const [data, setData] =
-        useState<RaceDataState>({
-            current: null,
-            previous: null,
-            next: null,
-        });
+    const [data, setData] = useState<RaceDataState>({
+        current: null,
+        previous: null,
+        next: null,
+    });
 
-    const [now, setNow] = useState(
-        () => Date.now(),
-    );
-
-    const currentRound =
-        getRoundNumber(race.round);
-
-    const nextRound =
-        nextRace
-            ? getRoundNumber(
-                nextRace.round,
-            )
-            : currentRound !== null
-                ? currentRound + 1
-                : null;
+    const [now, setNow] = useState(() => Date.now());
 
     useEffect(() => {
-        const interval =
-            window.setInterval(() => {
-                setNow(Date.now());
-            }, 1000);
+        const interval = window.setInterval(() => {
+            setNow(Date.now());
+        }, 1000);
 
         return () => {
             window.clearInterval(interval);
@@ -739,34 +527,91 @@ export default function RaceWeekendPanel({
     useEffect(() => {
         let cancelled = false;
 
-        const loadRaceData =
-            async (): Promise<void> => {
-                const [
-                    current,
-                    previous,
-                    next,
-                ] = await Promise.all([
-                    fetchRaceData(
-                        currentRound,
-                    ),
-                    findPreviousCompletedRace(
-                        currentRound,
-                    ),
-                    fetchRaceData(
-                        nextRound,
-                    ),
-                ]);
+        const loadRace = async (
+            round: number,
+        ): Promise<NormalisedRaceData | null> => {
+            try {
+                const response = await fetch(
+                    `/api/f1/race/${round}`,
+                    {
+                        cache: "no-store",
+                    },
+                );
 
-                if (cancelled) {
-                    return;
+                if (!response.ok) {
+                    return null;
                 }
 
-                setData({
-                    current,
-                    previous,
-                    next,
-                });
-            };
+                const json: unknown = await response.json();
+
+                return normaliseRaceResponse(json);
+            } catch {
+                return null;
+            }
+        };
+
+        const loadResults = async (
+            round: number,
+        ): Promise<RaceResult[]> => {
+            try {
+                const response = await fetch(
+                    `/api/f1/race/${round}/results`,
+                    {
+                        cache: "no-store",
+                    },
+                );
+
+                if (!response.ok) {
+                    return [];
+                }
+
+                const json: unknown = await response.json();
+
+                return normaliseResults(json);
+            } catch {
+                return [];
+            }
+        };
+
+        const loadRaceData = async (): Promise<void> => {
+            const [current, previous, next] = await Promise.all([
+                loadRace(race.round),
+                previousRace
+                    ? loadRace(previousRace.round)
+                    : Promise.resolve(null),
+                nextRace
+                    ? loadRace(nextRace.round)
+                    : Promise.resolve(null),
+            ]);
+
+            let previousResults: RaceResult[] = [];
+
+            if (previousRace) {
+                previousResults = await loadResults(
+                    previousRace.round,
+                );
+            }
+
+            if (cancelled) {
+                return;
+            }
+
+            setData({
+                current: current
+                    ? {
+                        ...current,
+                        results: [],
+                    }
+                    : null,
+                previous: previous
+                    ? {
+                        ...previous,
+                        results: previousResults,
+                    }
+                    : null,
+                next,
+            });
+        };
 
         void loadRaceData();
 
@@ -774,158 +619,172 @@ export default function RaceWeekendPanel({
             cancelled = true;
         };
     }, [
-        currentRound,
-        nextRound,
+        nextRace?.round,
+        previousRace?.round,
+        race.round,
     ]);
 
-    const currentSessions =
-        getSessions(data.current);
+    const currentData = data.current;
+    const previousData = data.previous;
+    const nextData = data.next;
+
+    const displayedName =
+        currentData?.race.name ??
+        race.name;
+
+    const displayedCircuit =
+        currentData?.circuit.name ??
+        race.circuit;
+
+    const displayedCountry =
+        currentData?.circuit.country ??
+        race.country;
+
+    const displayedCountryCode =
+        race.countryCode ??
+        "";
+
+    const displayedDate =
+        currentData?.race.date ??
+        race.startDate;
+
+    const displayedSessions =
+        currentData?.sessions ??
+        [];
 
     const previousResults =
-        getRaceResults(
-            data.previous,
-        );
+        previousData?.results.slice(0, 3) ??
+        [];
 
     const nextCircuit =
-        data.next?.circuit ?? null;
+        nextData?.circuit ??
+        null;
 
-    const nextCircuitMap =
-        getCircuitMap(
-            nextCircuit?.id ??
+    const nextCircuitMap = useMemo(() => {
+        return getCircuitMap(
             nextCircuit?.name ??
+            nextCircuit?.country ??
             nextRace?.circuit ??
-            "",
+            nextRace?.country ??
+            "Singapore",
         );
+    }, [
+        nextCircuit?.name,
+        nextCircuit?.country,
+        nextRace?.circuit,
+        nextRace?.country,
+    ]);
 
-    const nextRaceStart =
-        getRaceDateTime(
-            data.next?.schedule?.race?.date ??
-            data.next?.date ??
-            nextRace?.startDate ??
-            null,
-            data.next?.schedule?.race?.time ??
-            data.next?.time ??
-            null,
-        );
+    const nextRaceDate =
+        nextData?.race.date ??
+        nextRace?.startDate ??
+        null;
 
-    const countdown =
-        nextRaceStart
-            ? getCountdown(
-                nextRaceStart,
-                now,
-            )
-            : "—";
+    const nextRaceCountdown = getCountdown(
+        nextRaceDate,
+        now,
+    );
 
     return (
-        <div className="overflow-hidden">
-            <div className="space-y-4 p-4 sm:p-6 lg:p-8">
-                <section className="overflow-hidden border border-white/10 bg-[#242426]">
-                    <div className="relative grid lg:grid-cols-[1fr_1.15fr]">
-                        <div className="relative z-10 flex flex-col justify-between p-6 sm:p-8 lg:p-10">
-                            <div>
-                                <div className="flex items-center gap-3">
-                                    <span className="text-xl">
-                                        {countryCodeToEmoji(
-                                            race.countryCode ??
-                                            race.country ??
-                                            "",
-                                        )}
-                                    </span>
+        <div className="h-full overflow-hidden">
+            <div className="grid gap-4 p-4 sm:p-6 lg:p-8">
+                <div className="grid gap-4 lg:grid-cols-[1.65fr_0.85fr]">
+                    <section className="relative overflow-hidden border border-white/10 bg-[#242426]">
+                        <div className="p-5 sm:p-6 lg:p-7">
+                            <div className="flex items-start justify-between gap-6">
+                                <div>
+                                    <div className="mb-3 flex items-center gap-3">
+                                        <span className="text-lg">
+                                            {countryCodeToEmoji(
+                                                displayedCountryCode,
+                                            )}
+                                        </span>
 
-                                    <span className="text-[9px] font-semibold uppercase tracking-[0.3em] text-[#ff729f]">
-                                        Race weekend
-                                    </span>
-                                </div>
+                                        <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#ff729f]">
+                                            {status === "live"
+                                                ? "Live race"
+                                                : status === "completed"
+                                                    ? "Completed race"
+                                                    : "Race weekend"}
+                                        </span>
+                                    </div>
 
-                                <div className="mt-6">
-                                    <p className="text-[9px] font-semibold uppercase tracking-[0.25em] text-white/25">
-                                        Round{" "}
-                                        {String(
-                                            currentRound ??
-                                            race.round,
-                                        ).padStart(
-                                            2,
-                                            "0",
-                                        )}
-                                    </p>
-
-                                    <h2 className="mt-3 max-w-xl text-4xl font-semibold uppercase leading-[0.9] tracking-[-0.055em] text-white sm:text-5xl">
-                                        {race.name}
+                                    <h2 className="text-3xl font-semibold uppercase tracking-[-0.04em] text-white sm:text-4xl">
+                                        {displayedName}
                                     </h2>
 
-                                    <p className="mt-4 text-[10px] font-medium uppercase tracking-[0.2em] text-white/35">
-                                        {race.circuit}{" "}
-                                        <span className="text-[#ff729f]">
-                                            /
-                                        </span>{" "}
-                                        {race.country}
+                                    <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-white/40">
+                                        {displayedCircuit} •{" "}
+                                        {displayedCountry}
+                                    </p>
+                                </div>
+
+                                <div className="hidden text-right sm:block">
+                                    <p className="text-[9px] font-semibold uppercase tracking-[0.28em] text-white/30">
+                                        Round
+                                    </p>
+
+                                    <p className="mt-1 text-2xl font-semibold text-white">
+                                        {String(
+                                            race.round,
+                                        ).padStart(2, "0")}
                                     </p>
                                 </div>
                             </div>
 
-                            <div className="mt-10">
-                                <div className="mb-4 flex items-end justify-between">
+                            <div className="my-6 border-t border-white/10" />
+
+                            <div>
+                                <div className="flex items-end justify-between gap-4">
                                     <div>
-                                        <p className="text-[9px] font-semibold uppercase tracking-[0.28em] text-[#ff729f]">
+                                        <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#ff729f]">
                                             Weekend schedule
                                         </p>
 
-                                        <p className="mt-2 text-[9px] uppercase tracking-[0.15em] text-white/25">
-                                            Official session data
+                                        <p className="mt-2 text-xs tracking-[0.12em] text-white/35">
+                                            Official session times and race day information
                                         </p>
                                     </div>
+
+                                    <p className="hidden text-[9px] font-semibold uppercase tracking-[0.2em] text-white/25 sm:block">
+                                        2026 Season
+                                    </p>
                                 </div>
 
-                                {currentSessions.length > 0 ? (
-                                    <div className="space-y-1.5">
-                                        {currentSessions.map(
-                                            (
-                                                session,
-                                                index,
-                                            ) => {
+                                {displayedSessions.length > 0 ? (
+                                    <div className="mt-4 grid gap-2 sm:grid-cols-5">
+                                        {displayedSessions.map(
+                                            (session, index) => {
                                                 const isRace =
                                                     getSessionLabel(
                                                         session.name,
-                                                    ) ===
-                                                    "Race";
+                                                    ) === "Race";
 
                                                 return (
                                                     <div
                                                         key={`${session.name}-${session.date}-${index}`}
-                                                        className={`flex items-center justify-between border px-4 py-3 ${isRace
-                                                            ? "border-[#ff729f]/40 bg-[#ff729f]/[0.06]"
-                                                            : "border-white/5 bg-white/[0.015]"
+                                                        className={`border px-3 py-3 ${isRace
+                                                            ? "border-[#ff729f]/50 bg-[#ff729f]/5"
+                                                            : "border-white/10 bg-white/[0.015]"
                                                             }`}
                                                     >
-                                                        <div className="flex items-center gap-4">
-                                                            <span
-                                                                className={`h-1.5 w-1.5 rounded-full ${isRace
-                                                                    ? "bg-[#ff729f]"
-                                                                    : "bg-white/20"
-                                                                    }`}
-                                                            />
+                                                        <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
+                                                            {getSessionLabel(
+                                                                session.name,
+                                                            )}
+                                                        </p>
 
-                                                            <div>
-                                                                <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-white">
-                                                                    {getSessionLabel(
-                                                                        session.name,
-                                                                    )}
-                                                                </p>
+                                                        <p className="mt-2 text-xs font-semibold uppercase tracking-[0.06em] text-white">
+                                                            {formatShortDate(
+                                                                session.date,
+                                                            )}
+                                                        </p>
 
-                                                                <p className="mt-1 text-[8px] uppercase tracking-[0.15em] text-white/25">
-                                                                    {formatShortDate(
-                                                                        session.date,
-                                                                    )}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-
-                                                        <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-white/50">
-                                                            {session.time
-                                                                ? formatTime(
-                                                                    session.time,
-                                                                )
-                                                                : "Time TBC"}
+                                                        <p className="mt-1 text-[8px] font-medium uppercase tracking-[0.12em] text-white/35">
+                                                            {formatTime(
+                                                                session.date,
+                                                                session.time,
+                                                            )}
                                                         </p>
                                                     </div>
                                                 );
@@ -933,205 +792,250 @@ export default function RaceWeekendPanel({
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="border border-white/5 bg-white/[0.015] px-4 py-5">
-                                        <p className="text-[9px] uppercase tracking-[0.18em] text-white/30">
-                                            Session schedule not available yet.
+                                    <div className="mt-4 border border-white/10 bg-white/[0.015] px-4 py-5">
+                                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/25">
+                                            Weekend schedule
+                                        </p>
+
+                                        <p className="mt-2 text-xs text-white/40">
+                                            Session schedule unavailable.
                                         </p>
                                     </div>
                                 )}
                             </div>
+
+                            <div className="mt-6 grid grid-cols-2 border-t border-white/10 sm:grid-cols-4">
+                                <div className="border-r border-white/10 pt-5 sm:pr-5">
+                                    <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
+                                        Race date
+                                    </p>
+
+                                    <p className="mt-2 text-xs font-semibold uppercase tracking-[0.06em] text-white">
+                                        {formatDate(
+                                            displayedDate,
+                                        )}
+                                    </p>
+                                </div>
+
+                                <div className="border-b border-white/10 p-5 sm:border-b-0 sm:border-r">
+                                    <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
+                                        Circuit length
+                                    </p>
+
+                                    <p className="mt-2 text-xs font-semibold text-white">
+                                        {formatDistance(
+                                            currentData?.circuit.length ??
+                                            null,
+                                        )}
+                                    </p>
+                                </div>
+
+                                <div className="border-r border-white/10 pt-5 sm:px-5">
+                                    <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
+                                        Corners
+                                    </p>
+
+                                    <p className="mt-2 text-xs font-semibold text-white">
+                                        {currentData?.circuit.corners ??
+                                            "Unavailable"}
+                                    </p>
+                                </div>
+
+                                <div className="pt-5 sm:pl-5">
+                                    <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
+                                        Laps
+                                    </p>
+
+                                    <p className="mt-2 text-xs font-semibold text-white">
+                                        {currentData?.race.laps ??
+                                            "Unavailable"}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
+                    </section>
 
-                        <div className="relative min-h-[340px] overflow-hidden bg-black lg:min-h-[500px]">
-                            <div className="absolute inset-0">
-                                <RaceMap3D
-                                    circuit={getCircuitMap(
-                                        race.circuit ?? "",
-                                    )}
-                                />
-                            </div>
-
-                            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#242426] via-transparent to-transparent opacity-80" />
-
-                            <div className="pointer-events-none absolute right-6 top-6 text-right sm:right-8 sm:top-8">
-                                <p className="text-[8px] font-semibold uppercase tracking-[0.28em] text-white/30">
-                                    Circuit
-                                </p>
-
-                                <p className="mt-2 text-xs font-semibold uppercase tracking-[0.1em] text-white/70">
-                                    {race.circuit}
-                                </p>
-                            </div>
-
-                            <div className="pointer-events-none absolute bottom-6 right-6 text-right sm:bottom-8 sm:right-8">
-                                <p className="text-[8px] font-semibold uppercase tracking-[0.24em] text-white/25">
-                                    Interactive circuit
-                                </p>
-
-                                <p className="mt-2 text-[8px] font-semibold uppercase tracking-[0.18em] text-[#ff729f]">
-                                    Drag to rotate • Scroll to zoom
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <div className="grid gap-4 lg:grid-cols-[0.7fr_1.3fr]">
                     <PreviousRaceCard
-                        data={data.previous}
+                        race={previousRace}
+                        data={previousData}
                         results={previousResults}
                     />
-
-                    {nextRace && (
-                        <NextRaceCard
-                            race={nextRace}
-                            data={data.next}
-                            circuitMap={
-                                nextCircuitMap
-                            }
-                            countdown={
-                                countdown
-                            }
-                        />
-                    )}
                 </div>
+
+                {nextRace && (
+                    <NextRaceCard
+                        race={nextRace}
+                        data={nextData}
+                        circuitMap={nextCircuitMap}
+                        countdown={nextRaceCountdown}
+                    />
+                )}
             </div>
         </div>
     );
 }
 
 function PreviousRaceCard({
+    race,
     data,
     results,
 }: {
-    data: RaceApiData | null;
+    race: F1Race | null;
+    data: NormalisedRaceData | null;
     results: RaceResult[];
 }): React.ReactElement {
-    const raceName =
-        data?.raceName ??
-        "Previous race";
+    if (!race) {
+        return (
+            <section className="border border-white/10 bg-[#242426] p-6">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/30">
+                    Previous race
+                </p>
 
-    const circuit =
-        data?.circuit?.name ??
-        "—";
+                <p className="mt-4 text-sm text-white/40">
+                    No previous race available.
+                </p>
+            </section>
+        );
+    }
 
-    const country =
-        data?.circuit?.country ??
-        "";
+    const winner =
+        data?.race.winner ??
+        (results.length > 0
+            ? getDriverName(results[0])
+            : null);
 
     return (
         <section className="overflow-hidden border border-white/10 bg-[#242426]">
-            <div className="flex items-start justify-between border-b border-white/10 p-5 sm:p-6">
-                <div>
-                    <p className="text-[9px] font-semibold uppercase tracking-[0.28em] text-white/30">
-                        Previous race
+            <div className="border-b border-white/10 p-5 sm:p-6">
+                <div className="flex items-start justify-between gap-4">
+                    <div>
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.28em] text-[#ff729f]">
+                            Previous race
+                        </p>
+
+                        <h3 className="mt-2 text-xl font-semibold uppercase tracking-[-0.035em] text-white sm:text-2xl">
+                            {data?.race.name ??
+                                race.name}
+                        </h3>
+
+                        <p className="mt-1 text-[9px] font-medium uppercase tracking-[0.18em] text-white/35">
+                            {data?.circuit.name ??
+                                race.circuit}{" "}
+                            •{" "}
+                            {data?.circuit.country ??
+                                race.country}
+                        </p>
+                    </div>
+
+                    <span className="text-lg">
+                        {countryCodeToEmoji(
+                            race.countryCode ??
+                            data?.circuit.country ??
+                            race.country ??
+                            "",
+                        )}
+                    </span>
+                </div>
+            </div>
+
+            <div className="border-b border-white/10">
+                <div className="grid grid-cols-[42px_minmax(0,1fr)_auto] border-b border-white/10 px-4 py-2">
+                    <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-white/25">
+                        Pos
                     </p>
 
-                    <h3 className="mt-3 text-xl font-semibold uppercase leading-none tracking-[-0.04em] text-white">
-                        {raceName}
-                    </h3>
+                    <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-white/25">
+                        Driver
+                    </p>
 
-                    <p className="mt-2 text-[9px] uppercase tracking-[0.16em] text-white/30">
-                        {circuit}
-                        {country
-                            ? ` • ${country}`
-                            : ""}
+                    <p className="text-right text-[8px] font-semibold uppercase tracking-[0.18em] text-white/25">
+                        Time
                     </p>
                 </div>
 
-                <span className="text-lg">
-                    {countryCodeToEmoji(
-                        country,
-                    )}
-                </span>
-            </div>
-
-            <div className="divide-y divide-white/5">
                 {results.length > 0 ? (
-                    results.map(
-                        (
-                            result,
-                            index,
-                        ) => (
-                            <div
-                                key={`${getDriverName(result)}-${index}`}
-                                className="flex items-center gap-4 px-5 py-4 sm:px-6"
+                    results.map((result, index) => (
+                        <div
+                            key={`${getDriverName(result)}-${index}`}
+                            className="grid grid-cols-[42px_minmax(0,1fr)_auto] items-center border-b border-white/5 px-4 py-3 last:border-b-0"
+                        >
+                            <p
+                                className={`text-sm font-semibold ${index === 0
+                                    ? "text-[#ff729f]"
+                                    : "text-white/45"
+                                    }`}
                             >
-                                <span
-                                    className={`w-7 text-sm font-semibold ${index === 0
-                                        ? "text-[#ff729f]"
-                                        : "text-white/25"
-                                        }`}
-                                >
-                                    {getResultPosition(
+                                {getResultPosition(
+                                    result,
+                                    index + 1,
+                                )}
+                            </p>
+
+                            <div className="min-w-0">
+                                <p className="truncate text-xs font-semibold uppercase tracking-[0.04em] text-white">
+                                    {getDriverName(
                                         result,
-                                        index + 1,
                                     )}
-                                </span>
+                                </p>
 
-                                <div className="min-w-0 flex-1">
-                                    <p className="truncate text-[10px] font-semibold uppercase tracking-[0.06em] text-white">
-                                        {getDriverName(
-                                            result,
-                                        )}
-                                    </p>
-
-                                    <p className="mt-1 truncate text-[8px] uppercase tracking-[0.14em] text-white/25">
-                                        {getTeamName(
-                                            result,
-                                        )}
-                                    </p>
-                                </div>
-
-                                <p className="text-[9px] font-semibold uppercase tracking-[0.04em] text-white/40">
-                                    {getResultTime(
+                                <p className="mt-1 truncate text-[8px] font-medium uppercase tracking-[0.14em] text-white/25">
+                                    {getTeamName(
                                         result,
                                     )}
                                 </p>
                             </div>
-                        ),
-                    )
+
+                            <p className="pl-3 text-right text-[10px] font-semibold uppercase tracking-[0.04em] text-white/60">
+                                {getResultTime(
+                                    result,
+                                )}
+                            </p>
+                        </div>
+                    ))
                 ) : (
-                    <div className="px-5 py-6 sm:px-6">
-                        <p className="text-[9px] uppercase tracking-[0.18em] text-white/30">
-                            Race results not available.
+                    <div className="px-4 py-5">
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/25">
+                            Race results
+                        </p>
+
+                        <p className="mt-2 text-xs text-white/40">
+                            Results unavailable.
                         </p>
                     </div>
                 )}
             </div>
 
-            <div className="grid grid-cols-3 border-t border-white/10">
+            <div className="grid grid-cols-3">
                 <div className="border-r border-white/10 p-4">
-                    <p className="text-[7px] font-semibold uppercase tracking-[0.2em] text-white/25">
+                    <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/25">
                         Winner
                     </p>
 
-                    <p className="mt-2 truncate text-[9px] font-semibold uppercase text-white/70">
-                        {getRaceWinner(
-                            data,
-                            results,
-                        )}
+                    <p className="mt-2 truncate text-[10px] font-semibold uppercase tracking-[0.04em] text-white">
+                        {winner ?? "Unavailable"}
                     </p>
                 </div>
 
                 <div className="border-r border-white/10 p-4">
-                    <p className="text-[7px] font-semibold uppercase tracking-[0.2em] text-white/25">
-                        Lap record
+                    <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/25">
+                        Fastest lap
                     </p>
 
-                    <p className="mt-2 truncate text-[9px] font-semibold uppercase text-white/70">
-                        {getFastestLap(data)}
+                    <p className="mt-2 truncate text-[10px] font-semibold uppercase tracking-[0.04em] text-white">
+                        {data?.race.fastestLapDriver ??
+                            data?.race.fastestLap ??
+                            "Unavailable"}
                     </p>
                 </div>
 
                 <div className="p-4">
-                    <p className="text-[7px] font-semibold uppercase tracking-[0.2em] text-white/25">
+                    <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/25">
                         Laps
                     </p>
 
-                    <p className="mt-2 text-[9px] font-semibold text-white/70">
-                        {getRaceLaps(data) ??
-                            "—"}
+                    <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.04em] text-white">
+                        {data?.race.laps ??
+                            "Unavailable"}
                     </p>
                 </div>
             </div>
@@ -1146,14 +1050,11 @@ function NextRaceCard({
     countdown,
 }: {
     race: F1Race;
-    data: RaceApiData | null;
-    circuitMap: ReturnType<
-        typeof getCircuitMap
-    >;
+    data: NormalisedRaceData | null;
+    circuitMap: ReturnType<typeof getCircuitMap>;
     countdown: string;
 }): React.ReactElement {
-    const circuit =
-        data?.circuit ?? null;
+    const circuit = data?.circuit ?? null;
 
     const country =
         circuit?.country ??
@@ -1167,185 +1068,173 @@ function NextRaceCard({
 
     const location =
         circuit?.city ??
-        circuit?.location ??
         country;
 
     const length =
-        typeof circuit?.lengthKm ===
-            "number"
-            ? circuit.lengthKm
-            : typeof circuit?.length ===
-                "number"
-                ? circuit.length
-                : undefined;
-
-    const lengthIsKm =
-        typeof circuit?.lengthKm ===
-        "number";
+        circuit?.length ??
+        null;
 
     const corners =
-        circuit?.corners;
+        circuit?.corners ??
+        null;
 
     const laps =
-        circuit?.laps ??
-        data?.race?.laps ??
-        data?.laps;
+        data?.race.laps ??
+        null;
+
+    const raceDate =
+        data?.race.date ??
+        race.startDate ??
+        null;
 
     return (
-        <section className="overflow-hidden border border-white/10 bg-[#242426]">
-            <div className="grid lg:grid-cols-[1fr_1.1fr]">
-                <div className="flex flex-col p-6 sm:p-7 lg:p-8">
-                    <div className="flex items-start justify-between gap-6">
-                        <div>
-                            <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-[#ee8434]">
-                                Next race
-                            </p>
+        <section className="overflow-hidden border border-white/10 bg-[#242426] p-3">
+            <div className="grid items-center gap-8 lg:grid-cols-[0.95fr_1.05fr]">
+                <div className="order-2 flex flex-col lg:order-1">
+                    <div className="border-b border-white/10 p-5 sm:p-6 lg:p-7">
+                        <div className="flex items-start justify-between gap-6">
+                            <div>
+                                <p className="text-[9px] font-semibold uppercase tracking-[0.28em] text-[#ff729f]">
+                                    Next race
+                                </p>
 
-                            <h3 className="mt-3 text-3xl font-semibold uppercase leading-[0.92] tracking-[-0.05em] text-white sm:text-4xl">
-                                {race.name}
-                            </h3>
+                                <h3 className="mt-2 text-2xl font-semibold uppercase leading-[0.95] tracking-[-0.045em] text-white sm:text-3xl lg:text-4xl">
+                                    {data?.race.name ??
+                                        race.name}
+                                </h3>
 
-                            <div className="mt-4 flex items-center gap-3">
-                                <span className="text-xl">
-                                    {countryCodeToEmoji(
-                                        race.countryCode ??
-                                        country,
-                                    )}
-                                </span>
+                                <div className="mt-3 flex items-start gap-3">
+                                    <span className="text-lg">
+                                        {countryCodeToEmoji(
+                                            race.countryCode ??
+                                            country,
+                                        )}
+                                    </span>
 
-                                <div>
-                                    <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/55">
-                                        {circuitName}
-                                    </p>
+                                    <div>
+                                        <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-white/45">
+                                            {circuitName}
+                                        </p>
 
-                                    <p className="mt-1 text-[8px] uppercase tracking-[0.16em] text-white/25">
-                                        {location}
-                                        {country
-                                            ? ` • ${country}`
-                                            : ""}
-                                    </p>
+                                        <p className="mt-1 text-[9px] font-medium uppercase tracking-[0.18em] text-white/25">
+                                            {location} •{" "}
+                                            {country}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <div className="hidden text-right sm:block">
-                            <p className="text-[8px] uppercase tracking-[0.2em] text-white/25">
-                                Round
+                    <div className="grid grid-cols-2 border-b border-white/10 sm:grid-cols-4">
+                        <div className="border-r border-white/10 p-4 sm:p-5">
+                            <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
+                                Lights out
                             </p>
 
-                            <p className="mt-1 text-2xl font-semibold text-white">
-                                {String(
-                                    getRoundNumber(
-                                        race.round,
-                                    ) ??
-                                    race.round,
-                                ).padStart(
-                                    2,
-                                    "0",
+                            <p className="mt-2 text-xs font-semibold uppercase tracking-[0.06em] text-white">
+                                {formatDate(
+                                    raceDate,
                                 )}
                             </p>
                         </div>
-                    </div>
 
-                    <div className="mt-8 border-y border-white/10">
-                        <div className="grid grid-cols-2">
-                            <div className="border-r border-white/10 p-4 sm:p-5">
-                                <p className="text-[7px] font-semibold uppercase tracking-[0.22em] text-white/25">
-                                    Race date
-                                </p>
+                        <div className="border-b border-white/10 p-4 sm:border-b-0 sm:border-r sm:p-5">
+                            <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
+                                Round
+                            </p>
 
-                                <p className="mt-2 text-xs font-semibold uppercase text-white">
-                                    {formatDate(
-                                        race.startDate,
-                                    )}
-                                </p>
-                            </div>
-
-                            <div className="p-4 sm:p-5">
-                                <p className="text-[7px] font-semibold uppercase tracking-[0.22em] text-white/25">
-                                    Countdown
-                                </p>
-
-                                <p className="mt-2 text-xs font-semibold tracking-[0.04em] text-[#ff729f]">
-                                    {countdown}
-                                </p>
-                            </div>
+                            <p className="mt-2 text-xs font-semibold text-white">
+                                {String(
+                                    race.round,
+                                ).padStart(2, "0")}
+                            </p>
                         </div>
 
-                        <div className="grid grid-cols-3 border-t border-white/10">
-                            <div className="border-r border-white/10 p-4">
-                                <p className="text-[7px] font-semibold uppercase tracking-[0.2em] text-white/25">
-                                    Length
-                                </p>
+                        <div className="border-r border-white/10 p-4 sm:p-5">
+                            <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
+                                Length
+                            </p>
 
-                                <p className="mt-2 text-[10px] font-semibold text-white/70">
-                                    {formatDistance(
-                                        length,
-                                        lengthIsKm,
-                                    )}
-                                </p>
-                            </div>
+                            <p className="mt-2 truncate text-xs font-semibold text-white">
+                                {formatDistance(
+                                    length,
+                                )}
+                            </p>
+                        </div>
 
-                            <div className="border-r border-white/10 p-4">
-                                <p className="text-[7px] font-semibold uppercase tracking-[0.2em] text-white/25">
-                                    Corners
-                                </p>
+                        <div className="p-4 sm:p-5">
+                            <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
+                                Corners
+                            </p>
 
-                                <p className="mt-2 text-[10px] font-semibold text-white/70">
-                                    {corners ??
-                                        "—"}
-                                </p>
-                            </div>
-
-                            <div className="p-4">
-                                <p className="text-[7px] font-semibold uppercase tracking-[0.2em] text-white/25">
-                                    Laps
-                                </p>
-
-                                <p className="mt-2 text-[10px] font-semibold text-white/70">
-                                    {laps ??
-                                        "—"}
-                                </p>
-                            </div>
+                            <p className="mt-2 text-xs font-semibold text-white">
+                                {corners ??
+                                    "Unavailable"}
+                            </p>
                         </div>
                     </div>
 
-                    <div className="mt-auto pt-8">
-                        <p className="text-[8px] font-semibold uppercase tracking-[0.25em] text-white/20">
-                            Circuit destination
-                        </p>
+                    <div className="grid grid-cols-2 border-b border-white/10">
+                        <div className="border-r border-white/10 p-4 sm:p-5">
+                            <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
+                                Laps
+                            </p>
 
-                        <p className="mt-2 text-xs font-semibold uppercase tracking-[0.08em] text-white/60">
-                            {circuitName}
-                        </p>
+                            <p className="mt-2 text-xs font-semibold text-white">
+                                {laps ??
+                                    "Unavailable"}
+                            </p>
+                        </div>
 
-                        <p className="mt-1 text-[8px] uppercase tracking-[0.16em] text-white/25">
-                            {location}
-                            {country
-                                ? ` • ${country}`
-                                : ""}
-                        </p>
+                        <div className="p-4 sm:p-5">
+                            <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
+                                Until lights out
+                            </p>
+
+                            <p className="mt-2 text-xs font-semibold uppercase tracking-[0.06em] text-[#ee8434]">
+                                Counting down
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-end justify-between gap-6 p-5 sm:p-6">
+                        <div>
+                            <p className="text-[8px] font-semibold uppercase tracking-[0.28em] text-white/30">
+                                Countdown
+                            </p>
+
+                            <p className="mt-2 whitespace-nowrap text-2xl font-semibold tracking-[-0.04em] text-white sm:text-3xl">
+                                {countdown}
+                            </p>
+                        </div>
+
+                        <div className="hidden text-right sm:block">
+                            <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/25">
+                                Next destination
+                            </p>
+
+                            <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.06em] text-white/60">
+                                {country}
+                            </p>
+                        </div>
                     </div>
                 </div>
 
-                <div className="relative min-h-[320px] overflow-hidden bg-black lg:min-h-[470px]">
-                    <RaceMap3D
-                        circuit={circuitMap}
-                    />
+                <div className="relative order-1 h-[280px] overflow-hidden bg-black lg:order-2 lg:h-[390px]">
+                    <RaceMap3D circuit={circuitMap} />
 
-                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/10" />
-
-                    <div className="pointer-events-none absolute left-5 top-5 sm:left-7 sm:top-7">
-                        <p className="text-[8px] font-semibold uppercase tracking-[0.28em] text-white/35">
+                    <div className="pointer-events-none absolute left-5 top-5 z-10">
+                        <p className="text-[8px] font-semibold uppercase tracking-[0.28em] text-white/40">
                             Circuit map
                         </p>
 
-                        <p className="mt-2 max-w-[220px] text-[10px] font-semibold uppercase tracking-[0.1em] text-white/75">
+                        <p className="mt-2 max-w-[220px] text-[10px] font-medium uppercase tracking-[0.12em] text-white/70">
                             {circuitName}
                         </p>
                     </div>
 
-                    <div className="pointer-events-none absolute bottom-5 left-5 sm:bottom-7 sm:left-7">
+                    <div className="pointer-events-none absolute bottom-5 left-5 z-10">
                         <p className="text-[8px] font-semibold uppercase tracking-[0.24em] text-white/30">
                             Interactive circuit
                         </p>

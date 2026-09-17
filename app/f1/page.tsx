@@ -5,7 +5,11 @@ import {
     motion,
 } from "framer-motion";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+    useEffect,
+    useMemo,
+    useState,
+} from "react";
 
 import AnimatedLink from "@/components/ui/AnimatedLink";
 
@@ -25,18 +29,79 @@ import {
     type F1Series,
 } from "@/lib/f1/calendar";
 
-import type { F1LiveResponse } from "@/lib/f1/types";
+import type {
+    F1LiveResponse,
+    F1Race as ApiF1Race,
+} from "@/lib/f1/types";
+
+interface F1CalendarResponse {
+    season: number;
+    count: number;
+    races: ApiF1Race[];
+}
+
+function getCountryCode(country: string): string {
+    const countryCodes: Record<string, string> = {
+        Australia: "AU",
+        Austria: "AT",
+        Azerbaijan: "AZ",
+        Belgium: "BE",
+        Brazil: "BR",
+        Canada: "CA",
+        China: "CN",
+        Hungary: "HU",
+        Italy: "IT",
+        Japan: "JP",
+        Mexico: "MX",
+        Monaco: "MC",
+        Netherlands: "NL",
+        Qatar: "QA",
+        "Saudi Arabia": "SA",
+        Singapore: "SG",
+        Spain: "ES",
+        "United Arab Emirates": "AE",
+        "United Kingdom": "GB",
+        "United States": "US",
+    };
+
+    return countryCodes[country] ?? "";
+}
+
+function adaptApiRace(race: ApiF1Race): F1Race {
+    const raceDate =
+        race.schedule.race.date ?? "";
+
+    const country =
+        race.circuit.country;
+
+    return {
+        round: race.round,
+        name: race.raceName,
+        circuit: race.circuit.name,
+        location: race.circuit.city,
+        country,
+        countryCode: getCountryCode(country),
+        startDate: raceDate,
+        endDate: raceDate,
+    };
+}
 
 function getRaceStatus(
     race: F1Race,
     now: number,
 ): "completed" | "live" | "upcoming" {
+    const raceDate = race.startDate;
+
+    if (!raceDate) {
+        return "upcoming";
+    }
+
     const start = new Date(
-        `${race.startDate}T00:00:00`,
+        `${raceDate}T00:00:00`,
     ).getTime();
 
     const end = new Date(
-        `${race.endDate}T23:59:59`,
+        `${race.endDate || raceDate}T23:59:59`,
     ).getTime();
 
     if (now > end) {
@@ -63,113 +128,54 @@ const panelMotion: Record<
     }
 > = {
     overview: {
-        initial: {
-            opacity: 0,
-            y: 18,
-        },
-        animate: {
-            opacity: 1,
-            y: 0,
-        },
-        exit: {
-            opacity: 0,
-            y: -10,
-        },
+        initial: { opacity: 0, y: 18 },
+        animate: { opacity: 1, y: 0 },
+        exit: { opacity: 0, y: -10 },
         transition: {
             duration: 0.4,
             ease: [0.22, 1, 0.36, 1],
         },
     },
-
     race: {
-        initial: {
-            opacity: 0,
-            x: 28,
-        },
-        animate: {
-            opacity: 1,
-            x: 0,
-        },
-        exit: {
-            opacity: 0,
-            x: -20,
-        },
+        initial: { opacity: 0, x: 28 },
+        animate: { opacity: 1, x: 0 },
+        exit: { opacity: 0, x: -20 },
         transition: {
             duration: 0.45,
             ease: [0.22, 1, 0.36, 1],
         },
     },
-
     live: {
-        initial: {
-            opacity: 0,
-            scale: 0.985,
-        },
-        animate: {
-            opacity: 1,
-            scale: 1,
-        },
-        exit: {
-            opacity: 0,
-            scale: 0.992,
-        },
+        initial: { opacity: 0, scale: 0.985 },
+        animate: { opacity: 1, scale: 1 },
+        exit: { opacity: 0, scale: 0.992 },
         transition: {
             duration: 0.35,
             ease: [0.22, 1, 0.36, 1],
         },
     },
-
     drivers: {
-        initial: {
-            opacity: 0,
-            x: -24,
-        },
-        animate: {
-            opacity: 1,
-            x: 0,
-        },
-        exit: {
-            opacity: 0,
-            x: 20,
-        },
+        initial: { opacity: 0, x: -24 },
+        animate: { opacity: 1, x: 0 },
+        exit: { opacity: 0, x: 20 },
         transition: {
             duration: 0.4,
             ease: [0.22, 1, 0.36, 1],
         },
     },
-
     teams: {
-        initial: {
-            opacity: 0,
-            x: 24,
-        },
-        animate: {
-            opacity: 1,
-            x: 0,
-        },
-        exit: {
-            opacity: 0,
-            x: -20,
-        },
+        initial: { opacity: 0, x: 24 },
+        animate: { opacity: 1, x: 0 },
+        exit: { opacity: 0, x: -20 },
         transition: {
             duration: 0.4,
             ease: [0.22, 1, 0.36, 1],
         },
     },
-
     calendar: {
-        initial: {
-            opacity: 0,
-            y: 12,
-        },
-        animate: {
-            opacity: 1,
-            y: 0,
-        },
-        exit: {
-            opacity: 0,
-            y: -8,
-        },
+        initial: { opacity: 0, y: 12 },
+        animate: { opacity: 1, y: 0 },
+        exit: { opacity: 0, y: -8 },
         transition: {
             duration: 0.4,
             ease: [0.22, 1, 0.36, 1],
@@ -184,15 +190,22 @@ export default function F1Dashboard(): React.ReactElement {
     const [activePanel, setActivePanel] =
         useState<GridPanel>("overview");
 
+    const [calendar, setCalendar] =
+        useState<F1Race[]>([]);
+
     const [liveData, setLiveData] =
-        useState<F1LiveResponse | null>(
-            null,
-        );
+        useState<F1LiveResponse | null>(null);
 
     const [loading, setLoading] =
         useState(true);
 
+    const [calendarLoading, setCalendarLoading] =
+        useState(true);
+
     const [error, setError] =
+        useState<string | null>(null);
+
+    const [calendarError, setCalendarError] =
         useState<string | null>(null);
 
     const [currentTime, setCurrentTime] =
@@ -200,13 +213,70 @@ export default function F1Dashboard(): React.ReactElement {
 
     useEffect(() => {
         const clock = setInterval(() => {
-            setCurrentTime(
-                Date.now(),
-            );
+            setCurrentTime(Date.now());
         }, 1000);
 
-        return () =>
-            clearInterval(clock);
+        return () => clearInterval(clock);
+    }, []);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        async function loadCalendar(): Promise<void> {
+            try {
+                setCalendarLoading(true);
+                setCalendarError(null);
+
+                const response = await fetch(
+                    "/api/f1/calendar",
+                    {
+                        cache: "no-store",
+                    },
+                );
+
+                if (!response.ok) {
+                    throw new Error(
+                        "Failed to load F1 calendar",
+                    );
+                }
+
+                const data: F1CalendarResponse =
+                    await response.json();
+
+                const adaptedCalendar =
+                    data.races
+                        .map(adaptApiRace)
+                        .sort(
+                            (a, b) =>
+                                a.round - b.round,
+                        );
+
+                if (!cancelled) {
+                    setCalendar(
+                        adaptedCalendar,
+                    );
+                    setCalendarError(null);
+                }
+            } catch (err) {
+                console.error(err);
+
+                if (!cancelled) {
+                    setCalendarError(
+                        "F1 calendar is currently unavailable.",
+                    );
+                }
+            } finally {
+                if (!cancelled) {
+                    setCalendarLoading(false);
+                }
+            }
+        }
+
+        loadCalendar();
+
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     useEffect(() => {
@@ -218,13 +288,12 @@ export default function F1Dashboard(): React.ReactElement {
 
         async function loadLiveData(): Promise<void> {
             try {
-                const response =
-                    await fetch(
-                        "/api/f1/live",
-                        {
-                            cache: "no-store",
-                        },
-                    );
+                const response = await fetch(
+                    "/api/f1/live",
+                    {
+                        cache: "no-store",
+                    },
+                );
 
                 if (!response.ok) {
                     throw new Error(
@@ -236,10 +305,7 @@ export default function F1Dashboard(): React.ReactElement {
                     await response.json();
 
                 if (!cancelled) {
-                    setLiveData(
-                        data,
-                    );
-
+                    setLiveData(data);
                     setError(null);
                     setLoading(false);
                 }
@@ -250,7 +316,6 @@ export default function F1Dashboard(): React.ReactElement {
                     setError(
                         "F1 timing is currently unavailable.",
                     );
-
                     setLoading(false);
                 }
             }
@@ -258,87 +323,80 @@ export default function F1Dashboard(): React.ReactElement {
 
         loadLiveData();
 
-        const interval =
-            setInterval(
-                loadLiveData,
-                5000,
-            );
+        const interval = setInterval(
+            loadLiveData,
+            5000,
+        );
 
         return () => {
             cancelled = true;
-            clearInterval(
-                interval,
-            );
+            clearInterval(interval);
         };
     }, [activeSeries]);
 
     const activeSeriesData =
-        seriesData[
-        activeSeries
-        ];
-
-    const calendar =
-        activeSeriesData.calendar;
-
-    const displayedRace =
-        useMemo<F1Race | null>(
-            () => {
-                if (
-                    activeSeries ===
-                    "f1" &&
-                    liveData?.session
-                ) {
-                    const sessionCountry =
-                        liveData.session.countryName.toLowerCase();
-
-                    const liveRace =
-                        calendar.find(
-                            (race) =>
-                                race.country.toLowerCase() ===
-                                sessionCountry,
-                        );
-
-                    if (liveRace) {
-                        return liveRace;
-                    }
-                }
-
-                const currentRace =
-                    calendar.find(
-                        (race) =>
-                            getRaceStatus(
-                                race,
-                                currentTime,
-                            ) === "live",
-                    );
-
-                if (currentRace) {
-                    return currentRace;
-                }
-
-                return (
-                    calendar.find(
-                        (race) =>
-                            getRaceStatus(
-                                race,
-                                currentTime,
-                            ) ===
-                            "upcoming",
-                    ) ??
-                    calendar.at(-1) ??
-                    null
-                );
-            },
-            [
-                activeSeries,
+        activeSeries === "f1"
+            ? {
+                ...seriesData.f1,
                 calendar,
-                currentTime,
-                liveData,
-            ],
+            }
+            : seriesData[activeSeries];
+
+    const displayedRace = useMemo<F1Race | null>(() => {
+        if (
+            activeSeries !== "f1" ||
+            calendar.length === 0
+        ) {
+            return null;
+        }
+
+        if (liveData?.session) {
+            const sessionCountry =
+                liveData.session.countryName.toLowerCase();
+
+            const liveRace = calendar.find(
+                (race) =>
+                    race.country.toLowerCase() ===
+                    sessionCountry,
+            );
+
+            if (liveRace) {
+                return liveRace;
+            }
+        }
+
+        const currentRace = calendar.find(
+            (race) =>
+                getRaceStatus(
+                    race,
+                    currentTime,
+                ) === "live",
         );
 
+        if (currentRace) {
+            return currentRace;
+        }
+
+        return (
+            calendar.find(
+                (race) =>
+                    getRaceStatus(
+                        race,
+                        currentTime,
+                    ) === "upcoming",
+            ) ??
+            calendar.at(-1) ??
+            null
+        );
+    }, [
+        activeSeries,
+        calendar,
+        currentTime,
+        liveData,
+    ]);
+
     const displayedIndex =
-        displayedRace
+        displayedRace !== null
             ? calendar.findIndex(
                 (race) =>
                     race.round ===
@@ -348,22 +406,17 @@ export default function F1Dashboard(): React.ReactElement {
 
     const previousRace =
         displayedIndex > 0
-            ? calendar[
-            displayedIndex - 1
-            ]
+            ? calendar[displayedIndex - 1]
             : null;
 
     const nextRace =
         displayedIndex >= 0 &&
-            displayedIndex <
-            calendar.length - 1
-            ? calendar[
-            displayedIndex + 1
-            ]
+            displayedIndex < calendar.length - 1
+            ? calendar[displayedIndex + 1]
             : null;
 
     const displayedRaceStatus =
-        displayedRace
+        displayedRace !== null
             ? getRaceStatus(
                 displayedRace,
                 currentTime,
@@ -376,8 +429,7 @@ export default function F1Dashboard(): React.ReactElement {
                 getRaceStatus(
                     race,
                     currentTime,
-                ) ===
-                "completed",
+                ) === "completed",
         ).length;
 
     const remainingCount =
@@ -386,8 +438,7 @@ export default function F1Dashboard(): React.ReactElement {
                 getRaceStatus(
                     race,
                     currentTime,
-                ) !==
-                "completed",
+                ) !== "completed",
         ).length;
 
     const liveStatus =
@@ -398,52 +449,38 @@ export default function F1Dashboard(): React.ReactElement {
 
     const liveSession =
         activeSeries === "f1"
-            ? liveData?.session
-                ?.sessionName ??
+            ? liveData?.session?.sessionName ??
             "No live session"
             : "Series calendar";
 
     const handleSeriesChange = (
         series: F1Series,
     ): void => {
-        setActiveSeries(
-            series,
-        );
-
-        setActivePanel(
-            "overview",
-        );
+        setActiveSeries(series);
+        setActivePanel("overview");
     };
 
     const handlePanelChange = (
         panel: GridPanel,
     ): void => {
-        setActivePanel(
-            panel,
-        );
+        setActivePanel(panel);
     };
 
     const motionState =
-        panelMotion[
-        activePanel
-        ];
+        panelMotion[activePanel];
 
     return (
         <main className="flex h-[100dvh] flex-col overflow-hidden bg-[#1c1c1c] text-white">
             <div className="shrink-0">
                 <GridHeader
-                    activeSeries={
-                        activeSeries
-                    }
+                    activeSeries={activeSeries}
                     onSeriesChange={
                         handleSeriesChange
                     }
                 />
 
                 <GridNavigation
-                    activePanel={
-                        activePanel
-                    }
+                    activePanel={activePanel}
                     onPanelChange={
                         handlePanelChange
                     }
@@ -463,9 +500,7 @@ export default function F1Dashboard(): React.ReactElement {
                         animate={
                             motionState.animate
                         }
-                        exit={
-                            motionState.exit
-                        }
+                        exit={motionState.exit}
                         transition={
                             motionState.transition
                         }
@@ -478,7 +513,9 @@ export default function F1Dashboard(): React.ReactElement {
                                         activeSeriesData.fullLabel
                                     }
                                     rounds={
-                                        calendar.length
+                                        activeSeriesData
+                                            .calendar
+                                            .length
                                     }
                                     completed={
                                         completedCount
@@ -503,8 +540,48 @@ export default function F1Dashboard(): React.ReactElement {
                                 />
                             )}
 
-                        {activePanel ===
-                            "race" &&
+                        {activePanel === "race" &&
+                            activeSeries === "f1" &&
+                            calendarLoading && (
+                                <section className="flex min-h-[60vh] items-center justify-center">
+                                    <div className="text-center">
+                                        <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#ff729f]">
+                                            Formula 1
+                                        </p>
+
+                                        <p className="mt-4 text-sm font-medium text-white/50">
+                                            Loading race
+                                            calendar...
+                                        </p>
+                                    </div>
+                                </section>
+                            )}
+
+                        {activePanel === "race" &&
+                            activeSeries === "f1" &&
+                            !calendarLoading &&
+                            calendarError && (
+                                <section className="flex min-h-[60vh] items-center justify-center">
+                                    <div className="px-6 text-center">
+                                        <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#ff729f]">
+                                            Formula 1
+                                        </p>
+
+                                        <h2 className="mt-4 text-3xl font-black uppercase tracking-[-0.05em] text-white">
+                                            Race data unavailable
+                                        </h2>
+
+                                        <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-white/50">
+                                            {calendarError}
+                                        </p>
+                                    </div>
+                                </section>
+                            )}
+
+                        {activePanel === "race" &&
+                            activeSeries === "f1" &&
+                            !calendarLoading &&
+                            !calendarError &&
                             displayedRace && (
                                 <RaceWeekendPanel
                                     race={
@@ -522,20 +599,14 @@ export default function F1Dashboard(): React.ReactElement {
                                 />
                             )}
 
-                        {activePanel ===
-                            "live" &&
-                            activeSeries ===
-                            "f1" && (
+                        {activePanel === "live" &&
+                            activeSeries === "f1" && (
                                 <LiveTimingPanel
-                                    data={
-                                        liveData
-                                    }
+                                    data={liveData}
                                     loading={
                                         loading
                                     }
-                                    error={
-                                        error
-                                    }
+                                    error={error}
                                 />
                             )}
 
@@ -546,8 +617,7 @@ export default function F1Dashboard(): React.ReactElement {
                                 <ChampionshipPanel />
                             )}
 
-                        {activePanel ===
-                            "teams" &&
+                        {activePanel === "teams" &&
                             activeSeries ===
                             "f1" && (
                                 <ChampionshipPanel
@@ -559,7 +629,7 @@ export default function F1Dashboard(): React.ReactElement {
                             "calendar" && (
                                 <CalendarPanel
                                     calendar={
-                                        calendar
+                                        activeSeriesData.calendar
                                     }
                                     seriesLabel={
                                         activeSeriesData.fullLabel
@@ -594,8 +664,7 @@ export default function F1Dashboard(): React.ReactElement {
                                         </h2>
 
                                         <p className="mx-auto mt-4 max-w-xl text-base font-medium leading-7 text-white/60">
-                                            This panel is ready for
-                                            the deeper{" "}
+                                            This panel is ready for the deeper{" "}
                                             {
                                                 activeSeriesData.fullLabel
                                             }{" "}

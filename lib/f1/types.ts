@@ -106,3 +106,79 @@ export interface F1ConstructorStandingsResponse {
   standings: F1ConstructorStanding[];
   sessionKey: number | null;
 }
+
+/* -------------------------------------------------------------------------- */
+/* F1 API race data                                                           */
+/* -------------------------------------------------------------------------- */
+
+export interface F1DriverWinner {
+  driverId: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  number: number;
+  code: string;
+  dateOfBirth: string;
+  url: string;
+}
+
+export interface F1ConstructorWinner {
+  constructorId: string;
+  name: string;
+  nationality: string;
+  firstAppearance: number | null;
+  constructorsChampionships: number;
+  driversChampionships: number;
+  url: string;
+}
+
+export interface F1RaceSession {
+  date: string | null;
+  time: string | null;
+}
+
+export interface F1Schedule {
+  race: F1RaceSession;
+  qualy: F1RaceSession;
+  fp1: F1RaceSession;
+  fp2: F1RaceSession;
+  fp3: F1RaceSession;
+  sprintQualy: F1RaceSession;
+  sprintRace: F1RaceSession;
+}
+
+export interface F1Circuit {
+  circuitId: string;
+  name: string;
+  country: string;
+  city: string;
+  length: string | null;
+  lapRecord: string | null;
+  firstParticipationYear: number | null;
+  corners: number | null;
+  fastestLapDriverId: string | null;
+  fastestLapTeamId: string | null;
+  fastestLapYear: number | null;
+  url: string | null;
+}
+
+export interface F1FastestLap {
+  time: string | null;
+  driverId: string | null;
+  constructorId: string | null;
+}
+
+export interface F1Race {
+  raceId: string;
+  championshipId: string;
+  raceName: string;
+  season: number;
+  round: number;
+  url: string | null;
+  schedule: F1Schedule;
+  laps: number | null;
+  circuit: F1Circuit;
+  fastestLap: F1FastestLap;
+  winner: F1DriverWinner | null;
+  constructorWinner: F1ConstructorWinner | null;
+}
