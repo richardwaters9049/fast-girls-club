@@ -1,7 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import {
+    useEffect,
+    useMemo,
+    useState,
+} from "react";
 
 import { countryCodeToEmoji } from "@/lib/f1/countries";
 import type {
@@ -12,48 +16,60 @@ import type {
 const PAGE_SIZE = 10;
 
 export default function DriverStandings(): React.ReactElement {
-    const [standings, setStandings] = useState<F1DriverStanding[]>([]);
+    const [standings, setStandings] = useState<
+        F1DriverStanding[]
+    >([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [currentPage, setCurrentPage] = useState(1);
+    const [error, setError] = useState<string | null>(
+        null,
+    );
+    const [currentPage, setCurrentPage] =
+        useState(1);
 
     useEffect(() => {
         let cancelled = false;
 
-        async function loadStandings(): Promise<void> {
+        const loadStandings = async () => {
             try {
-                setLoading(true);
-                setError(null);
-
-                const response = await fetch("/api/f1/drivers");
+                const response = await fetch(
+                    "/api/f1/drivers",
+                );
 
                 if (!response.ok) {
                     throw new Error(
-                        "Failed to load driver standings",
+                        `Driver API returned ${response.status}`,
                     );
                 }
 
-                const data: F1DriverStandingsResponse =
-                    await response.json();
+                const data =
+                    (await response.json()) as F1DriverStandingsResponse;
 
-                if (!cancelled) {
-                    setStandings(data.standings);
-                    setCurrentPage(1);
+                if (cancelled) {
+                    return;
                 }
+
+                setStandings(data.standings);
+                setCurrentPage(1);
+                setError(null);
             } catch (err) {
-                console.error(err);
-
-                if (!cancelled) {
-                    setError(
-                        "Driver championship data is currently unavailable.",
-                    );
+                if (cancelled) {
+                    return;
                 }
+
+                console.error(
+                    "Failed to load driver standings:",
+                    err,
+                );
+
+                setError(
+                    "Driver championship data is currently unavailable.",
+                );
             } finally {
                 if (!cancelled) {
                     setLoading(false);
                 }
             }
-        }
+        };
 
         loadStandings();
 
@@ -64,7 +80,9 @@ export default function DriverStandings(): React.ReactElement {
 
     const totalPages = Math.max(
         1,
-        Math.ceil(standings.length / PAGE_SIZE),
+        Math.ceil(
+            standings.length / PAGE_SIZE,
+        ),
     );
 
     const safeCurrentPage = Math.min(
@@ -74,7 +92,8 @@ export default function DriverStandings(): React.ReactElement {
 
     const visibleStandings = useMemo(() => {
         const startIndex =
-            (safeCurrentPage - 1) * PAGE_SIZE;
+            (safeCurrentPage - 1) *
+            PAGE_SIZE;
 
         return standings.slice(
             startIndex,
@@ -85,7 +104,9 @@ export default function DriverStandings(): React.ReactElement {
     const firstVisiblePosition =
         standings.length === 0
             ? 0
-            : (safeCurrentPage - 1) * PAGE_SIZE + 1;
+            : (safeCurrentPage - 1) *
+            PAGE_SIZE +
+            1;
 
     const lastVisiblePosition = Math.min(
         safeCurrentPage * PAGE_SIZE,
@@ -94,11 +115,7 @@ export default function DriverStandings(): React.ReactElement {
 
     return (
         <div>
-            <PanelHeader
-                eyebrow="2026 Championship"
-                title="Driver Standings"
-                description="The fight for the Formula 1 World Drivers&apos; Championship."
-            />
+            <PanelHeader />
 
             {loading && <LoadingState />}
 
@@ -106,9 +123,11 @@ export default function DriverStandings(): React.ReactElement {
                 <ErrorState message={error} />
             )}
 
-            {!loading && !error && standings.length === 0 && (
-                <EmptyState />
-            )}
+            {!loading &&
+                !error &&
+                standings.length === 0 && (
+                    <EmptyState />
+                )}
 
             {!loading &&
                 !error &&
@@ -116,7 +135,6 @@ export default function DriverStandings(): React.ReactElement {
                     <div>
                         <div className="grid grid-cols-[42px_minmax(0,1fr)_82px] items-center gap-3 border-b border-white/10 bg-black/[0.08] px-5 py-3 text-[8px] font-black uppercase tracking-[0.22em] text-white/25 sm:grid-cols-[55px_minmax(0,1fr)_150px_90px] sm:px-8">
                             <span>Pos</span>
-
                             <span>Driver</span>
 
                             <span className="hidden sm:block">
@@ -128,38 +146,55 @@ export default function DriverStandings(): React.ReactElement {
                             </span>
                         </div>
 
-                        {visibleStandings.map((driver) => (
-                            <DriverRow
-                                key={driver.driverNumber}
-                                driver={driver}
-                            />
-                        ))}
+                        {visibleStandings.map(
+                            (driver) => (
+                                <DriverRow
+                                    key={`${driver.driverNumber}-${driver.position}`}
+                                    driver={driver}
+                                />
+                            ),
+                        )}
 
                         <div className="flex flex-col gap-4 border-t border-white/10 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8">
                             <p className="text-[8px] font-bold uppercase tracking-[0.18em] text-white/25">
-                                Showing {firstVisiblePosition}–
-                                {lastVisiblePosition} of{" "}
-                                {standings.length} drivers
+                                Showing{" "}
+                                {firstVisiblePosition}
+                                –
+                                {lastVisiblePosition}{" "}
+                                of {standings.length}{" "}
+                                drivers
                             </p>
 
                             {totalPages > 1 && (
                                 <Pagination
-                                    currentPage={safeCurrentPage}
-                                    totalPages={totalPages}
+                                    currentPage={
+                                        safeCurrentPage
+                                    }
+                                    totalPages={
+                                        totalPages
+                                    }
                                     onPrevious={() =>
-                                        setCurrentPage((page) =>
-                                            Math.max(
-                                                page - 1,
-                                                1,
-                                            ),
+                                        setCurrentPage(
+                                            (
+                                                page,
+                                            ) =>
+                                                Math.max(
+                                                    page -
+                                                    1,
+                                                    1,
+                                                ),
                                         )
                                     }
                                     onNext={() =>
-                                        setCurrentPage((page) =>
-                                            Math.min(
-                                                page + 1,
-                                                totalPages,
-                                            ),
+                                        setCurrentPage(
+                                            (
+                                                page,
+                                            ) =>
+                                                Math.min(
+                                                    page +
+                                                    1,
+                                                    totalPages,
+                                                ),
                                         )
                                     }
                                 />
@@ -171,31 +206,24 @@ export default function DriverStandings(): React.ReactElement {
     );
 }
 
-function PanelHeader({
-    eyebrow,
-    title,
-    description,
-}: {
-    eyebrow: string;
-    title: string;
-    description: string;
-}): React.ReactElement {
+function PanelHeader(): React.ReactElement {
     return (
         <div className="border-b border-white/10 px-5 py-6 sm:px-8 sm:py-7">
             <div className="mb-3 flex items-center gap-3">
                 <span className="h-2 w-2 bg-[#ff729f]" />
 
                 <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#ff729f]">
-                    {eyebrow}
+                    2026 Championship
                 </p>
             </div>
 
             <h3 className="text-2xl font-black uppercase tracking-tight sm:text-3xl">
-                {title}
+                Driver Standings
             </h3>
 
             <p className="mt-2 max-w-xl text-sm leading-6 text-white/40">
-                {description}
+                The fight for the Formula 1 World
+                Drivers&apos; Championship.
             </p>
         </div>
     );
@@ -213,13 +241,16 @@ function DriverRow({
         <div
             className={[
                 "group relative grid grid-cols-[42px_minmax(0,1fr)_82px] items-center gap-3 border-b border-white/[0.06] px-5 py-4 transition-colors duration-200 hover:bg-white/[0.04] sm:grid-cols-[55px_minmax(0,1fr)_150px_90px] sm:px-8 sm:py-5",
-                isLeader ? "bg-white/[0.025]" : "",
+                isLeader
+                    ? "bg-white/[0.025]"
+                    : "",
             ].join(" ")}
         >
             <span
                 className="absolute bottom-0 left-0 top-0 w-[3px] opacity-70 transition-opacity duration-200 group-hover:opacity-100"
                 style={{
-                    backgroundColor: `#${driver.teamColour}`,
+                    backgroundColor:
+                        driver.teamColour,
                 }}
             />
 
@@ -236,17 +267,23 @@ function DriverRow({
                             : "text-lg text-white/45",
                     ].join(" ")}
                 >
-                    {String(driver.position).padStart(2, "0")}
+                    {String(
+                        driver.position,
+                    ).padStart(2, "0")}
                 </span>
             </div>
 
             <div className="flex min-w-0 items-center gap-3">
-                <DriverImage driver={driver} />
+                <DriverImage
+                    driver={driver}
+                />
 
                 <div className="min-w-0">
                     <div className="flex min-w-0 items-center gap-2">
                         <CountryFlag
-                            countryCode={driver.countryCode}
+                            countryCode={
+                                driver.countryCode
+                            }
                         />
 
                         <span className="text-xs font-black uppercase tracking-[0.12em] text-[#ff729f]">
@@ -336,15 +373,15 @@ function CountryFlag({
 }: {
     countryCode: string;
 }): React.ReactElement {
-    const emoji = countryCodeToEmoji(countryCode);
-
     return (
         <span
             className="text-sm leading-none"
             role="img"
             aria-label={countryCode}
         >
-            {emoji}
+            {countryCodeToEmoji(
+                countryCode,
+            )}
         </span>
     );
 }
@@ -373,13 +410,17 @@ function Pagination({
             </button>
 
             <span className="min-w-12 text-center text-[8px] font-black tabular-nums text-white/45">
-                {currentPage} / {totalPages}
+                {currentPage} /{" "}
+                {totalPages}
             </span>
 
             <button
                 type="button"
                 onClick={onNext}
-                disabled={currentPage === totalPages}
+                disabled={
+                    currentPage ===
+                    totalPages
+                }
                 aria-label="Next page"
                 className="border border-white/10 px-3 py-2 text-[8px] font-black uppercase tracking-[0.16em] text-white/45 transition-colors hover:border-[#ff729f]/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-25"
             >
@@ -393,24 +434,25 @@ function LoadingState(): React.ReactElement {
     return (
         <div className="px-5 py-12 sm:px-8">
             <div className="space-y-2">
-                {[1, 2, 3, 4, 5].map((item) => (
-                    <div
-                        key={item}
-                        className="flex items-center gap-4 border-b border-white/[0.06] px-2 py-5"
-                    >
-                        <div className="h-5 w-7 bg-white/[0.06]" />
+                {Array.from(
+                    { length: 5 },
+                    (_, index) => (
+                        <div
+                            key={index}
+                            className="flex items-center gap-4 border-b border-white/[0.06] px-2 py-5"
+                        >
+                            <div className="h-5 w-7 bg-white/[0.06]" />
+                            <div className="h-10 w-10 bg-white/[0.06]" />
 
-                        <div className="h-10 w-10 bg-white/[0.06]" />
+                            <div className="flex-1">
+                                <div className="h-2 w-24 bg-white/[0.06]" />
+                                <div className="mt-2 h-3 w-40 bg-white/[0.06]" />
+                            </div>
 
-                        <div className="flex-1">
-                            <div className="h-2 w-24 bg-white/[0.06]" />
-
-                            <div className="mt-2 h-3 w-40 bg-white/[0.06]" />
+                            <div className="h-3 w-12 bg-white/[0.06]" />
                         </div>
-
-                        <div className="h-3 w-12 bg-white/[0.06]" />
-                    </div>
-                ))}
+                    ),
+                )}
             </div>
 
             <p className="mt-8 text-center text-[9px] font-bold uppercase tracking-[0.22em] text-white/25">
@@ -454,7 +496,8 @@ function EmptyState(): React.ReactElement {
             </p>
 
             <p className="mt-2 text-sm text-white/40">
-                Driver standings are not currently available.
+                Driver standings are not
+                currently available.
             </p>
         </div>
     );

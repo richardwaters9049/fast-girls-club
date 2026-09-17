@@ -12,7 +12,7 @@ type ChampionshipPanelProps = {
 export default function ChampionshipPanel({
     initialView = "drivers",
 }: ChampionshipPanelProps): React.ReactElement {
-    const isTeamsFirst = initialView === "teams";
+    const isTeams = initialView === "teams";
 
     return (
         <Container
@@ -22,66 +22,35 @@ export default function ChampionshipPanel({
             <AnimatedSection>
                 <SectionHeading
                     eyebrow="Championship"
-                    title={isTeamsFirst ? "Teams" : "Drivers"}
+                    title={isTeams ? "Teams" : "Drivers"}
                     description="Explore the current championship order. Each classification has its own paginated table."
                 />
 
-                <div className="space-y-10">
-                    {isTeamsFirst ? (
-                        <>
-                            <section className="border border-white/10 bg-white/[0.025] p-5 md:p-7">
-                                <SectionHeading
-                                    eyebrow="Constructors"
-                                    title="Team championship"
-                                    description="Constructor points and championship positions."
-                                />
+                <div className="mt-8 grid items-start gap-6 lg:grid-cols-2">
+                    <section className="border border-white/10 bg-white/[0.025] p-5 md:p-7">
+                        <SectionHeading
+                            eyebrow="Drivers"
+                            title="Driver championship"
+                            description="Driver points and championship positions."
+                            accent="orange"
+                        />
 
-                                <div className="mt-7">
-                                    <ConstructorStandings />
-                                </div>
-                            </section>
+                        <div className="mt-7">
+                            <DriverStandings />
+                        </div>
+                    </section>
 
-                            <section className="border border-white/10 bg-white/[0.025] p-5 md:p-7">
-                                <SectionHeading
-                                    eyebrow="Drivers"
-                                    title="Driver championship"
-                                    description="Driver points and championship positions."
-                                    accent="orange"
-                                />
+                    <section className="border border-white/10 bg-white/[0.025] p-5 md:p-7">
+                        <SectionHeading
+                            eyebrow="Constructors"
+                            title="Team championship"
+                            description="Constructor points and championship positions."
+                        />
 
-                                <div className="mt-7">
-                                    <DriverStandings />
-                                </div>
-                            </section>
-                        </>
-                    ) : (
-                        <>
-                            <section className="border border-white/10 bg-white/[0.025] p-5 md:p-7">
-                                <SectionHeading
-                                    eyebrow="Drivers"
-                                    title="Driver championship"
-                                    description="Driver points and championship positions."
-                                    accent="orange"
-                                />
-
-                                <div className="mt-7">
-                                    <DriverStandings />
-                                </div>
-                            </section>
-
-                            <section className="border border-white/10 bg-white/[0.025] p-5 md:p-7">
-                                <SectionHeading
-                                    eyebrow="Constructors"
-                                    title="Team championship"
-                                    description="Constructor points and championship positions."
-                                />
-
-                                <div className="mt-7">
-                                    <ConstructorStandings />
-                                </div>
-                            </section>
-                        </>
-                    )}
+                        <div className="mt-7">
+                            <ConstructorStandings />
+                        </div>
+                    </section>
                 </div>
             </AnimatedSection>
         </Container>

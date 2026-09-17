@@ -120,7 +120,7 @@ export default function ConstructorStandings(): React.ReactElement {
 
                         {visibleStandings.map((team) => (
                             <ConstructorRow
-                                key={team.team}
+                                key={`${team.position}-${team.team}`}
                                 team={team}
                             />
                         ))}

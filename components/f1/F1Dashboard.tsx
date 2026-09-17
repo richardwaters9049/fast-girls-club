@@ -163,7 +163,8 @@ export default function F1Dashboard({
         };
     }, [activeSeries]);
 
-    const calendar = seriesData[activeSeries].calendar;
+    const calendar =
+        seriesData[activeSeries].calendar;
 
     const displayedRace = useMemo<F1Race | null>(() => {
         if (calendar.length === 0) {
@@ -172,7 +173,10 @@ export default function F1Dashboard({
 
         const liveRace = calendar.find(
             (race) =>
-                getRaceStatus(race, currentTime) === "live",
+                getRaceStatus(
+                    race,
+                    currentTime,
+                ) === "live",
         );
 
         if (liveRace) {
@@ -181,7 +185,10 @@ export default function F1Dashboard({
 
         const upcomingRace = calendar.find(
             (race) =>
-                getRaceStatus(race, currentTime) === "upcoming",
+                getRaceStatus(
+                    race,
+                    currentTime,
+                ) === "upcoming",
         );
 
         if (upcomingRace) {
@@ -197,7 +204,8 @@ export default function F1Dashboard({
         }
 
         return calendar.findIndex(
-            (race) => race.round === displayedRace.round,
+            (race) =>
+                race.round === displayedRace.round,
         );
     }, [calendar, displayedRace]);
 
@@ -206,36 +214,46 @@ export default function F1Dashboard({
             return null;
         }
 
-        return calendar[displayedRaceIndex - 1] ?? null;
+        return (
+            calendar[displayedRaceIndex - 1] ??
+            null
+        );
     }, [calendar, displayedRaceIndex]);
 
     const nextRace = useMemo<F1Race | null>(() => {
         if (
             displayedRaceIndex < 0 ||
-            displayedRaceIndex >= calendar.length - 1
+            displayedRaceIndex >=
+            calendar.length - 1
         ) {
             return null;
         }
 
-        return calendar[displayedRaceIndex + 1] ?? null;
+        return (
+            calendar[displayedRaceIndex + 1] ??
+            null
+        );
     }, [calendar, displayedRaceIndex]);
 
-    const displayedRaceStatus = useMemo<RaceStatus | null>(() => {
-        if (!displayedRace) {
-            return null;
-        }
+    const displayedRaceStatus =
+        useMemo<RaceStatus | null>(() => {
+            if (!displayedRace) {
+                return null;
+            }
 
-        return getRaceStatus(
-            displayedRace,
-            currentTime,
-        );
-    }, [displayedRace, currentTime]);
+            return getRaceStatus(
+                displayedRace,
+                currentTime,
+            );
+        }, [displayedRace, currentTime]);
 
     const completedCount = useMemo(() => {
         return calendar.filter(
             (race) =>
-                getRaceStatus(race, currentTime) ===
-                "completed",
+                getRaceStatus(
+                    race,
+                    currentTime,
+                ) === "completed",
         ).length;
     }, [calendar, currentTime]);
 
@@ -284,6 +302,10 @@ export default function F1Dashboard({
         setActivePanel("race");
     };
 
+    const championshipActive =
+        activePanel === "drivers" ||
+        activePanel === "teams";
+
     return (
         <section className="w-full">
             <GridHeader
@@ -322,9 +344,13 @@ export default function F1Dashboard({
                         displayedRaceStatus ? (
                         <RaceWeekendPanel
                             race={displayedRace}
-                            previousRace={previousRace}
+                            previousRace={
+                                previousRace
+                            }
                             nextRace={nextRace}
-                            status={displayedRaceStatus}
+                            status={
+                                displayedRaceStatus
+                            }
                         />
                     ) : (
                         <div className="rounded-2xl border border-white/10 bg-black/20 p-8 text-sm text-white/60">
@@ -337,14 +363,22 @@ export default function F1Dashboard({
                     active={activePanel === "live"}
                 >
                     {activeSeries === "f1" ? (
-                        <LiveTimingPanel data={liveData} loading={liveLoading} error={liveError} />
+                        <LiveTimingPanel
+                            data={liveData}
+                            loading={
+                                liveLoading
+                            }
+                            error={liveError}
+                        />
                     ) : (
                         <div className="rounded-2xl border border-white/10 bg-black/20 p-8 text-sm text-white/60">
-                            Live timing is currently
+                            Live timing is
+                            currently
                             unavailable for{" "}
                             {
-                                seriesData[activeSeries]
-                                    .fullLabel
+                                seriesData[
+                                    activeSeries
+                                ].fullLabel
                             }
                             .
                         </div>
@@ -352,33 +386,28 @@ export default function F1Dashboard({
                 </DashboardPanel>
 
                 <DashboardPanel
-                    active={activePanel === "drivers"}
+                    active={championshipActive}
                 >
                     {activeSeries === "f1" ? (
-                        <ChampionshipPanel />
+                        <ChampionshipPanel
+                            initialView={
+                                activePanel ===
+                                    "teams"
+                                    ? "teams"
+                                    : "drivers"
+                            }
+                        />
                     ) : (
                         <div className="rounded-2xl border border-white/10 bg-black/20 p-8 text-sm text-white/60">
-                            Driver standings for{" "}
+                            {activePanel ===
+                                "teams"
+                                ? "Team"
+                                : "Driver"}{" "}
+                            standings for{" "}
                             {
-                                seriesData[activeSeries]
-                                    .fullLabel
-                            }{" "}
-                            are coming soon.
-                        </div>
-                    )}
-                </DashboardPanel>
-
-                <DashboardPanel
-                    active={activePanel === "teams"}
-                >
-                    {activeSeries === "f1" ? (
-                        <ChampionshipPanel initialView="teams" />
-                    ) : (
-                        <div className="rounded-2xl border border-white/10 bg-black/20 p-8 text-sm text-white/60">
-                            Team standings for{" "}
-                            {
-                                seriesData[activeSeries]
-                                    .fullLabel
+                                seriesData[
+                                    activeSeries
+                                ].fullLabel
                             }{" "}
                             are coming soon.
                         </div>
@@ -417,9 +446,11 @@ export default function F1Dashboard({
                             <p className="text-xs uppercase tracking-[0.18em] text-white/40">
                                 Current session
                             </p>
+
                             <p className="mt-1 text-sm font-medium text-white">
                                 {
-                                    liveData.session
+                                    liveData
+                                        .session
                                         .sessionName
                                 }
                             </p>
