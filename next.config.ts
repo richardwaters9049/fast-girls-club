@@ -9,6 +9,11 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "media.formula1.com",
       },
+      {
+        protocol: "https",
+        hostname: "fastgirlsclub.co.uk",
+        pathname: "/wp-content/uploads/**",
+      },
     ],
   },
 };
