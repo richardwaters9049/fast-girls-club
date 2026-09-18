@@ -28,6 +28,11 @@ import {
     type F1Race,
     type F1Series,
 } from "@/lib/f1/calendar";
+import { countryNameToCode } from "@/lib/f1/countries";
+import {
+    getRaceStatus,
+    selectDisplayedRace,
+} from "@/lib/f1/race-selection";
 
 import type {
     F1LiveResponse,
@@ -38,33 +43,6 @@ interface F1CalendarResponse {
     season: number;
     count: number;
     races: ApiF1Race[];
-}
-
-function getCountryCode(country: string): string {
-    const countryCodes: Record<string, string> = {
-        Australia: "AU",
-        Austria: "AT",
-        Azerbaijan: "AZ",
-        Belgium: "BE",
-        Brazil: "BR",
-        Canada: "CA",
-        China: "CN",
-        Hungary: "HU",
-        Italy: "IT",
-        Japan: "JP",
-        Mexico: "MX",
-        Monaco: "MC",
-        Netherlands: "NL",
-        Qatar: "QA",
-        "Saudi Arabia": "SA",
-        Singapore: "SG",
-        Spain: "ES",
-        "United Arab Emirates": "AE",
-        "United Kingdom": "GB",
-        "United States": "US",
-    };
-
-    return countryCodes[country] ?? "";
 }
 
 function adaptApiRace(race: ApiF1Race): F1Race {
@@ -80,39 +58,10 @@ function adaptApiRace(race: ApiF1Race): F1Race {
         circuit: race.circuit.name,
         location: race.circuit.city,
         country,
-        countryCode: getCountryCode(country),
+        countryCode: countryNameToCode(country),
         startDate: raceDate,
         endDate: raceDate,
     };
-}
-
-function getRaceStatus(
-    race: F1Race,
-    now: number,
-): "completed" | "live" | "upcoming" {
-    const raceDate = race.startDate;
-
-    if (!raceDate) {
-        return "upcoming";
-    }
-
-    const start = new Date(
-        `${raceDate}T00:00:00`,
-    ).getTime();
-
-    const end = new Date(
-        `${race.endDate || raceDate}T23:59:59`,
-    ).getTime();
-
-    if (now > end) {
-        return "completed";
-    }
-
-    if (now >= start && now <= end) {
-        return "live";
-    }
-
-    return "upcoming";
 }
 
 const panelMotion: Record<
@@ -193,6 +142,9 @@ export default function F1Dashboard(): React.ReactElement {
     const [calendar, setCalendar] =
         useState<F1Race[]>([]);
 
+    const [season, setSeason] =
+        useState<number | null>(null);
+
     const [liveData, setLiveData] =
         useState<F1LiveResponse | null>(null);
 
@@ -214,7 +166,7 @@ export default function F1Dashboard(): React.ReactElement {
     useEffect(() => {
         const clock = setInterval(() => {
             setCurrentTime(Date.now());
-        }, 1000);
+        }, 30_000);
 
         return () => clearInterval(clock);
     }, []);
@@ -255,6 +207,7 @@ export default function F1Dashboard(): React.ReactElement {
                     setCalendar(
                         adaptedCalendar,
                     );
+                    setSeason(data.season);
                     setCalendarError(null);
                 }
             } catch (err) {
@@ -323,16 +276,18 @@ export default function F1Dashboard(): React.ReactElement {
 
         loadLiveData();
 
-        const interval = setInterval(
-            loadLiveData,
-            5000,
-        );
+        const refreshInterval =
+            activePanel === "live" || liveData?.isLive
+                ? 5_000
+                : 30_000;
+
+        const interval = setInterval(loadLiveData, refreshInterval);
 
         return () => {
             cancelled = true;
             clearInterval(interval);
         };
-    }, [activeSeries]);
+    }, [activePanel, activeSeries, liveData?.isLive]);
 
     const activeSeriesData =
         activeSeries === "f1"
@@ -343,57 +298,16 @@ export default function F1Dashboard(): React.ReactElement {
             : seriesData[activeSeries];
 
     const displayedRace = useMemo<F1Race | null>(() => {
-        if (
-            activeSeries !== "f1" ||
-            calendar.length === 0
-        ) {
+        if (activeSeries !== "f1") {
             return null;
         }
 
-        if (liveData?.session) {
-            const sessionCountry =
-                liveData.session.countryName.toLowerCase();
-
-            const liveRace = calendar.find(
-                (race) =>
-                    race.country.toLowerCase() ===
-                    sessionCountry,
-            );
-
-            if (liveRace) {
-                return liveRace;
-            }
-        }
-
-        const currentRace = calendar.find(
-            (race) =>
-                getRaceStatus(
-                    race,
-                    currentTime,
-                ) === "live",
+        return selectDisplayedRace(
+            calendar,
+            currentTime,
+            liveData?.isLive ? liveData.session : null,
         );
-
-        if (currentRace) {
-            return currentRace;
-        }
-
-        return (
-            calendar.find(
-                (race) =>
-                    getRaceStatus(
-                        race,
-                        currentTime,
-                    ) === "upcoming",
-            ) ??
-            calendar.at(-1) ??
-            null
-        );
-    }, [
-        activeSeries,
-        calendar,
-        currentTime,
-        liveData,
-    ]);
+    }, [activeSeries, calendar, currentTime, liveData]);
 
     const displayedIndex =
         displayedRace !== null
@@ -474,6 +388,7 @@ export default function F1Dashboard(): React.ReactElement {
             <div className="shrink-0">
                 <GridHeader
                     activeSeries={activeSeries}
+                    season={season}
                     onSeriesChange={
                         handleSeriesChange
                     }

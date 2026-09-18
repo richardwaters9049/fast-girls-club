@@ -242,7 +242,6 @@ function getResultTime(result: RaceResult): string {
 
 function getResultPosition(
     result: RaceResult,
-    fallback: number,
 ): string {
     const position = toNumber(result.position);
 
@@ -250,7 +249,7 @@ function getResultPosition(
         return String(position).padStart(2, "0");
     }
 
-    return String(fallback).padStart(2, "0");
+    return "—";
 }
 
 function getSessionLabel(name: string): string {
@@ -513,6 +512,8 @@ export default function RaceWeekendPanel({
     });
 
     const [now, setNow] = useState(() => Date.now());
+    const previousRound = previousRace?.round ?? null;
+    const nextRound = nextRace?.round ?? null;
 
     useEffect(() => {
         const interval = window.setInterval(() => {
@@ -576,19 +577,19 @@ export default function RaceWeekendPanel({
         const loadRaceData = async (): Promise<void> => {
             const [current, previous, next] = await Promise.all([
                 loadRace(race.round),
-                previousRace
-                    ? loadRace(previousRace.round)
+                previousRound
+                    ? loadRace(previousRound)
                     : Promise.resolve(null),
-                nextRace
-                    ? loadRace(nextRace.round)
+                nextRound
+                    ? loadRace(nextRound)
                     : Promise.resolve(null),
             ]);
 
             let previousResults: RaceResult[] = [];
 
-            if (previousRace) {
+            if (previousRound) {
                 previousResults = await loadResults(
-                    previousRace.round,
+                    previousRound,
                 );
             }
 
@@ -619,8 +620,8 @@ export default function RaceWeekendPanel({
             cancelled = true;
         };
     }, [
-        nextRace?.round,
-        previousRace?.round,
+        nextRound,
+        previousRound,
         race.round,
     ]);
 
@@ -665,8 +666,7 @@ export default function RaceWeekendPanel({
             nextCircuit?.name ??
             nextCircuit?.country ??
             nextRace?.circuit ??
-            nextRace?.country ??
-            "Singapore",
+            nextRace?.country,
         );
     }, [
         nextCircuit?.name,
@@ -747,7 +747,7 @@ export default function RaceWeekendPanel({
                                     </div>
 
                                     <p className="hidden text-[9px] font-semibold uppercase tracking-[0.2em] text-white/25 sm:block">
-                                        2026 Season
+                                        Current season
                                     </p>
                                 </div>
 
@@ -965,10 +965,7 @@ function PreviousRaceCard({
                                     : "text-white/45"
                                     }`}
                             >
-                                {getResultPosition(
-                                    result,
-                                    index + 1,
-                                )}
+                                {getResultPosition(result)}
                             </p>
 
                             <div className="min-w-0">
@@ -1222,7 +1219,15 @@ function NextRaceCard({
                 </div>
 
                 <div className="relative order-1 h-[280px] overflow-hidden bg-black lg:order-2 lg:h-[390px]">
-                    <RaceMap3D circuit={circuitMap} />
+                    {circuitMap ? (
+                        <RaceMap3D circuit={circuitMap} />
+                    ) : (
+                        <div className="flex h-full items-center justify-center px-8 text-center">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/35">
+                                Circuit map unavailable
+                            </p>
+                        </div>
+                    )}
 
                     <div className="pointer-events-none absolute left-5 top-5 z-10">
                         <p className="text-[8px] font-semibold uppercase tracking-[0.28em] text-white/40">
@@ -1234,7 +1239,7 @@ function NextRaceCard({
                         </p>
                     </div>
 
-                    <div className="pointer-events-none absolute bottom-5 left-5 z-10">
+                    {circuitMap ? <div className="pointer-events-none absolute bottom-5 left-5 z-10">
                         <p className="text-[8px] font-semibold uppercase tracking-[0.24em] text-white/30">
                             Interactive circuit
                         </p>
@@ -1242,7 +1247,7 @@ function NextRaceCard({
                         <p className="mt-2 text-[8px] font-semibold uppercase tracking-[0.18em] text-[#ff729f]">
                             Drag to rotate • Scroll to zoom
                         </p>
-                    </div>
+                    </div> : null}
                 </div>
             </div>
         </section>

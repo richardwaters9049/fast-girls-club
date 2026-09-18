@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
-export const revalidate = 1800;
+import { F1_API_BASE_URL } from "@/lib/config";
 
-const F1_API_BASE = process.env.F1_API_BASE ?? "http://localhost:8787/api";
+export const revalidate = 1800;
 
 interface ApiConstructorStanding {
   classificationId: number;
@@ -29,10 +29,11 @@ interface ApiConstructorStandingsResponse {
 
 export async function GET() {
   try {
-    const response = await fetch(`${F1_API_BASE}/standings/constructors`, {
+    const response = await fetch(`${F1_API_BASE_URL}/standings/constructors`, {
       next: {
         revalidate: 1800,
       },
+      signal: AbortSignal.timeout(10_000),
     });
 
     if (!response.ok) {

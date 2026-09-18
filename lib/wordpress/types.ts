@@ -15,6 +15,7 @@ export interface WordPressMediaDetails {
     medium?: WordPressMediaSize;
     medium_large?: WordPressMediaSize;
     large?: WordPressMediaSize;
+    "1536x1536"?: WordPressMediaSize;
     full?: WordPressMediaSize;
     thumbnail?: WordPressMediaSize;
   };
@@ -85,6 +86,16 @@ export interface WordPressPost {
   };
 }
 
+export interface BlogFeaturedImage {
+  url: string;
+  width: number;
+  height: number;
+  heroUrl: string;
+  heroWidth: number;
+  heroHeight: number;
+  alt: string;
+}
+
 export interface BlogPostSummary {
   id: number;
   slug: string;
@@ -92,12 +103,7 @@ export interface BlogPostSummary {
   excerpt: string;
   date: string;
   modified: string;
-  featuredImage: {
-    url: string;
-    width: number;
-    height: number;
-    alt: string;
-  } | null;
+  featuredImage: BlogFeaturedImage | null;
   categories: Array<{
     id: number;
     name: string;
@@ -133,4 +139,5 @@ export interface BlogPostsResult {
   posts: BlogPostSummary[];
   total: number;
   totalPages: number;
+  page: number;
 }

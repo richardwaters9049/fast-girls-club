@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
 
-const F1_API_URL = process.env.F1_API_URL ?? "http://localhost:8787/api/races";
+import { F1_API_BASE_URL } from "@/lib/config";
 
 export const revalidate = 21_600;
 
 export async function GET(): Promise<NextResponse> {
   try {
-    const response = await fetch(F1_API_URL, {
+    const response = await fetch(`${F1_API_BASE_URL}/races`, {
       next: {
         revalidate: 21_600,
       },
+      signal: AbortSignal.timeout(10_000),
     });
 
     if (!response.ok) {

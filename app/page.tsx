@@ -1,11 +1,12 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
-import { useState } from "react";
 
+import Footer from "@/components/layout/Footer";
+import Header from "@/components/layout/Header";
+import LatestPosts from "@/components/stories/LatestPosts";
 import newLogo from "@/public/images/F1-images/newlogo3.png";
 
 const HeroScene = dynamic(
@@ -17,12 +18,6 @@ const HeroScene = dynamic(
 );
 
 export default function Home(): React.ReactElement {
-    const [menuOpen, setMenuOpen] = useState<boolean>(false);
-
-    const closeMenu = (): void => {
-        setMenuOpen(false);
-    };
-
     return (
         <main className="overflow-hidden bg-[#1c1c1c] text-white">
             <section className="relative isolate overflow-hidden">
@@ -32,149 +27,7 @@ export default function Home(): React.ReactElement {
 
                 <div className="absolute left-0 top-0 h-1 w-full bg-[linear-gradient(90deg,#ff729f,#ee8434)]" />
 
-                <nav className="relative z-30 mx-auto flex w-full max-w-[77.5rem] items-center justify-between px-6 py-7 lg:px-10">
-                    <Link
-                        href="/"
-                        onClick={closeMenu}
-                        className="text-xl font-black uppercase tracking-[-0.06em]"
-                    >
-                        <Image
-                            src={newLogo}
-                            alt="Fast Girls"
-                            width={80}
-                            height={80}
-                        />
-                    </Link>
-
-                    <div className="hidden items-center gap-8 text-xs font-bold uppercase tracking-[0.18em] md:flex">
-                        <Link
-                            href="#latest"
-                            className="transition-colors hover:text-[#ff729f]"
-                        >
-                            Latest
-                        </Link>
-
-                        <Link
-                            href="#racing"
-                            className="transition-colors hover:text-[#ff729f]"
-                        >
-                            Racing
-                        </Link>
-
-                        <Link
-                            href="/f1"
-                            className="transition-colors hover:text-[#ff729f]"
-                        >
-                            The Grid
-                        </Link>
-
-                        <Link
-                            href="#about"
-                            className="transition-colors hover:text-[#ff729f]"
-                        >
-                            About
-                        </Link>
-                    </div>
-
-                    <button
-                        type="button"
-                        aria-label={
-                            menuOpen
-                                ? "Close navigation menu"
-                                : "Open navigation menu"
-                        }
-                        aria-expanded={menuOpen}
-                        onClick={() => setMenuOpen(!menuOpen)}
-                        className="relative z-50 flex items-center gap-3 border border-white/20 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] transition-colors hover:border-[#ff729f] hover:text-[#ff729f] md:hidden"
-                    >
-                        <span>
-                            {menuOpen ? "Close" : "Menu"}
-                        </span>
-
-                        <span className="relative flex h-3 w-4 flex-col justify-between">
-                            <span
-                                className={`block h-px w-full bg-current transition-transform duration-300 ${menuOpen
-                                    ? "translate-y-1.5 rotate-45"
-                                    : ""
-                                    }`}
-                            />
-
-                            <span
-                                className={`block h-px w-full bg-current transition-opacity duration-300 ${menuOpen
-                                    ? "opacity-0"
-                                    : "opacity-100"
-                                    }`}
-                            />
-
-                            <span
-                                className={`block h-px w-full bg-current transition-transform duration-300 ${menuOpen
-                                    ? "-translate-y-1.5 -rotate-45"
-                                    : ""
-                                    }`}
-                            />
-                        </span>
-                    </button>
-
-                    {menuOpen && (
-                        <motion.div
-                            initial={{
-                                opacity: 0,
-                                y: -15,
-                            }}
-                            animate={{
-                                opacity: 1,
-                                y: 0,
-                            }}
-                            transition={{
-                                duration: 0.25,
-                                ease: "easeOut",
-                            }}
-                            className="absolute left-0 right-0 top-full border-t border-white/10 bg-[#1c1c1c] px-6 py-8 shadow-2xl md:hidden"
-                        >
-                            <div className="flex flex-col">
-                                <Link
-                                    href="#latest"
-                                    onClick={closeMenu}
-                                    className="border-b border-white/10 py-5 text-3xl font-black uppercase tracking-[-0.04em] transition-colors hover:text-[#ff729f]"
-                                >
-                                    Latest
-                                </Link>
-
-                                <Link
-                                    href="#racing"
-                                    onClick={closeMenu}
-                                    className="border-b border-white/10 py-5 text-3xl font-black uppercase tracking-[-0.04em] transition-colors hover:text-[#ff729f]"
-                                >
-                                    Racing
-                                </Link>
-
-                                <Link
-                                    href="/f1"
-                                    onClick={closeMenu}
-                                    className="border-b border-white/10 py-5 text-3xl font-black uppercase tracking-[-0.04em] transition-colors hover:text-[#ff729f]"
-                                >
-                                    The Grid
-                                </Link>
-
-                                <Link
-                                    href="#about"
-                                    onClick={closeMenu}
-                                    className="py-5 text-3xl font-black uppercase tracking-[-0.04em] transition-colors hover:text-[#ff729f]"
-                                >
-                                    About
-                                </Link>
-                            </div>
-
-                            <div className="mt-8 flex items-center gap-3">
-                                <span className="h-2 w-2 bg-[#ff729f]" />
-
-                                <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/35">
-                                    Women in Motorsport
-                                </span>
-                            </div>
-                        </motion.div>
-                    )}
-                </nav>
+                <Header />
 
                 <div className="relative mx-auto grid max-w-[77.5rem] items-center px-6 pb-16 pt-8 lg:grid-cols-[0.85fr_1.15fr] lg:px-10 lg:pb-24 lg:pt-12">
                     <div className="relative z-10 max-w-[36.25rem]">
@@ -344,92 +197,7 @@ export default function Home(): React.ReactElement {
                         </p>
                     </div>
 
-                    <div className="mt-10 grid gap-5 md:grid-cols-3">
-                        <article className="group bg-[#1c1c1c] text-white">
-                            <div className="relative aspect-[4/3] overflow-hidden bg-[#3a2029]">
-                                <Image
-                                    src="/images/F1-images/2cars.webp"
-                                    alt="Formula 1 cars racing"
-                                    fill
-                                    sizes="(max-width: 768px) 100vw, 33vw"
-                                    className="object-cover transition-transform duration-700 group-hover:scale-105"
-                                />
-                            </div>
-
-                            <div className="p-6">
-                                <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#ff729f]">
-                                    Racing
-                                </p>
-
-                                <h3 className="mt-3 text-2xl font-black uppercase leading-none tracking-[-0.04em]">
-                                    The women changing the grid
-                                </h3>
-
-                                <p className="mt-4 text-sm leading-6 text-white/50">
-                                    Profiles, stories and the latest
-                                    developments from the world of
-                                    motorsport.
-                                </p>
-                            </div>
-                        </article>
-
-                        <article className="group bg-white">
-                            <div className="relative aspect-[4/3] overflow-hidden bg-[#1c1c1c]">
-                                <Image
-                                    src="/images/F1-images/red-blur.jpg"
-                                    alt="Blurred racing scene"
-                                    fill
-                                    sizes="(max-width: 768px) 100vw, 33vw"
-                                    className="object-cover transition-transform duration-700 group-hover:scale-105"
-                                />
-                            </div>
-
-                            <div className="p-6">
-                                <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#ee8434]">
-                                    Culture
-                                </p>
-
-                                <h3 className="mt-3 text-2xl font-black uppercase leading-none tracking-[-0.04em]">
-                                    Beyond the chequered flag
-                                </h3>
-
-                                <p className="mt-4 text-sm leading-6 text-black/50">
-                                    Motorsport culture, personalities
-                                    and everything happening around the
-                                    racing world.
-                                </p>
-                            </div>
-                        </article>
-
-                        <article className="group bg-[#ff729f]">
-                            <div className="p-6 md:pt-8">
-                                <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#1c1c1c]/60">
-                                    Grid guide
-                                </p>
-
-                                <h3 className="mt-8 text-4xl font-black uppercase leading-[0.9] tracking-[-0.06em]">
-                                    Know
-                                    <br />
-                                    Your
-                                    <br />
-                                    Grid.
-                                </h3>
-
-                                <p className="mt-8 text-sm leading-6 text-[#1c1c1c]/65">
-                                    Drivers, teams, championships and
-                                    everything you need to follow the
-                                    season.
-                                </p>
-
-                                <Link
-                                    href="/f1"
-                                    className="mt-8 inline-block border-b-2 border-[#1c1c1c] pb-2 text-xs font-black uppercase tracking-[0.2em]"
-                                >
-                                    View the grid →
-                                </Link>
-                            </div>
-                        </article>
-                    </div>
+                    <LatestPosts />
                 </div>
             </section>
 
@@ -462,7 +230,7 @@ export default function Home(): React.ReactElement {
                             <p className="mt-5 max-w-[32rem] text-sm leading-6 text-white/45 md:text-base">
                                 Your complete F1 season hub. Follow the
                                 racing, explore the championship and keep
-                                up with every round of the 2026 calendar.
+                                up with every round of the current calendar.
                             </p>
                         </div>
 
@@ -485,7 +253,7 @@ export default function Home(): React.ReactElement {
                                 <div className="relative z-10">
                                     <div className="flex items-center gap-3">
                                         <span className="border border-[#ff729f]/30 bg-[#ff729f]/10 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#ff729f]">
-                                            2026 Season
+                                            Current season
                                         </span>
 
                                         <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/25">
@@ -623,30 +391,7 @@ export default function Home(): React.ReactElement {
                 </div>
             </section >
 
-            <footer
-                id="about"
-                className="border-t border-white/10 bg-black px-6 py-10 lg:px-10"
-            >
-                <div className="mx-auto flex max-w-[77.5rem] flex-col justify-between gap-6 md:flex-row md:items-center">
-                    <div>
-                        <Link
-                            href="/"
-                            className="text-xl font-black uppercase tracking-[-0.05em]"
-                        >
-                            Fast Girls
-                            <span className="text-[#ff729f]">.</span>
-                        </Link>
-
-                        <p className="mt-2 text-xs uppercase tracking-[0.2em] text-white/30">
-                            Women in motorsport
-                        </p>
-                    </div>
-
-                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/25">
-                        © 2026 Fast Girls Club
-                    </p>
-                </div>
-            </footer>
+            <Footer />
         </main >
     );
 }

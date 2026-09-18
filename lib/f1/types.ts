@@ -98,13 +98,15 @@ export interface F1LiveResponse {
 }
 
 export interface F1DriverStandingsResponse {
+  season: number;
+  count: number;
   standings: F1DriverStanding[];
-  sessionKey: number | null;
 }
 
 export interface F1ConstructorStandingsResponse {
+  season: number;
+  count: number;
   standings: F1ConstructorStanding[];
-  sessionKey: number | null;
 }
 
 /* -------------------------------------------------------------------------- */

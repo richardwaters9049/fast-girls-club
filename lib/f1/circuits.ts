@@ -610,13 +610,11 @@ const CIRCUITS: Record<string, CircuitMapData> = {
   portugal: PORTUGAL,
 };
 
-export const FALLBACK_CIRCUIT = ITALY;
-
 export function getCircuitMap(
   identifier: string | null | undefined,
-): CircuitMapData {
+): CircuitMapData | null {
   if (!identifier) {
-    return FALLBACK_CIRCUIT;
+    return null;
   }
 
   const normalised = identifier
@@ -624,7 +622,7 @@ export function getCircuitMap(
     .trim()
     .replace(/[_\s]+/g, "-");
 
-  return CIRCUITS[normalised] ?? FALLBACK_CIRCUIT;
+  return CIRCUITS[normalised] ?? null;
 }
 
 export function getAvailableCircuits(): CircuitMapData[] {

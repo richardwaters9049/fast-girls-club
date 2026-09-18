@@ -47,9 +47,8 @@ The current application uses:
 - React Three Fiber
 - Three.js
 - Node.js
-- WebSocket (`ws`)
-- Formula 1 SignalR live timing
-- `f1api.dev` for championship/race data
+- WordPress REST API
+- Sibling `f1-api` service for championship, race and live data
 
 Use the existing stack unless there is a clear technical reason to change it.
 
@@ -233,15 +232,15 @@ For F1 functionality:
 components/f1/
 ├── ConstructorStandings.tsx
 ├── DriverStandings.tsx
-├── F1DataHub.tsx
-└── LiveTiming.tsx
+├── LiveTiming.tsx
+└── dashboard/
 ```
 
 Keep components focused.
 
 For example:
 
-- `F1DataHub` manages the data hub tabs and overall state.
+- `app/f1/page.tsx` manages the dashboard panels and overall state.
 - `LiveTiming` presents live session/timing information.
 - `DriverStandings` presents the drivers' championship.
 - `ConstructorStandings` presents the constructors' championship.
@@ -272,7 +271,7 @@ Current data sources:
 
 ### Championship and race data
 
-`f1api.dev`
+The sibling `f1-api` project, configured through `F1_API_BASE_URL`.
 
 Used for:
 
@@ -300,24 +299,7 @@ Used for:
 
 ## 10. Live Timing Service
 
-The project contains a dedicated local live timing service:
-
-```text
-services/f1-live/
-├── index.ts
-├── signalr.ts
-└── types.ts
-```
-
-The service maintains a persistent connection to Formula 1's live timing SignalR system.
-
-It exposes:
-
-```text
-GET /health
-GET /api/live
-WebSocket /ws
-```
+Live timing is supplied by the sibling `f1-api` project. This Next.js project accesses its `GET /api/live` endpoint through the internal `/api/f1/live` route and does not contain a second embedded timing service.
 
 The service handles:
 
@@ -395,12 +377,6 @@ Main application F1 types:
 lib/f1/types.ts
 ```
 
-Live service types:
-
-```text
-services/f1-live/types.ts
-```
-
 Avoid `any`.
 
 External untrusted data should be handled at the service/API boundary and converted into known application types before reaching presentation components.
@@ -415,6 +391,9 @@ Current F1 API routes:
 
 ```text
 /api/f1/live
+/api/f1/calendar
+/api/f1/race/[round]
+/api/f1/race/[round]/results
 /api/f1/drivers
 /api/f1/constructors
 ```

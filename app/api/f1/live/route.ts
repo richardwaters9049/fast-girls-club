@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
-const F1_LIVE_SERVICE =
-  process.env.F1_LIVE_SERVICE_URL ?? "http://127.0.0.1:8787";
+import { F1_API_BASE_URL } from "@/lib/config";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -624,8 +623,9 @@ function buildRaceControl(value: unknown): Array<{
 
 export async function GET(): Promise<NextResponse> {
   try {
-    const response = await fetch(`${F1_LIVE_SERVICE}/api/live`, {
+    const response = await fetch(`${F1_API_BASE_URL}/live`, {
       cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
     });
 
     if (!response.ok) {

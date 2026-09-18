@@ -6,6 +6,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import ArticleContent from "@/components/blog/ArticleContent";
+import Footer from "@/components/layout/Footer";
+import Header from "@/components/layout/Header";
+import { SITE_URL } from "@/lib/config";
 import {
     getPostBySlug,
 } from "@/lib/wordpress/client";
@@ -33,23 +36,22 @@ export async function generateMetadata({
 
     if (!post) {
         return {
-            title: "Article Not Found | Fast Girls Club",
+            title: "Article Not Found",
         };
     }
 
     return {
-        title:
-            post.seo.title ??
-            `${post.title} | Fast Girls Club`,
+        title: {
+            absolute:
+                post.seo.title ??
+                `${post.title} | Fast Girls Club`,
+        },
         description:
             post.seo.description ??
             post.excerpt,
-        alternates: post.seo.canonical
-            ? {
-                canonical:
-                    post.seo.canonical,
-            }
-            : undefined,
+        alternates: {
+            canonical: `${SITE_URL}/blog/${slug}`,
+        },
         openGraph: {
             title:
                 post.seo.title ??
@@ -58,12 +60,13 @@ export async function generateMetadata({
                 post.seo.description ??
                 post.excerpt,
             type: "article",
+            url: `${SITE_URL}/blog/${slug}`,
             publishedTime: post.date,
             modifiedTime: post.modified,
             images: post.seo.image
                 ? [
                     {
-                        url: post.seo.image,
+                        url: post.featuredImage?.heroUrl ?? post.seo.image,
                     },
                 ]
                 : undefined,
@@ -87,6 +90,7 @@ export default async function BlogArticlePage({
 
     return (
         <main className="min-h-screen bg-[#e6e6e6] text-[#1c1c1c]">
+            <Header />
             <section className="bg-[#1c1c1c] px-6 py-10 text-white lg:px-10 lg:py-14">
                 <div className="mx-auto max-w-[77.5rem]">
                     <Link
@@ -141,11 +145,7 @@ export default async function BlogArticlePage({
                     <div className="mx-auto max-w-[77.5rem]">
                         <div className="relative aspect-[16/8] overflow-hidden bg-[#1c1c1c]">
                             <Image
-                                src={
-                                    post
-                                        .featuredImage
-                                        .url
-                                }
+                                src={post.featuredImage.heroUrl}
                                 alt={
                                     post
                                         .featuredImage
@@ -190,6 +190,7 @@ export default async function BlogArticlePage({
                     </aside>
                 </div>
             </section>
+            <Footer />
         </main>
     );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import CategoryTag from "@/components/ui/CategoryTag";
@@ -11,11 +12,13 @@ import type { F1Series } from "@/lib/f1/calendar";
 interface GridHeaderProps {
     activeSeries: F1Series;
     onSeriesChange: (series: F1Series) => void;
+    season: number | null;
 }
 
 export default function GridHeader({
     activeSeries,
     onSeriesChange,
+    season,
 }: GridHeaderProps): React.ReactElement {
     return (
         <section className="relative overflow-hidden border-b border-white/10">
@@ -42,7 +45,11 @@ export default function GridHeader({
                         }}
                         className="flex min-w-0 items-center gap-5"
                     >
-                        <div className="shrink-0">
+                        <Link
+                            href="/"
+                            className="shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff729f]"
+                            aria-label="Return to Fast Girls Club home"
+                        >
                             <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-white/40">
                                 Fast Girls
                             </p>
@@ -53,13 +60,13 @@ export default function GridHeader({
                                     Grid.
                                 </span>
                             </h1>
-                        </div>
+                        </Link>
 
                         <div className="hidden h-10 w-px bg-white/10 sm:block" />
 
                         <div className="hidden items-center gap-3 sm:flex">
                             <CategoryTag accent="pink">
-                                2026
+                                {season ?? "Current"}
                             </CategoryTag>
 
                             <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
@@ -97,7 +104,9 @@ export default function GridHeader({
                                         onClick={() =>
                                             onSeriesChange(series)
                                         }
-                                        className={`cursor-pointer px-4 text-[9px] font-black uppercase tracking-[0.16em] hover:bg-transparent ${activeSeries === series
+                                        disabled={series !== "f1"}
+                                        title={series === "f1" ? undefined : `${series.toUpperCase()} data coming soon`}
+                                        className={`cursor-pointer px-4 text-[9px] font-black uppercase tracking-[0.16em] hover:bg-transparent disabled:cursor-not-allowed disabled:opacity-25 ${activeSeries === series
                                             ? "bg-white text-[#1c1c1c] hover:bg-white hover:text-[#1c1c1c]"
                                             : "text-white/50 hover:text-white"
                                             }`}

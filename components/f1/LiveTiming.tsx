@@ -505,7 +505,10 @@ export default function LiveTiming({
     const [selectedTeam, setSelectedTeam] =
         useState("all");
 
-    const drivers = data?.drivers ?? [];
+    const drivers = useMemo(
+        () => data?.drivers ?? [],
+        [data?.drivers],
+    );
 
     const teams = useMemo(() => {
         return Array.from(

@@ -9,24 +9,15 @@ import type {
   WordPressPost,
   WordPressTerm,
 } from "@/lib/wordpress/types";
-
-const WORDPRESS_API_URL = "https://fastgirlsclub.co.uk/wp-json/wp/v2";
+import { WORDPRESS_API_URL } from "@/lib/config";
+import { cleanSeoTitle, decodeHtmlText } from "@/lib/wordpress/utils";
 
 const WORDPRESS_REVALIDATE_SECONDS = 60;
 
-function decodeHtml(value: string): string {
-  return value
-    .replace(/<[^>]*>/g, "")
-    .replace(/&amp;/g, "&")
-    .replace(/&quot;/g, '"')
-    .replace(/&#039;/g, "'")
-    .replace(/&#8217;/g, "’")
-    .replace(/&#8216;/g, "‘")
-    .replace(/&#8220;/g, "“")
-    .replace(/&#8221;/g, "”")
-    .replace(/&#038;/g, "&")
-    .replace(/&nbsp;/g, " ")
-    .trim();
+class WordPressRequestError extends Error {
+  constructor(public readonly status: number) {
+    super(`WordPress request failed: ${status}`);
+  }
 }
 
 function getTerms(post: WordPressPost): WordPressTerm[] {
@@ -47,13 +38,19 @@ function getFeaturedImage(
   }
 
   const mediumLarge = media.media_details.sizes?.medium_large;
-
+  const large = media.media_details.sizes?.large;
+  const extraLarge = media.media_details.sizes?.["1536x1536"];
   const full = media.media_details.sizes?.full;
+  const card = mediumLarge ?? large ?? full;
+  const hero = extraLarge ?? large ?? full ?? card;
 
   return {
-    url: mediumLarge?.source_url ?? full?.source_url ?? media.source_url,
-    width: mediumLarge?.width ?? full?.width ?? media.media_details.width,
-    height: mediumLarge?.height ?? full?.height ?? media.media_details.height,
+    url: card?.source_url ?? media.source_url,
+    width: card?.width ?? media.media_details.width,
+    height: card?.height ?? media.media_details.height,
+    heroUrl: hero?.source_url ?? media.source_url,
+    heroWidth: hero?.width ?? media.media_details.width,
+    heroHeight: hero?.height ?? media.media_details.height,
     alt: media.alt_text || "",
   };
 }
@@ -64,8 +61,8 @@ function mapPostSummary(post: WordPressPost): BlogPostSummary {
   return {
     id: post.id,
     slug: post.slug,
-    title: decodeHtml(post.title.rendered),
-    excerpt: decodeHtml(post.excerpt.rendered),
+    title: decodeHtmlText(post.title.rendered),
+    excerpt: decodeHtmlText(post.excerpt.rendered),
     date: post.date,
     modified: post.modified,
     featuredImage: getFeaturedImage(post),
@@ -85,7 +82,7 @@ function mapPost(post: WordPressPost): BlogPost {
     ...summary,
     content: post.content.rendered,
     seo: {
-      title: post.yoast_head_json?.title ?? null,
+      title: cleanSeoTitle(post.yoast_head_json?.title ?? null),
       description: post.yoast_head_json?.description ?? null,
       canonical: post.yoast_head_json?.canonical ?? null,
       image:
@@ -104,10 +101,11 @@ async function wordpressFetch<T>(endpoint: string): Promise<{
     next: {
       revalidate: WORDPRESS_REVALIDATE_SECONDS,
     },
+    signal: AbortSignal.timeout(10_000),
   });
 
   if (!response.ok) {
-    throw new Error(`WordPress request failed: ${response.status}`);
+    throw new WordPressRequestError(response.status);
   }
 
   return {
@@ -184,15 +182,54 @@ export async function getBlogPosts(
 ): Promise<BlogPostsResult> {
   const query = buildPostsQuery(options);
 
-  const { data, response } = await wordpressFetch<WordPressPost[]>(
-    `/posts?${query}`,
-  );
+  const requestedPage = options.page ?? 1;
 
-  return {
-    posts: data.map(mapPostSummary),
-    total: Number(response.headers.get("X-WP-Total") ?? "0"),
-    totalPages: Number(response.headers.get("X-WP-TotalPages") ?? "0"),
-  };
+  try {
+    const { data, response } = await wordpressFetch<WordPressPost[]>(
+      `/posts?${query}`,
+    );
+
+    return {
+      posts: data.map(mapPostSummary),
+      total: Number(response.headers.get("X-WP-Total") ?? "0"),
+      totalPages: Number(response.headers.get("X-WP-TotalPages") ?? "0"),
+      page: requestedPage,
+    };
+  } catch (error) {
+    if (!(error instanceof WordPressRequestError) || error.status !== 400) {
+      throw error;
+    }
+
+    const firstPageQuery = buildPostsQuery({ ...options, page: 1 });
+    const firstPage = await wordpressFetch<WordPressPost[]>(
+      `/posts?${firstPageQuery}`,
+    );
+    const total = Number(firstPage.response.headers.get("X-WP-Total") ?? "0");
+    const totalPages = Number(
+      firstPage.response.headers.get("X-WP-TotalPages") ?? "0",
+    );
+
+    if (totalPages <= 1) {
+      return {
+        posts: firstPage.data.map(mapPostSummary),
+        total,
+        totalPages,
+        page: 1,
+      };
+    }
+
+    const lastPageQuery = buildPostsQuery({ ...options, page: totalPages });
+    const lastPage = await wordpressFetch<WordPressPost[]>(
+      `/posts?${lastPageQuery}`,
+    );
+
+    return {
+      posts: lastPage.data.map(mapPostSummary),
+      total,
+      totalPages,
+      page: totalPages,
+    };
+  }
 }
 
 export async function getBlogCategories(): Promise<WordPressCategory[]> {
@@ -201,16 +238,6 @@ export async function getBlogCategories(): Promise<WordPressCategory[]> {
   );
 
   return data;
-}
-
-export async function getPosts(perPage = 12): Promise<BlogPostSummary[]> {
-  const result = await getBlogPosts({
-    page: 1,
-    perPage,
-    sort: "newest",
-  });
-
-  return result.posts;
 }
 
 export async function getPostBySlug(slug: string): Promise<BlogPost | null> {

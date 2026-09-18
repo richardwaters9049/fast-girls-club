@@ -1,37 +1,9 @@
 import { NextResponse } from "next/server";
 
+import { F1_API_BASE_URL } from "@/lib/config";
+import { countryNameToCode } from "@/lib/f1/countries";
+
 export const revalidate = 1800;
-
-const F1_API_BASE = process.env.F1_API_BASE ?? "http://localhost:8787/api";
-
-const F1_EXTERNAL_API = "https://f1api.dev/api";
-
-const COUNTRY_CODES: Record<string, string> = {
-  Argentina: "AR",
-  Australia: "AU",
-  Austria: "AT",
-  Belgium: "BE",
-  Brazil: "BR",
-  Canada: "CA",
-  China: "CN",
-  Denmark: "DK",
-  Finland: "FI",
-  France: "FR",
-  Germany: "DE",
-  "Great Britain": "GB",
-  Italy: "IT",
-  Japan: "JP",
-  Mexico: "MX",
-  Monaco: "MC",
-  Netherlands: "NL",
-  "New Zealand": "NZ",
-  Poland: "PL",
-  Portugal: "PT",
-  Russia: "RU",
-  Spain: "ES",
-  Thailand: "TH",
-  "United States": "US",
-};
 
 const TEAM_COLOURS: Record<string, string> = {
   mercedes: "#27F4D2",
@@ -69,12 +41,13 @@ interface ApiDriverStandingsResponse {
 
 interface ApiDriver {
   driverId: string;
-  name: string;
-  surname: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
   nationality: string;
-  birthday: string;
-  number: number | null;
-  shortName: string;
+  dateOfBirth: string;
+  number: string | null;
+  code: string | null;
   url: string;
 }
 
@@ -85,15 +58,17 @@ interface ApiDriversResponse {
 export async function GET() {
   try {
     const [standingsResponse, driversResponse] = await Promise.all([
-      fetch(`${F1_API_BASE}/standings/drivers`, {
+      fetch(`${F1_API_BASE_URL}/standings/drivers`, {
         next: {
           revalidate: 1800,
         },
+        signal: AbortSignal.timeout(10_000),
       }),
-      fetch(`${F1_EXTERNAL_API}/current/drivers?limit=100`, {
+      fetch(`${F1_API_BASE_URL}/drivers`, {
         next: {
           revalidate: 1800,
         },
+        signal: AbortSignal.timeout(10_000),
       }),
     ]);
 
@@ -115,8 +90,10 @@ export async function GET() {
     const driversByNumber = new Map<number, ApiDriver>();
 
     for (const driver of driversData.drivers) {
-      if (driver.number !== null) {
-        driversByNumber.set(driver.number, driver);
+      const driverNumber = Number(driver.number);
+
+      if (Number.isFinite(driverNumber)) {
+        driversByNumber.set(driverNumber, driver);
       }
     }
 
@@ -130,11 +107,11 @@ export async function GET() {
         position: standing.position,
         driverNumber,
         driver: driver
-          ? `${driver.name} ${driver.surname}`.trim()
+          ? driver.fullName || `${driver.firstName} ${driver.lastName}`.trim()
           : `#${driverNumber}`,
-        acronym: driver?.shortName ?? "",
+        acronym: driver?.code ?? "",
         nationality,
-        countryCode: COUNTRY_CODES[nationality] ?? "",
+        countryCode: countryNameToCode(nationality),
         team: standing.team.name,
         points: standing.points,
         pointsStart: standing.points,

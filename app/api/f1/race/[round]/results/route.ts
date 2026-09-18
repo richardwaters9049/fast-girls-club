@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
-const BACKEND_API_BASE_URL =
-  process.env.F1_BACKEND_API_BASE_URL ?? "http://localhost:8787/api";
+import { F1_API_BASE_URL } from "@/lib/config";
 
 export const revalidate = 60;
 
@@ -103,10 +102,29 @@ export async function GET(
     );
   }
 
-  const season = 2026;
-  const url = `${BACKEND_API_BASE_URL}/results/${season}/${round}`;
-
   try {
+    const raceResponse = await fetch(`${F1_API_BASE_URL}/races/${round}`, {
+      headers: {
+        Accept: "application/json",
+      },
+      next: {
+        revalidate: 1_800,
+      },
+      signal: AbortSignal.timeout(10_000),
+    });
+
+    if (!raceResponse.ok) {
+      throw new Error(`F1 race request returned ${raceResponse.status}`);
+    }
+
+    const raceData = (await raceResponse.json()) as { season?: number };
+    const season = raceData.season;
+
+    if (!Number.isInteger(season)) {
+      throw new Error("F1 race response did not include a valid season");
+    }
+
+    const url = `${F1_API_BASE_URL}/results/${season}/${round}`;
     const response = await fetch(url, {
       headers: {
         Accept: "application/json",

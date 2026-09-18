@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import BlogCard from "@/components/blog/BlogCard";
 import BlogDashboardControls from "@/components/blog/BlogDashboardControls";
 import BlogPagination from "@/components/blog/BlogPagination";
+import Footer from "@/components/layout/Footer";
+import Header from "@/components/layout/Header";
 
 import {
     getBlogCategories,
@@ -16,7 +19,7 @@ import type {
 } from "@/lib/wordpress/types";
 
 export const metadata: Metadata = {
-    title: "News | Fast Girls Club",
+    title: "News",
     description:
         "Explore the latest Fast Girls Club motorsport stories, news and articles.",
 };
@@ -82,6 +85,25 @@ function getPage(
     return parsed;
 }
 
+function buildBlogUrl(values: {
+    query: string;
+    category: string;
+    dateRange: BlogDateRange;
+    sort: BlogSort;
+    page?: number;
+}): string {
+    const params = new URLSearchParams();
+
+    if (values.query) params.set("q", values.query);
+    if (values.category) params.set("category", values.category);
+    if (values.dateRange !== "all") params.set("range", values.dateRange);
+    if (values.sort !== "newest") params.set("sort", values.sort);
+    if (values.page && values.page > 1) params.set("page", String(values.page));
+
+    const queryString = params.toString();
+    return queryString ? `/blog?${queryString}` : "/blog";
+}
+
 export default async function BlogPage({
     searchParams,
 }: BlogPageProps): Promise<React.ReactElement> {
@@ -121,6 +143,15 @@ export default async function BlogPage({
                 category,
         );
 
+    if (category && !selectedCategory) {
+        redirect(buildBlogUrl({
+            query,
+            category: "",
+            dateRange,
+            sort,
+        }));
+    }
+
     const result =
         await getBlogPosts({
             page: requestedPage,
@@ -131,6 +162,16 @@ export default async function BlogPage({
             dateRange,
             sort,
         });
+
+    if (result.page !== requestedPage) {
+        redirect(buildBlogUrl({
+            query,
+            category,
+            dateRange,
+            sort,
+            page: result.page,
+        }));
+    }
 
     const totalPages =
         result.totalPages;
@@ -155,6 +196,7 @@ export default async function BlogPage({
 
     return (
         <main className="min-h-screen bg-[#e6e6e6] text-[#1c1c1c]">
+            <Header />
             <section className="relative overflow-hidden bg-[#1c1c1c] px-6 py-10 text-white lg:px-10 lg:py-14">
                 <div className="absolute -right-40 -top-40 h-[34rem] w-[34rem] rounded-full bg-[#ff729f]/10 blur-3xl" />
 
@@ -360,6 +402,7 @@ export default async function BlogPage({
                     )}
                 </div>
             </section>
+            <Footer />
         </main>
     );
 }

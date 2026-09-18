@@ -19,6 +19,7 @@ export default function DriverStandings(): React.ReactElement {
     const [standings, setStandings] = useState<
         F1DriverStanding[]
     >([]);
+    const [season, setSeason] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(
         null,
@@ -49,6 +50,7 @@ export default function DriverStandings(): React.ReactElement {
                 }
 
                 setStandings(data.standings);
+                setSeason(data.season);
                 setCurrentPage(1);
                 setError(null);
             } catch (err) {
@@ -115,7 +117,7 @@ export default function DriverStandings(): React.ReactElement {
 
     return (
         <div>
-            <PanelHeader />
+            <PanelHeader season={season} />
 
             {loading && <LoadingState />}
 
@@ -206,14 +208,14 @@ export default function DriverStandings(): React.ReactElement {
     );
 }
 
-function PanelHeader(): React.ReactElement {
+function PanelHeader({ season }: { season: number | null }): React.ReactElement {
     return (
         <div className="border-b border-white/10 px-5 py-6 sm:px-8 sm:py-7">
             <div className="mb-3 flex items-center gap-3">
                 <span className="h-2 w-2 bg-[#ff729f]" />
 
                 <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#ff729f]">
-                    2026 Championship
+                    {season ? `${season} Championship` : "Current Championship"}
                 </p>
             </div>
 

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
-const BACKEND_API_BASE_URL =
-  process.env.F1_BACKEND_API_BASE_URL ?? "http://localhost:8787/api";
+import { F1_API_BASE_URL } from "@/lib/config";
 
 export const revalidate = 1_800;
 
@@ -142,7 +141,7 @@ export async function GET(
     );
   }
 
-  const url = new URL(`${BACKEND_API_BASE_URL}/races/${round}`);
+  const url = new URL(`${F1_API_BASE_URL}/races/${round}`);
 
   try {
     const response = await fetch(url, {
