@@ -60,9 +60,7 @@ function buildPageUrl(
     const queryString =
         params.toString();
 
-    return queryString
-        ? `/blog?${queryString}`
-        : "/blog";
+    return `${queryString ? `/blog?${queryString}` : "/blog"}#stories`;
 }
 
 export default function BlogPagination({

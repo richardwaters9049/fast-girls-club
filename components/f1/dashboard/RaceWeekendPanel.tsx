@@ -1,10 +1,12 @@
 "use client";
 
+import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 
 import RaceMap3D from "@/components/3d/RaceMap3D";
 import { countryCodeToEmoji } from "@/lib/f1/countries";
 import { getCircuitMap } from "@/lib/f1/circuits";
+import { getVerifiedCircuitFacts } from "@/lib/f1/race-facts";
 import type { F1Race } from "@/lib/f1/calendar";
 
 interface RaceWeekendPanelProps {
@@ -22,6 +24,7 @@ interface RaceSession {
 
 interface RaceResult {
     position?: number | string | null;
+    driverId?: string | null;
     driver?: string | RaceDriver | null;
     driverName?: string | null;
     name?: string | null;
@@ -36,6 +39,7 @@ interface RaceResult {
 }
 
 interface RaceDriver {
+    driverId?: string | null;
     givenName?: string | null;
     familyName?: string | null;
     name?: string | null;
@@ -87,6 +91,10 @@ interface RawRaceResponse {
     schedule?: RaceSchedule | null;
     circuit?: RaceCircuit | null;
     laps?: number | string | null;
+    fastestLap?: {
+        time?: string | null;
+        driverId?: string | null;
+    } | null;
     winner?: {
         fullName?: string | null;
         firstName?: string | null;
@@ -115,7 +123,7 @@ interface NormalisedRaceData {
         winner: string | null;
         teamWinner: string | null;
         fastestLap: string | null;
-        fastestLapDriver: string | null;
+        fastestLapDriverId: string | null;
         laps: number | null;
     };
     circuit: {
@@ -135,6 +143,25 @@ interface RaceDataState {
     current: NormalisedRaceData | null;
     previous: NormalisedRaceData | null;
     next: NormalisedRaceData | null;
+}
+
+function revealMotion(
+    reducedMotion: boolean | null,
+    delay = 0,
+    x = 0,
+) {
+    if (reducedMotion) return {};
+
+    return {
+        initial: { opacity: 0, x, y: 16 },
+        whileInView: { opacity: 1, x: 0, y: 0 },
+        viewport: { once: false, amount: 0.16 },
+        transition: {
+            duration: 0.5,
+            delay,
+            ease: [0.22, 1, 0.36, 1] as const,
+        },
+    };
 }
 
 function toNumber(value: unknown): number | null {
@@ -448,8 +475,8 @@ function normaliseRaceResponse(
                 response.constructorWinner?.name ??
                 response.teamWinner?.name ??
                 null,
-            fastestLap: null,
-            fastestLapDriver: null,
+            fastestLap: response.fastestLap?.time ?? null,
+            fastestLapDriverId: response.fastestLap?.driverId ?? null,
             laps: toNumber(response.laps),
         },
         circuit: {
@@ -505,6 +532,7 @@ export default function RaceWeekendPanel({
     nextRace,
     status,
 }: RaceWeekendPanelProps): React.ReactElement {
+    const reducedMotion = useReducedMotion();
     const [data, setData] = useState<RaceDataState>({
         current: null,
         previous: null,
@@ -663,16 +691,16 @@ export default function RaceWeekendPanel({
 
     const nextCircuitMap = useMemo(() => {
         return getCircuitMap(
-            nextCircuit?.name ??
-            nextCircuit?.country ??
-            nextRace?.circuit ??
-            nextRace?.country,
+            nextCircuit?.id,
+            nextCircuit?.name,
+            nextRace?.circuit,
+            nextRace?.location,
         );
     }, [
+        nextCircuit?.id,
         nextCircuit?.name,
-        nextCircuit?.country,
         nextRace?.circuit,
-        nextRace?.country,
+        nextRace?.location,
     ]);
 
     const nextRaceDate =
@@ -689,9 +717,15 @@ export default function RaceWeekendPanel({
         <div className="h-full overflow-hidden">
             <div className="grid gap-4 p-4 sm:p-6 lg:p-8">
                 <div className="grid gap-4 lg:grid-cols-[1.65fr_0.85fr]">
-                    <section className="relative overflow-hidden border border-white/10 bg-[#242426]">
+                    <motion.section
+                        {...revealMotion(reducedMotion, 0, -12)}
+                        className="relative overflow-hidden border border-white/10 bg-[#242426]"
+                    >
                         <div className="p-5 sm:p-6 lg:p-7">
-                            <div className="flex items-start justify-between gap-6">
+                            <motion.div
+                                {...revealMotion(reducedMotion, 0.05, -10)}
+                                className="flex items-start justify-between gap-6"
+                            >
                                 <div>
                                     <div className="mb-3 flex items-center gap-3">
                                         <span className="text-lg">
@@ -700,7 +734,7 @@ export default function RaceWeekendPanel({
                                             )}
                                         </span>
 
-                                        <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#ff729f]">
+                                        <span className="text-[12px] font-semibold uppercase tracking-[0.28em] text-[#ff729f]">
                                             {status === "live"
                                                 ? "Live race"
                                                 : status === "completed"
@@ -713,14 +747,14 @@ export default function RaceWeekendPanel({
                                         {displayedName}
                                     </h2>
 
-                                    <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-white/40">
+                                    <p className="mt-2 text-sm font-medium uppercase tracking-[0.18em] text-white/40">
                                         {displayedCircuit} •{" "}
                                         {displayedCountry}
                                     </p>
                                 </div>
 
                                 <div className="hidden text-right sm:block">
-                                    <p className="text-[9px] font-semibold uppercase tracking-[0.28em] text-white/30">
+                                    <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/30">
                                         Round
                                     </p>
 
@@ -730,26 +764,29 @@ export default function RaceWeekendPanel({
                                         ).padStart(2, "0")}
                                     </p>
                                 </div>
-                            </div>
+                            </motion.div>
 
                             <div className="my-6 border-t border-white/10" />
 
                             <div>
-                                <div className="flex items-end justify-between gap-4">
+                                <motion.div
+                                    {...revealMotion(reducedMotion, 0.08, -8)}
+                                    className="flex items-end justify-between gap-4"
+                                >
                                     <div>
-                                        <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#ff729f]">
+                                        <p className="text-[12px] font-semibold uppercase tracking-[0.28em] text-[#ff729f]">
                                             Weekend schedule
                                         </p>
 
-                                        <p className="mt-2 text-xs tracking-[0.12em] text-white/35">
+                                        <p className="mt-2 text-sm tracking-[0.12em] text-white/35">
                                             Official session times and race day information
                                         </p>
                                     </div>
 
-                                    <p className="hidden text-[9px] font-semibold uppercase tracking-[0.2em] text-white/25 sm:block">
+                                    <p className="hidden text-[11px] font-semibold uppercase tracking-[0.2em] text-white/25 sm:block">
                                         Current season
                                     </p>
-                                </div>
+                                </motion.div>
 
                                 {displayedSessions.length > 0 ? (
                                     <div className="mt-4 grid gap-2 sm:grid-cols-5">
@@ -761,56 +798,60 @@ export default function RaceWeekendPanel({
                                                     ) === "Race";
 
                                                 return (
-                                                    <div
+                                                    <motion.div
                                                         key={`${session.name}-${session.date}-${index}`}
+                                                        {...revealMotion(reducedMotion, index * 0.055)}
                                                         className={`border px-3 py-3 ${isRace
                                                             ? "border-[#ff729f]/50 bg-[#ff729f]/5"
                                                             : "border-white/10 bg-white/[0.015]"
                                                             }`}
                                                     >
-                                                        <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
+                                                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/30">
                                                             {getSessionLabel(
                                                                 session.name,
                                                             )}
                                                         </p>
 
-                                                        <p className="mt-2 text-xs font-semibold uppercase tracking-[0.06em] text-white">
+                                                        <p className="mt-2 text-sm font-semibold uppercase tracking-[0.06em] text-white">
                                                             {formatShortDate(
                                                                 session.date,
                                                             )}
                                                         </p>
 
-                                                        <p className="mt-1 text-[8px] font-medium uppercase tracking-[0.12em] text-white/35">
+                                                        <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.12em] text-white/35">
                                                             {formatTime(
                                                                 session.date,
                                                                 session.time,
                                                             )}
                                                         </p>
-                                                    </div>
+                                                    </motion.div>
                                                 );
                                             },
                                         )}
                                     </div>
                                 ) : (
                                     <div className="mt-4 border border-white/10 bg-white/[0.015] px-4 py-5">
-                                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/25">
+                                        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/25">
                                             Weekend schedule
                                         </p>
 
-                                        <p className="mt-2 text-xs text-white/40">
+                                        <p className="mt-2 text-sm text-white/40">
                                             Session schedule unavailable.
                                         </p>
                                     </div>
                                 )}
                             </div>
 
-                            <div className="mt-6 grid grid-cols-2 border-t border-white/10 sm:grid-cols-4">
+                            <motion.div
+                                {...revealMotion(reducedMotion, 0.08)}
+                                className="mt-6 grid grid-cols-2 border-t border-white/10 sm:grid-cols-4"
+                            >
                                 <div className="border-r border-white/10 pt-5 sm:pr-5">
-                                    <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
+                                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/30">
                                         Race date
                                     </p>
 
-                                    <p className="mt-2 text-xs font-semibold uppercase tracking-[0.06em] text-white">
+                                    <p className="mt-2 text-sm font-semibold uppercase tracking-[0.06em] text-white">
                                         {formatDate(
                                             displayedDate,
                                         )}
@@ -818,11 +859,11 @@ export default function RaceWeekendPanel({
                                 </div>
 
                                 <div className="border-b border-white/10 p-5 sm:border-b-0 sm:border-r">
-                                    <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
+                                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/30">
                                         Circuit length
                                     </p>
 
-                                    <p className="mt-2 text-xs font-semibold text-white">
+                                    <p className="mt-2 text-sm font-semibold text-white">
                                         {formatDistance(
                                             currentData?.circuit.length ??
                                             null,
@@ -831,29 +872,29 @@ export default function RaceWeekendPanel({
                                 </div>
 
                                 <div className="border-r border-white/10 pt-5 sm:px-5">
-                                    <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
+                                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/30">
                                         Corners
                                     </p>
 
-                                    <p className="mt-2 text-xs font-semibold text-white">
+                                    <p className="mt-2 text-sm font-semibold text-white">
                                         {currentData?.circuit.corners ??
                                             "Unavailable"}
                                     </p>
                                 </div>
 
                                 <div className="pt-5 sm:pl-5">
-                                    <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
+                                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/30">
                                         Laps
                                     </p>
 
-                                    <p className="mt-2 text-xs font-semibold text-white">
+                                    <p className="mt-2 text-sm font-semibold text-white">
                                         {currentData?.race.laps ??
                                             "Unavailable"}
                                     </p>
                                 </div>
-                            </div>
+                            </motion.div>
                         </div>
-                    </section>
+                    </motion.section>
 
                     <PreviousRaceCard
                         race={previousRace}
@@ -884,17 +925,19 @@ function PreviousRaceCard({
     data: NormalisedRaceData | null;
     results: RaceResult[];
 }): React.ReactElement {
+    const reducedMotion = useReducedMotion();
+
     if (!race) {
         return (
-            <section className="border border-white/10 bg-[#242426] p-6">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/30">
+            <motion.section {...revealMotion(reducedMotion, 0.05, 12)} className="border border-white/10 bg-[#242426] p-6">
+                <p className="text-[12px] font-semibold uppercase tracking-[0.28em] text-white/30">
                     Previous race
                 </p>
 
                 <p className="mt-4 text-sm text-white/40">
                     No previous race available.
                 </p>
-            </section>
+            </motion.section>
         );
     }
 
@@ -904,12 +947,20 @@ function PreviousRaceCard({
             ? getDriverName(results[0])
             : null);
 
+    const fastestLapDriver = data?.results.find(
+        (result) =>
+            (result.driverId ??
+                (typeof result.driver === "object"
+                    ? result.driver?.driverId
+                    : null)) === data?.race.fastestLapDriverId,
+    );
+
     return (
-        <section className="overflow-hidden border border-white/10 bg-[#242426]">
-            <div className="border-b border-white/10 p-5 sm:p-6">
+        <motion.section {...revealMotion(reducedMotion, 0.05, 12)} className="overflow-hidden border border-white/10 bg-[#242426]">
+            <motion.div {...revealMotion(reducedMotion, 0.08, 8)} className="border-b border-white/10 p-5 sm:p-6">
                 <div className="flex items-start justify-between gap-4">
                     <div>
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.28em] text-[#ff729f]">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#ff729f]">
                             Previous race
                         </p>
 
@@ -918,7 +969,7 @@ function PreviousRaceCard({
                                 race.name}
                         </h3>
 
-                        <p className="mt-1 text-[9px] font-medium uppercase tracking-[0.18em] text-white/35">
+                        <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.18em] text-white/35">
                             {data?.circuit.name ??
                                 race.circuit}{" "}
                             •{" "}
@@ -936,27 +987,28 @@ function PreviousRaceCard({
                         )}
                     </span>
                 </div>
-            </div>
+            </motion.div>
 
             <div className="border-b border-white/10">
                 <div className="grid grid-cols-[42px_minmax(0,1fr)_auto] border-b border-white/10 px-4 py-2">
-                    <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-white/25">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/25">
                         Pos
                     </p>
 
-                    <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-white/25">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/25">
                         Driver
                     </p>
 
-                    <p className="text-right text-[8px] font-semibold uppercase tracking-[0.18em] text-white/25">
+                    <p className="text-right text-[10px] font-semibold uppercase tracking-[0.18em] text-white/25">
                         Time
                     </p>
                 </div>
 
                 {results.length > 0 ? (
                     results.map((result, index) => (
-                        <div
+                        <motion.div
                             key={`${getDriverName(result)}-${index}`}
+                            {...revealMotion(reducedMotion, index * 0.06, 6)}
                             className="grid grid-cols-[42px_minmax(0,1fr)_auto] items-center border-b border-white/5 px-4 py-3 last:border-b-0"
                         >
                             <p
@@ -969,74 +1021,78 @@ function PreviousRaceCard({
                             </p>
 
                             <div className="min-w-0">
-                                <p className="truncate text-xs font-semibold uppercase tracking-[0.04em] text-white">
+                                <p className="truncate text-sm font-semibold uppercase tracking-[0.04em] text-white">
                                     {getDriverName(
                                         result,
                                     )}
                                 </p>
 
-                                <p className="mt-1 truncate text-[8px] font-medium uppercase tracking-[0.14em] text-white/25">
+                                <p className="mt-1 truncate text-[10px] font-medium uppercase tracking-[0.14em] text-white/25">
                                     {getTeamName(
                                         result,
                                     )}
                                 </p>
                             </div>
 
-                            <p className="pl-3 text-right text-[10px] font-semibold uppercase tracking-[0.04em] text-white/60">
+                            <p className="pl-3 text-right text-[12px] font-semibold uppercase tracking-[0.04em] text-white/60">
                                 {getResultTime(
                                     result,
                                 )}
                             </p>
-                        </div>
+                        </motion.div>
                     ))
                 ) : (
                     <div className="px-4 py-5">
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/25">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/25">
                             Race results
                         </p>
 
-                        <p className="mt-2 text-xs text-white/40">
+                        <p className="mt-2 text-sm text-white/40">
                             Results unavailable.
                         </p>
                     </div>
                 )}
             </div>
 
-            <div className="grid grid-cols-3">
+            <motion.div {...revealMotion(reducedMotion, 0.12)} className="grid grid-cols-3">
                 <div className="border-r border-white/10 p-4">
-                    <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/25">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/25">
                         Winner
                     </p>
 
-                    <p className="mt-2 truncate text-[10px] font-semibold uppercase tracking-[0.04em] text-white">
+                    <p className="mt-2 truncate text-[12px] font-semibold uppercase tracking-[0.04em] text-white">
                         {winner ?? "Unavailable"}
                     </p>
                 </div>
 
                 <div className="border-r border-white/10 p-4">
-                    <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/25">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/25">
                         Fastest lap
                     </p>
 
-                    <p className="mt-2 truncate text-[10px] font-semibold uppercase tracking-[0.04em] text-white">
-                        {data?.race.fastestLapDriver ??
-                            data?.race.fastestLap ??
-                            "Unavailable"}
+                    <p className="mt-2 text-[12px] font-semibold uppercase tracking-[0.04em] text-white">
+                        {data?.race.fastestLap ?? "Unavailable"}
                     </p>
+
+                    {fastestLapDriver && (
+                        <p className="mt-1 truncate text-[10px] font-medium uppercase tracking-[0.1em] text-white/45">
+                            {getDriverName(fastestLapDriver)}
+                        </p>
+                    )}
                 </div>
 
                 <div className="p-4">
-                    <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/25">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/25">
                         Laps
                     </p>
 
-                    <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.04em] text-white">
+                    <p className="mt-2 text-[12px] font-semibold uppercase tracking-[0.04em] text-white">
                         {data?.race.laps ??
                             "Unavailable"}
                     </p>
                 </div>
-            </div>
-        </section>
+            </motion.div>
+        </motion.section>
     );
 }
 
@@ -1051,7 +1107,11 @@ function NextRaceCard({
     circuitMap: ReturnType<typeof getCircuitMap>;
     countdown: string;
 }): React.ReactElement {
+    const reducedMotion = useReducedMotion();
     const circuit = data?.circuit ?? null;
+    const verifiedCircuit = getVerifiedCircuitFacts(
+        circuit?.id ?? circuitMap?.id,
+    );
 
     const country =
         circuit?.country ??
@@ -1069,10 +1129,12 @@ function NextRaceCard({
 
     const length =
         circuit?.length ??
+        verifiedCircuit?.lengthKm ??
         null;
 
     const corners =
         circuit?.corners ??
+        verifiedCircuit?.corners ??
         null;
 
     const laps =
@@ -1085,13 +1147,13 @@ function NextRaceCard({
         null;
 
     return (
-        <section className="overflow-hidden border border-white/10 bg-[#242426] p-3">
-            <div className="grid items-center gap-8 lg:grid-cols-[0.95fr_1.05fr]">
+        <motion.section {...revealMotion(reducedMotion)} className="overflow-hidden border border-white/10 bg-[#242426] p-3">
+            <div className="grid items-stretch gap-8 lg:grid-cols-[0.95fr_1.05fr]">
                 <div className="order-2 flex flex-col lg:order-1">
-                    <div className="border-b border-white/10 p-5 sm:p-6 lg:p-7">
+                    <motion.div {...revealMotion(reducedMotion, 0.06, -8)} className="border-b border-white/10 p-5 sm:p-6 lg:p-7">
                         <div className="flex items-start justify-between gap-6">
                             <div>
-                                <p className="text-[9px] font-semibold uppercase tracking-[0.28em] text-[#ff729f]">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#ff729f]">
                                     Next race
                                 </p>
 
@@ -1109,11 +1171,11 @@ function NextRaceCard({
                                     </span>
 
                                     <div>
-                                        <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-white/45">
+                                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">
                                             {circuitName}
                                         </p>
 
-                                        <p className="mt-1 text-[9px] font-medium uppercase tracking-[0.18em] text-white/25">
+                                        <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.18em] text-white/25">
                                             {location} •{" "}
                                             {country}
                                         </p>
@@ -1121,15 +1183,15 @@ function NextRaceCard({
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </motion.div>
 
-                    <div className="grid grid-cols-2 border-b border-white/10 sm:grid-cols-4">
+                    <motion.div {...revealMotion(reducedMotion, 0.1)} className="grid grid-cols-2 border-b border-white/10 sm:grid-cols-4">
                         <div className="border-r border-white/10 p-4 sm:p-5">
-                            <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/30">
                                 Lights out
                             </p>
 
-                            <p className="mt-2 text-xs font-semibold uppercase tracking-[0.06em] text-white">
+                            <p className="mt-2 text-sm font-semibold uppercase tracking-[0.06em] text-white">
                                 {formatDate(
                                     raceDate,
                                 )}
@@ -1137,11 +1199,11 @@ function NextRaceCard({
                         </div>
 
                         <div className="border-b border-white/10 p-4 sm:border-b-0 sm:border-r sm:p-5">
-                            <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/30">
                                 Round
                             </p>
 
-                            <p className="mt-2 text-xs font-semibold text-white">
+                            <p className="mt-2 text-sm font-semibold text-white">
                                 {String(
                                     race.round,
                                 ).padStart(2, "0")}
@@ -1149,11 +1211,11 @@ function NextRaceCard({
                         </div>
 
                         <div className="border-r border-white/10 p-4 sm:p-5">
-                            <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/30">
                                 Length
                             </p>
 
-                            <p className="mt-2 truncate text-xs font-semibold text-white">
+                            <p className="mt-2 truncate text-sm font-semibold text-white">
                                 {formatDistance(
                                     length,
                                 )}
@@ -1161,43 +1223,43 @@ function NextRaceCard({
                         </div>
 
                         <div className="p-4 sm:p-5">
-                            <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/30">
                                 Corners
                             </p>
 
-                            <p className="mt-2 text-xs font-semibold text-white">
+                            <p className="mt-2 text-sm font-semibold text-white">
                                 {corners ??
                                     "Unavailable"}
                             </p>
                         </div>
-                    </div>
+                    </motion.div>
 
-                    <div className="grid grid-cols-2 border-b border-white/10">
+                    <motion.div {...revealMotion(reducedMotion, 0.14)} className="grid grid-cols-2 border-b border-white/10">
                         <div className="border-r border-white/10 p-4 sm:p-5">
-                            <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/30">
                                 Laps
                             </p>
 
-                            <p className="mt-2 text-xs font-semibold text-white">
+                            <p className="mt-2 text-sm font-semibold text-white">
                                 {laps ??
                                     "Unavailable"}
                             </p>
                         </div>
 
                         <div className="p-4 sm:p-5">
-                            <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/30">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/30">
                                 Until lights out
                             </p>
 
-                            <p className="mt-2 text-xs font-semibold uppercase tracking-[0.06em] text-[#ee8434]">
+                            <p className="mt-2 text-sm font-semibold uppercase tracking-[0.06em] text-[#ee8434]">
                                 Counting down
                             </p>
                         </div>
-                    </div>
+                    </motion.div>
 
-                    <div className="flex items-end justify-between gap-6 p-5 sm:p-6">
+                    <motion.div {...revealMotion(reducedMotion, 0.18)} className="flex items-end justify-between gap-6 p-5 sm:p-6">
                         <div>
-                            <p className="text-[8px] font-semibold uppercase tracking-[0.28em] text-white/30">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/30">
                                 Countdown
                             </p>
 
@@ -1207,49 +1269,45 @@ function NextRaceCard({
                         </div>
 
                         <div className="hidden text-right sm:block">
-                            <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/25">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/25">
                                 Next destination
                             </p>
 
-                            <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.06em] text-white/60">
+                            <p className="mt-2 flex items-center justify-end gap-2 text-[12px] font-semibold uppercase tracking-[0.06em] text-white/60">
+                                <span aria-hidden="true" className="text-base leading-none">
+                                    {countryCodeToEmoji(race.countryCode ?? country)}
+                                </span>
                                 {country}
                             </p>
                         </div>
-                    </div>
+                    </motion.div>
                 </div>
 
-                <div className="relative order-1 h-[280px] overflow-hidden bg-black lg:order-2 lg:h-[390px]">
-                    {circuitMap ? (
-                        <RaceMap3D circuit={circuitMap} />
-                    ) : (
-                        <div className="flex h-full items-center justify-center px-8 text-center">
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/35">
-                                Circuit map unavailable
-                            </p>
-                        </div>
-                    )}
+                <motion.div {...revealMotion(reducedMotion, 0.12, 12)} className="relative order-1 h-[360px] lg:order-2 lg:h-auto lg:self-stretch">
+                    <div aria-hidden="true" className="pointer-events-none absolute -inset-1 rounded-3xl bg-[radial-gradient(ellipse_at_25%_35%,rgba(255,114,159,0.22),transparent_60%),radial-gradient(ellipse_at_75%_70%,rgba(238,132,52,0.14),transparent_60%)] blur-xl" />
+                    <div className="relative h-full overflow-hidden bg-black">
+                        {circuitMap ? (
+                            <RaceMap3D circuit={circuitMap} />
+                        ) : (
+                            <div className="flex h-full items-center justify-center px-8 text-center">
+                                <p className="text-[12px] font-semibold uppercase tracking-[0.2em] text-white/35">
+                                    Circuit map unavailable
+                                </p>
+                            </div>
+                        )}
+                    </div>
 
                     <div className="pointer-events-none absolute left-5 top-5 z-10">
-                        <p className="text-[8px] font-semibold uppercase tracking-[0.28em] text-white/40">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/40">
                             Circuit map
                         </p>
 
-                        <p className="mt-2 max-w-[220px] text-[10px] font-medium uppercase tracking-[0.12em] text-white/70">
+                        <p className="mt-2 max-w-[220px] text-[12px] font-medium uppercase tracking-[0.12em] text-white/70">
                             {circuitName}
                         </p>
                     </div>
-
-                    {circuitMap ? <div className="pointer-events-none absolute bottom-5 left-5 z-10">
-                        <p className="text-[8px] font-semibold uppercase tracking-[0.24em] text-white/30">
-                            Interactive circuit
-                        </p>
-
-                        <p className="mt-2 text-[8px] font-semibold uppercase tracking-[0.18em] text-[#ff729f]">
-                            Drag to rotate • Scroll to zoom
-                        </p>
-                    </div> : null}
-                </div>
+                </motion.div>
             </div>
-        </section>
+        </motion.section>
     );
 }

@@ -1,8 +1,8 @@
 "use client";
 
-import { OrbitControls } from "@react-three/drei";
+import { Html, OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
 import type {
@@ -790,6 +790,31 @@ function StartFinishLine({
     );
 }
 
+function StartFinishLabel({
+    circuit,
+}: {
+    circuit: CircuitMapData;
+}): React.ReactElement {
+    const startPosition = circuit.points[0];
+
+    return (
+        <Html
+            position={[
+                startPosition.x,
+                0.35,
+                startPosition.y,
+            ]}
+            center
+            style={{ pointerEvents: "none" }}
+        >
+            <div className="flex items-center gap-1.5 whitespace-nowrap rounded-sm border border-[#ff729f]/60 bg-[#101014]/90 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white shadow-[0_0_12px_rgba(255,114,159,0.22)]">
+                <span className="text-[#ff729f]">▣</span>
+                Start / finish
+            </div>
+        </Html>
+    );
+}
+
 function CornerMarkers({
     circuit,
 }: {
@@ -1322,6 +1347,10 @@ function AnimatedCircuit({
                 circuit={circuit}
             />
 
+            <StartFinishLabel
+                circuit={circuit}
+            />
+
             <CornerMarkers
                 circuit={circuit}
             />
@@ -1335,8 +1364,10 @@ function AnimatedCircuit({
 
 function CircuitScene({
     circuit,
+    interactive,
 }: {
     circuit: CircuitMapData;
+    interactive: boolean;
 }): React.ReactElement {
     const bounds = useMemo(
         () =>
@@ -1426,6 +1457,7 @@ function CircuitScene({
             />
 
             <OrbitControls
+                enabled={interactive}
                 target={[
                     bounds.centreX,
                     0,
@@ -1433,7 +1465,7 @@ function CircuitScene({
                 ]}
                 enableRotate
                 enableZoom
-                enablePan
+                enablePan={false}
                 enableDamping
                 dampingFactor={0.08}
                 rotateSpeed={0.5}
@@ -1461,8 +1493,33 @@ function CircuitScene({
 export default function RaceMap3D({
     circuit,
 }: RaceMap3DProps): React.ReactElement {
+    const [interactive, setInteractive] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!interactive) return;
+
+        const deactivateOutside = (event: PointerEvent) => {
+            if (!containerRef.current?.contains(event.target as Node)) {
+                setInteractive(false);
+            }
+        };
+
+        const deactivateOnEscape = (event: KeyboardEvent) => {
+            if (event.key === "Escape") setInteractive(false);
+        };
+
+        document.addEventListener("pointerdown", deactivateOutside);
+        document.addEventListener("keydown", deactivateOnEscape);
+
+        return () => {
+            document.removeEventListener("pointerdown", deactivateOutside);
+            document.removeEventListener("keydown", deactivateOnEscape);
+        };
+    }, [interactive]);
+
     return (
-        <div className="relative h-full overflow-hidden rounded-2xl border border-[#ff729f]/30 bg-[#08080a] shadow-[0_0_35px_rgba(255,114,159,0.08)]">
+        <div ref={containerRef} className="relative h-full overflow-hidden rounded-2xl border border-[#ff729f]/30 bg-[#08080a] shadow-[0_0_35px_rgba(255,114,159,0.08)]">
             <div className="pointer-events-none absolute inset-0 z-10 rounded-6xl border border-white/5" />
 
             <Canvas
@@ -1481,8 +1538,31 @@ export default function RaceMap3D({
             >
                 <CircuitScene
                     circuit={circuit}
+                    interactive={interactive}
                 />
             </Canvas>
+
+            {!interactive && (
+                <button
+                    type="button"
+                    onClick={() => setInteractive(true)}
+                    className="absolute inset-0 z-20 flex cursor-pointer flex-col items-center justify-center gap-2 bg-black/15 text-center transition-colors hover:bg-black/25 focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[#ff729f]"
+                    aria-label="Click map to rotate. Then drag to rotate and scroll or pinch to zoom."
+                >
+                    <span className="rounded-full border border-[#ff729f]/70 bg-[#101014]/90 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-white shadow-[0_0_20px_rgba(255,114,159,0.18)]">
+                        Click map to rotate
+                    </span>
+                    <span className="rounded-sm bg-[#101014]/75 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-white/80">
+                        Then drag to rotate · Scroll or pinch to zoom
+                    </span>
+                </button>
+            )}
+
+            {interactive && (
+                <div className="pointer-events-none absolute bottom-5 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-sm border border-white/15 bg-[#101014]/85 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-white/85">
+                    Drag to rotate · Scroll or pinch to zoom · Esc to exit
+                </div>
+            )}
         </div>
     );
 }

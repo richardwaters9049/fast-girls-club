@@ -4,7 +4,9 @@ import { redirect } from "next/navigation";
 
 import BlogCard from "@/components/blog/BlogCard";
 import BlogDashboardControls from "@/components/blog/BlogDashboardControls";
+import BlogLeadStory from "@/components/blog/BlogLeadStory";
 import BlogPagination from "@/components/blog/BlogPagination";
+import BlogReveal from "@/components/blog/BlogReveal";
 import Footer from "@/components/layout/Footer";
 import Header from "@/components/layout/Header";
 
@@ -111,7 +113,7 @@ export default async function BlogPage({
         await searchParams;
 
     const query =
-        getFirstValue(params.q);
+        getFirstValue(params.q).trim();
 
     const category =
         getFirstValue(
@@ -197,94 +199,34 @@ export default async function BlogPage({
     return (
         <main className="min-h-screen bg-[#e6e6e6] text-[#1c1c1c]">
             <Header />
-            <section className="relative overflow-hidden bg-[#1c1c1c] px-6 py-10 text-white lg:px-10 lg:py-14">
-                <div className="absolute -right-40 -top-40 h-[34rem] w-[34rem] rounded-full bg-[#ff729f]/10 blur-3xl" />
+            <section className="relative isolate overflow-hidden bg-[#1c1c1c] px-6 py-14 text-white lg:px-10 lg:py-20">
+                <div className="absolute inset-0 -z-20 bg-[linear-gradient(115deg,#1c1c1c_35%,#37232b_75%,#52312c_130%)]" />
+                <div className="absolute -right-24 -top-32 -z-10 h-[32rem] w-[32rem] rounded-full bg-[#ff729f]/10 blur-3xl" />
+                <div aria-hidden="true" className="absolute -bottom-12 right-0 -z-10 hidden text-[clamp(11rem,23vw,23rem)] font-black uppercase leading-none tracking-[-0.1em] text-white/[0.025] lg:block">Read</div>
+                <div className="absolute inset-x-0 bottom-0 h-1 bg-[linear-gradient(90deg,#ff729f,#ee8434,transparent_90%)]" />
 
-                <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-[#ff729f]/60 to-transparent" />
-
-                <div className="relative mx-auto max-w-[77.5rem]">
-                    <div className="flex flex-col justify-between gap-8 md:flex-row md:items-end">
-                        <div className="max-w-4xl">
-                            <Link
-                                href="/"
-                                className="inline-flex text-[9px] font-black uppercase tracking-[0.2em] text-white/35 transition-colors hover:text-[#ff729f]"
-                            >
-                                ← Fast Girls
-                                Club
-                            </Link>
-
-                            <div className="mt-10">
-                                <div className="flex items-center gap-3">
-                                    <span className="h-2 w-2 bg-[#ff729f]" />
-
-                                    <p className="text-[9px] font-black uppercase tracking-[0.25em] text-white/40">
-                                        Editorial
-                                        desk
-                                    </p>
-                                </div>
-
-                                <h1 className="mt-5 text-[clamp(4rem,9vw,8rem)] font-black uppercase leading-[0.8] tracking-[-0.08em]">
-                                    News
-                                    <span className="text-[#ff729f]">
-                                        .
-                                    </span>
-                                </h1>
-
-                                <p className="mt-7 max-w-2xl text-sm leading-7 text-white/45 md:text-base">
-                                    Stories,
-                                    drivers,
-                                    teams and
-                                    racing
-                                    culture from
-                                    the Fast Girls
-                                    Club.
-                                </p>
-                            </div>
+                <div className="mx-auto grid max-w-[77.5rem] gap-10 md:grid-cols-[1fr_auto] md:items-end">
+                    <BlogReveal direction="left">
+                        <div className="flex items-center gap-3">
+                            <span className="h-2 w-2 bg-[#ff729f]" />
+                            <p className="text-[10px] font-black uppercase tracking-[0.26em] text-white/60">Fast Girls Club / Editorial</p>
+                            <span className="h-px w-9 bg-[#ee8434]" />
                         </div>
 
-                        <div className="grid grid-cols-3 border border-white/10 bg-white/[0.03] md:min-w-[25rem]">
-                            <div className="border-r border-white/10 p-4 md:p-5">
-                                <p className="text-[8px] font-bold uppercase tracking-[0.18em] text-white/30">
-                                    Stories
-                                </p>
+                        <h1 className="mt-7 text-[clamp(3.1rem,10vw,9rem)] font-black uppercase leading-[0.78] tracking-[-0.075em]">
+                            The<br /><span className="text-[#ff729f]">paddock</span><span className="text-[#ee8434]">.</span>
+                        </h1>
 
-                                <p className="mt-3 text-2xl font-black tracking-[-0.04em] text-[#ff729f]">
-                                    {
-                                        result.total
-                                    }
-                                </p>
-                            </div>
+                        <p className="mt-8 max-w-[33rem] text-base leading-7 text-white/65 md:text-lg">
+                            Fresh perspectives on the racing, the people and the moments worth talking about.
+                        </p>
+                    </BlogReveal>
 
-                            <div className="border-r border-white/10 p-4 md:p-5">
-                                <p className="text-[8px] font-bold uppercase tracking-[0.18em] text-white/30">
-                                    Categories
-                                </p>
-
-                                <p className="mt-3 text-2xl font-black tracking-[-0.04em] text-[#ee8434]">
-                                    {
-                                        categories.length
-                                    }
-                                </p>
-                            </div>
-
-                            <div className="p-4 md:p-5">
-                                <p className="text-[8px] font-bold uppercase tracking-[0.18em] text-white/30">
-                                    Page
-                                </p>
-
-                                <p className="mt-3 text-2xl font-black tracking-[-0.04em]">
-                                    {currentPage}
-                                    <span className="text-white/25">
-                                        /
-                                        {
-                                            totalPages ||
-                                            1
-                                        }
-                                    </span>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
+                    <BlogReveal delay={0.18} className="border-l border-[#ff729f]/50 pl-5 md:max-w-[13rem]">
+                        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#ff9ebd]">In this edition</p>
+                        <p className="mt-3 text-4xl font-black tracking-[-0.06em]">{result.total}</p>
+                        <p className="mt-1 text-xs leading-5 text-white/50">{result.total === 1 ? "story" : "stories"} to explore</p>
+                    </BlogReveal>
                 </div>
             </section>
 
@@ -300,39 +242,47 @@ export default async function BlogPage({
                 }
             />
 
-            <section className="px-6 py-8 lg:px-10 lg:py-12">
+            <section id="stories" className="scroll-mt-24 px-6 py-12 lg:px-10 lg:py-16">
                 <div className="mx-auto max-w-[77.5rem]">
-                    <div className="mb-7 flex flex-col justify-between gap-4 border-b border-[#1c1c1c]/10 pb-5 sm:flex-row sm:items-end">
+                    <BlogReveal direction="left" className="mb-8 flex flex-col justify-between gap-4 border-b border-[#1c1c1c]/15 pb-6 sm:flex-row sm:items-end">
                         <div>
-                            <p className="text-[9px] font-black uppercase tracking-[0.22em] text-[#ee8434]">
+                            <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] text-[#b95322]">
+                                <span className="h-2 w-2 bg-[#ee8434]" />
                                 {hasFilters
-                                    ? "Filtered results"
-                                    : "Latest stories"}
+                                    ? "Your selection"
+                                    : "Straight from the paddock"}
                             </p>
 
-                            <h2 className="mt-2 text-3xl font-black uppercase tracking-[-0.05em] md:text-4xl">
+                            <h2 className="mt-3 max-w-[45rem] break-words text-4xl font-black uppercase leading-[0.9] tracking-[-0.06em] md:text-6xl">
                                 {query
                                     ? `Search: ${query}`
                                     : selectedCategory
                                         ? selectedCategory.name
-                                        : "The latest"}
+                                        : "Latest stories"}
                             </h2>
                         </div>
 
-                        <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#1c1c1c]/35">
+                        <p className="shrink-0 text-[10px] font-bold uppercase tracking-[0.18em] text-[#1c1c1c]/50">
                             {result.total}{" "}
                             {result.total ===
                                 1
                                 ? "story"
                                 : "stories"}
+                            <span className="ml-3 text-[#d45580]">/</span>
+                            <span className="ml-3">Page {currentPage} of {totalPages || 1}</span>
                         </p>
-                    </div>
+                    </BlogReveal>
 
                     {result.posts.length >
                         0 ? (
                         <>
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                                {result.posts.map(
+                            <BlogReveal className="mb-6">
+                                <BlogLeadStory post={result.posts[0]} />
+                            </BlogReveal>
+
+                            {result.posts.length > 1 && (
+                            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                                {result.posts.slice(1).map(
                                     (
                                         post,
                                         index,
@@ -351,7 +301,9 @@ export default async function BlogPage({
                                     ),
                                 )}
                             </div>
+                            )}
 
+                            <BlogReveal>
                             <BlogPagination
                                 currentPage={
                                     currentPage
@@ -372,9 +324,10 @@ export default async function BlogPage({
                                     sort
                                 }
                             />
+                            </BlogReveal>
                         </>
                     ) : (
-                        <div className="border border-[#1c1c1c]/10 bg-white px-6 py-20 text-center">
+                        <BlogReveal className="border border-[#1c1c1c]/10 bg-white px-6 py-20 text-center">
                             <p className="text-[9px] font-black uppercase tracking-[0.24em] text-[#ee8434]">
                                 No matches
                             </p>
@@ -393,12 +346,12 @@ export default async function BlogPage({
                             </p>
 
                             <Link
-                                href="/blog"
+                                href="/blog#stories"
                                 className="mt-8 inline-flex bg-[#1c1c1c] px-6 py-3 text-[9px] font-black uppercase tracking-[0.18em] text-white transition-colors hover:bg-[#ff729f] hover:text-[#1c1c1c]"
                             >
-                                Reset dashboard
+                                Clear all filters
                             </Link>
-                        </div>
+                        </BlogReveal>
                     )}
                 </div>
             </section>

@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 
 import { F1_API_BASE_URL } from "@/lib/config";
+import {
+  getVerifiedCircuitFacts,
+  getVerifiedRaceLaps,
+  getVerifiedRaceLengthCorrectionKm,
+  parseCircuitLengthKm,
+} from "@/lib/f1/race-facts";
 
 export const revalidate = 1_800;
 
@@ -196,6 +202,7 @@ export async function GET(
     const race = backendData.race;
     const schedule = race.schedule;
     const circuit = race.circuit;
+    const verifiedCircuit = getVerifiedCircuitFacts(circuit.circuitId);
 
     const result = {
       round: race.round,
@@ -221,8 +228,15 @@ export async function GET(
         country: circuit.country,
         city: circuit.city,
         lengthKm:
-          circuit.length === null ? null : Number(circuit.length) || null,
-        corners: circuit.corners,
+          getVerifiedRaceLengthCorrectionKm(
+            race.season,
+            race.round,
+            circuit.circuitId,
+          ) ??
+          parseCircuitLengthKm(circuit.length) ??
+          verifiedCircuit?.lengthKm ??
+          null,
+        corners: circuit.corners ?? verifiedCircuit?.corners ?? null,
         lapRecord: circuit.lapRecord,
         fastestLapDriverId: circuit.fastestLapDriverId,
         fastestLapTeamId: circuit.fastestLapTeamId,
@@ -230,7 +244,11 @@ export async function GET(
         url: circuit.url,
       },
 
-      laps: race.laps,
+      laps:
+        race.laps ??
+        getVerifiedRaceLaps(race.season, race.round, circuit.circuitId),
+
+      fastestLap: race.fastestLap,
 
       winner: normaliseWinner(race.winner),
 
