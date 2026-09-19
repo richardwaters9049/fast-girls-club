@@ -9,10 +9,9 @@ import newLogo from "@/public/images/F1-images/newlogo3.png";
 
 const links = [
   { href: "/#latest", label: "Latest" },
-  { href: "/blog", label: "News" },
-  { href: "/#racing", label: "Racing" },
+  { href: "/blog", label: "Blog" },
   { href: "/f1", label: "The Grid" },
-  { href: "/#about", label: "About" },
+  { href: "/about", label: "About" },
 ];
 
 export default function Header(): React.ReactElement {

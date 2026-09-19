@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 import type { BlogPostSummary } from "@/lib/wordpress/types";
 
@@ -30,20 +30,29 @@ export default function BlogCard({
 }: BlogCardProps): React.ReactElement {
     const category =
         post.categories[0];
+    const reduceMotion = useReducedMotion();
 
     return (
         <motion.article
-            initial={{
-                opacity: 0,
-                y: 24,
-            }}
-            animate={{
+            initial={
+                reduceMotion
+                    ? false
+                    : {
+                          opacity: 0,
+                          y: 72,
+                      }
+            }
+            whileInView={{
                 opacity: 1,
                 y: 0,
             }}
+            viewport={{
+                amount: 0.12,
+                once: true,
+            }}
             transition={{
-                duration: 0.45,
-                delay: index * 0.07,
+                duration: 0.9,
+                delay: index * 0.14,
                 ease: [
                     0.22,
                     1,
@@ -54,11 +63,13 @@ export default function BlogCard({
             whileHover={{
                 y: -5,
             }}
-            className="group h-full overflow-hidden border border-[#1c1c1c]/10 bg-[#1c1c1c] text-white"
+            className="group relative h-full overflow-hidden border border-[#1c1c1c]/10 bg-[#1c1c1c] text-white shadow-[0_18px_50px_rgba(28,28,28,0.08)] transition-colors duration-300 hover:border-[#ff729f]/45"
         >
+            <span className="absolute left-0 top-0 z-20 h-1 w-12 bg-[linear-gradient(90deg,#ff729f,#ee8434)] transition-all duration-500 group-hover:w-full" />
+
             <Link
                 href={`/blog/${post.slug}`}
-                className="flex h-full flex-col"
+                className="flex h-full flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#ff729f]"
             >
                 <div className="relative aspect-[16/10] overflow-hidden bg-[#292020]">
                     {post.featuredImage ? (
@@ -105,7 +116,7 @@ export default function BlogCard({
                         </span>
                     </div>
 
-                    <h2 className="mt-5 text-2xl font-black uppercase leading-[0.9] tracking-[-0.05em]">
+                    <h2 className="mt-5 text-2xl font-black uppercase leading-[0.9] tracking-[-0.05em] transition-colors duration-300 group-hover:text-[#ff9abd]">
                         {post.title}
                     </h2>
 
