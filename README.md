@@ -14,6 +14,12 @@ Fast Girls Club is a Next.js motorsport publication focused on women in motorspo
 
 ## Application areas
 
+### Homepage
+
+The homepage combines the latest WordPress stories with an interactive React Three Fiber hero, an image-led route into The Grid and branded editorial sections. On desktop, the 3D car can be rotated with the mouse and follows a scroll-driven exit and return sequence. Touch interaction remains reserved for normal page scrolling.
+
+Homepage motion honours `prefers-reduced-motion`. Story-card entrances run once to avoid flicker, while deliberately directional sections may respond to both entry and exit.
+
 ### Editorial
 
 The homepage displays the latest published WordPress stories. `/blog` provides searching, category/date filters, sorting and pagination, while `/blog/[slug]` renders the article body and WordPress media.
@@ -32,6 +38,10 @@ WordPress requests are made on the server through `lib/wordpress/client.ts`. The
 - available circuit maps and the 3D car experience.
 
 F2 and F3 are deliberately marked as unavailable until genuine data is connected. Missing results or circuit maps are shown as unavailable and are never replaced with invented values.
+
+### About
+
+`/about` presents the Fast Girls Club mission, editorial point of view and working brand values. Its current narrative copy is suitable placeholder content and should be reviewed before a final production launch.
 
 ## Data architecture
 
@@ -92,12 +102,13 @@ bun run build
 
 ```text
 app/
+  about/                   Brand story and values
   api/blog/latest/         Homepage editorial feed
   api/f1/                  F1 server-side boundary
   blog/                    Editorial dashboard and articles
   f1/                      The Grid
 components/
-  3d/                      Car and circuit scenes
+  3d/                      Interactive hero car and circuit scenes
   blog/                    Editorial cards, filters and pagination
   f1/                      Timing, standings and dashboard panels
   layout/                  Shared site navigation and footer

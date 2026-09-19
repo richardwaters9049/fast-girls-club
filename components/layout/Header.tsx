@@ -18,7 +18,7 @@ export default function Header(): React.ReactElement {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="relative z-30 bg-[#1c1c1c] text-white">
+    <header className="sticky top-0 z-50 shrink-0 border-b border-white/10 bg-[#1c1c1c] text-white shadow-[0_8px_30px_rgba(0,0,0,0.18)]">
       <nav
         aria-label="Main navigation"
         className="relative mx-auto flex w-full max-w-[77.5rem] items-center justify-between px-6 py-5 lg:px-10"

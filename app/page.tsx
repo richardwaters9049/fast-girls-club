@@ -176,7 +176,10 @@ export default function Home(): React.ReactElement {
     ]);
 
     return (
-        <main className="overflow-hidden bg-[#1c1c1c] text-white">
+        <>
+            <Header />
+
+            <main className="overflow-hidden bg-[#1c1c1c] text-white">
             <section
                 ref={heroSectionRef}
                 className="relative isolate overflow-hidden"
@@ -186,8 +189,6 @@ export default function Home(): React.ReactElement {
                 <div className="absolute -right-40 top-20 h-[31.25rem] w-[31.25rem] rounded-full bg-[#ff729f]/15 blur-3xl" />
 
                 <div className="absolute left-0 top-0 h-1 w-full bg-[linear-gradient(90deg,#ff729f,#ee8434)]" />
-
-                <Header />
 
                 <div className="relative mx-auto grid max-w-[77.5rem] items-center px-6 pb-16 pt-8 lg:grid-cols-[0.85fr_1.15fr] lg:px-10 lg:pb-24 lg:pt-12">
                     <motion.div
@@ -345,7 +346,7 @@ export default function Home(): React.ReactElement {
 
             <section
                 id="latest"
-                className="relative isolate overflow-hidden bg-[#e6e6e6] px-6 py-8 text-[#1c1c1c] lg:px-10 lg:py-14"
+                className="relative isolate scroll-mt-24 overflow-hidden bg-[#e6e6e6] px-6 py-8 text-[#1c1c1c] lg:px-10 lg:py-14"
             >
                 <div
                     aria-hidden="true"
@@ -685,6 +686,7 @@ export default function Home(): React.ReactElement {
             </section>
 
             <Footer />
-        </main>
+            </main>
+        </>
     );
 }

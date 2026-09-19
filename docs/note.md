@@ -1,5 +1,41 @@
 # Fast Girls Club engineering note
 
+## Update — 19 September 2026
+
+### Summary
+
+This pass brought the public-facing homepage and About page up to the same standard as The Grid without changing the established layout system. The work focused on branded editorial presentation, purposeful scroll animation, a more expressive 3D car experience and responsive behaviour across desktop and mobile.
+
+### Homepage and interaction changes
+
+- Refined the 3D Formula 1 car's scale, lighting and branded pink-and-orange livery.
+- Added mouse drag rotation while retaining vertical page scrolling on touch devices.
+- Added a desktop scroll sequence that sends the car along a curved, spinning route towards the top-right of the screen and reverses when the user scrolls back.
+- Reset the car to its original pose after it leaves and returns, so manual rotation never creates an inconsistent starting state.
+- Repositioned the drag instruction above the car where it remains visible.
+- Made the hero copy move out and back into view in response to the user's scroll position.
+- Restyled the Race Report area with stronger editorial hierarchy, brand accents and scroll-led entrances.
+- Changed story cards to a slower, one-time staggered entrance to prevent viewport-boundary flicker. Photography retains its original colour on hover.
+- Rebuilt Enter the Grid as a full-width image-led section with high-contrast overlaid copy and directional entrance and exit motion.
+- Refined Fast Women. Faster Future with restrained background detail, clearer supporting copy and responsive motion.
+- Integrated the shared header into The Grid without clipping its mobile menu.
+
+### About page
+
+- Replaced the placeholder About route with a complete responsive brand page.
+- Added a mission-led hero, editorial story section, three brand values, a manifesto panel and clear links to the blog and The Grid.
+- Added meaningful placeholder copy that can be replaced when the final brand narrative is approved.
+- Used one-time section reveals to keep the experience polished without repeating or flickering during ordinary scrolling.
+
+### Accessibility and verification
+
+- Applied visible keyboard focus states to new interactive elements.
+- Honoured `prefers-reduced-motion` across the new Framer Motion sequences.
+- Checked the homepage and About page at desktop and mobile viewport sizes.
+- Completed TypeScript, ESLint, the seven-test suite and a production build successfully.
+
+---
+
 **Date:** 18 September 2026
 
 ## Summary

@@ -48,8 +48,11 @@ export default function AboutPage(): React.ReactElement {
     const initialState = reduceMotion ? false : "hidden";
 
     return (
-        <main className="overflow-hidden bg-[#1c1c1c] text-white">
-            <section className="relative isolate min-h-[46rem] overflow-hidden border-b border-white/10">
+        <>
+            <Header />
+
+            <main className="overflow-hidden bg-[#1c1c1c] text-white">
+            <section className="relative isolate overflow-hidden border-b border-white/10">
                 <div className="absolute inset-0 -z-30 bg-[linear-gradient(125deg,#1c1c1c_0%,#1c1c1c_48%,#38212b_78%,#6f372e_140%)]" />
 
                 <div className="absolute -right-40 top-20 -z-20 h-[34rem] w-[34rem] rounded-full bg-[#ff729f]/15 blur-3xl" />
@@ -62,8 +65,6 @@ export default function AboutPage(): React.ReactElement {
                 </div>
 
                 <div className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#ff729f,#ee8434,transparent_85%)]" />
-
-                <Header />
 
                 <div className="relative mx-auto flex min-h-[39rem] max-w-[77.5rem] flex-col justify-center px-6 py-20 lg:px-10 lg:py-28">
                     <motion.div
@@ -411,6 +412,7 @@ export default function AboutPage(): React.ReactElement {
             </section>
 
             <Footer />
-        </main>
+            </main>
+        </>
     );
 }

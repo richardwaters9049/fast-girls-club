@@ -171,6 +171,24 @@ Avoid:
 
 Animation should enhance the editorial experience rather than become the feature.
 
+### Motion implementation notes
+
+- Honour `prefers-reduced-motion` for every new animation sequence.
+- Prefer one-time viewport entrances for article cards and repeated content. Re-triggering near a viewport threshold can cause visible flicker.
+- Use reversible motion only when the design explicitly responds to scroll direction or scroll progress.
+- Scroll-driven elements must return to a deterministic resting state when the user returns to their starting position.
+- Validate motion at desktop and mobile sizes; an animation must not leave readable content inaccessible when JavaScript, motion or viewport conditions differ.
+
+### 3D hero interaction
+
+The homepage car is implemented in `components/3d/Model.tsx`, with its canvas and instruction treatment in `components/3d/Scene.tsx` and `components/3d/HeroScene.tsx`.
+
+- Mouse drag rotates the car; touch gestures must remain available for vertical page scrolling.
+- The scroll-driven car exit is a desktop enhancement and is disabled for reduced-motion users.
+- After leaving and returning, the car deliberately resets to its original pose, including any rotation previously applied by the user.
+- Keep the livery texture at `public/images/3Dimages/formula 1/formula1_BlackPink_Diffuse.png` unless every importing path is updated and the rendered result is visually checked.
+- Test the start, midpoint, off-screen state and complete return whenever the car trajectory changes.
+
 ---
 
 ## 7. Responsive Design
