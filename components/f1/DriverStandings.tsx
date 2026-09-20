@@ -1,7 +1,6 @@
 "use client";
 
 import {
-    useEffect,
     useMemo,
     useState,
 } from "react";
@@ -16,75 +15,21 @@ import type {
 } from "@/lib/f1/types";
 
 const PAGE_SIZE = 10;
+const EMPTY_STANDINGS: F1DriverStanding[] = [];
 
 export default function DriverStandings({
     liveDrivers,
+    data,
+    error,
 }: {
     liveDrivers: F1Driver[];
+    data: F1DriverStandingsResponse | null;
+    error: string | null;
 }): React.ReactElement {
-    const [standings, setStandings] = useState<
-        F1DriverStanding[]
-    >([]);
-    const [season, setSeason] = useState<number | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(
-        null,
-    );
+    const standings = data?.standings ?? EMPTY_STANDINGS;
+    const season = data?.season ?? null;
     const [currentPage, setCurrentPage] =
         useState(1);
-
-    useEffect(() => {
-        let cancelled = false;
-
-        const loadStandings = async () => {
-            try {
-                const response = await fetch(
-                    "/api/f1/drivers",
-                );
-
-                if (!response.ok) {
-                    throw new Error(
-                        `Driver API returned ${response.status}`,
-                    );
-                }
-
-                const data =
-                    (await response.json()) as F1DriverStandingsResponse;
-
-                if (cancelled) {
-                    return;
-                }
-
-                setStandings(data.standings);
-                setSeason(data.season);
-                setCurrentPage(1);
-                setError(null);
-            } catch (err) {
-                if (cancelled) {
-                    return;
-                }
-
-                console.error(
-                    "Failed to load driver standings:",
-                    err,
-                );
-
-                setError(
-                    "Driver championship data is currently unavailable.",
-                );
-            } finally {
-                if (!cancelled) {
-                    setLoading(false);
-                }
-            }
-        };
-
-        loadStandings();
-
-        return () => {
-            cancelled = true;
-        };
-    }, []);
 
     const totalPages = Math.max(
         1,
@@ -125,20 +70,16 @@ export default function DriverStandings({
         <div>
             <PanelHeader season={season} />
 
-            {loading && <LoadingState />}
-
-            {!loading && error && (
+            {error && (
                 <ErrorState message={error} />
             )}
 
-            {!loading &&
-                !error &&
+            {!error &&
                 standings.length === 0 && (
                     <EmptyState />
                 )}
 
-            {!loading &&
-                !error &&
+            {!error &&
                 standings.length > 0 && (
                     <div>
                         <div className="grid grid-cols-[28px_minmax(0,1fr)_54px] items-center gap-2 border-b border-white/10 bg-black/[0.08] px-3 py-3 text-[8px] font-black uppercase tracking-[0.22em] text-white/25 sm:grid-cols-[55px_minmax(0,1fr)_150px_90px] sm:gap-3 sm:px-8 lg:grid-cols-[55px_minmax(0,1fr)_230px_90px]">
@@ -415,38 +356,6 @@ function Pagination({
             >
                 Next
             </button>
-        </div>
-    );
-}
-
-function LoadingState(): React.ReactElement {
-    return (
-        <div className="px-5 py-12 sm:px-8">
-            <div className="space-y-2">
-                {Array.from(
-                    { length: 5 },
-                    (_, index) => (
-                        <div
-                            key={index}
-                            className="flex items-center gap-4 border-b border-white/[0.06] px-2 py-5"
-                        >
-                            <div className="h-5 w-7 bg-white/[0.06]" />
-                            <div className="h-10 w-10 bg-white/[0.06]" />
-
-                            <div className="flex-1">
-                                <div className="h-2 w-24 bg-white/[0.06]" />
-                                <div className="mt-2 h-3 w-40 bg-white/[0.06]" />
-                            </div>
-
-                            <div className="h-3 w-12 bg-white/[0.06]" />
-                        </div>
-                    ),
-                )}
-            </div>
-
-            <p className="mt-8 text-center text-[9px] font-bold uppercase tracking-[0.22em] text-white/25">
-                Loading championship...
-            </p>
         </div>
     );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import type {
     F1ConstructorStanding,
@@ -9,59 +9,18 @@ import type {
 } from "@/lib/f1/types";
 
 const PAGE_SIZE = 10;
+const EMPTY_STANDINGS: F1ConstructorStanding[] = [];
 
-export default function ConstructorStandings(): React.ReactElement {
-    const [standings, setStandings] = useState<F1ConstructorStanding[]>([]);
-    const [season, setSeason] = useState<number | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+export default function ConstructorStandings({
+    data,
+    error,
+}: {
+    data: F1ConstructorStandingsResponse | null;
+    error: string | null;
+}): React.ReactElement {
+    const standings = data?.standings ?? EMPTY_STANDINGS;
+    const season = data?.season ?? null;
     const [currentPage, setCurrentPage] = useState(1);
-
-    useEffect(() => {
-        let cancelled = false;
-
-        async function loadStandings(): Promise<void> {
-            try {
-                setLoading(true);
-                setError(null);
-
-                const response = await fetch("/api/f1/constructors");
-
-                if (!response.ok) {
-                    throw new Error(
-                        "Failed to load constructor standings",
-                    );
-                }
-
-                const data: F1ConstructorStandingsResponse =
-                    await response.json();
-
-                if (!cancelled) {
-                    setStandings(data.standings);
-                    setSeason(data.season);
-                    setCurrentPage(1);
-                }
-            } catch (err) {
-                console.error(err);
-
-                if (!cancelled) {
-                    setError(
-                        "Constructor championship data is currently unavailable.",
-                    );
-                }
-            } finally {
-                if (!cancelled) {
-                    setLoading(false);
-                }
-            }
-        }
-
-        loadStandings();
-
-        return () => {
-            cancelled = true;
-        };
-    }, []);
 
     const totalPages = Math.max(
         1,
@@ -97,18 +56,15 @@ export default function ConstructorStandings(): React.ReactElement {
         <div>
             <PanelHeader season={season} />
 
-            {loading && <LoadingState />}
-
-            {!loading && error && (
+            {error && (
                 <ErrorState message={error} />
             )}
 
-            {!loading && !error && standings.length === 0 && (
+            {!error && standings.length === 0 && (
                 <EmptyState />
             )}
 
-            {!loading &&
-                !error &&
+            {!error &&
                 standings.length > 0 && (
                     <div>
                         <div className="grid grid-cols-[28px_minmax(0,1fr)_54px] items-center gap-2 border-b border-white/10 bg-black/[0.08] px-3 py-3 text-[8px] font-black uppercase tracking-[0.22em] text-white/25 sm:grid-cols-[55px_minmax(0,1fr)_90px] sm:gap-3 sm:px-8">
@@ -346,37 +302,6 @@ function Pagination({
             >
                 Next
             </button>
-        </div>
-    );
-}
-
-function LoadingState(): React.ReactElement {
-    return (
-        <div className="px-5 py-12 sm:px-8">
-            <div className="space-y-2">
-                {[1, 2, 3, 4, 5].map((item) => (
-                    <div
-                        key={item}
-                        className="flex items-center gap-4 border-b border-white/[0.06] px-2 py-5"
-                    >
-                        <div className="h-5 w-7 bg-white/[0.06]" />
-
-                        <div className="h-10 w-10 bg-white/[0.06]" />
-
-                        <div className="flex-1">
-                            <div className="h-3 w-32 bg-white/[0.06]" />
-
-                            <div className="mt-2 h-2 w-20 bg-white/[0.06]" />
-                        </div>
-
-                        <div className="h-3 w-12 bg-white/[0.06]" />
-                    </div>
-                ))}
-            </div>
-
-            <p className="mt-8 text-center text-[9px] font-bold uppercase tracking-[0.22em] text-white/25">
-                Loading championship...
-            </p>
         </div>
     );
 }

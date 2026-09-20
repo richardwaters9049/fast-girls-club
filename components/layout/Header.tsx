@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import newLogo from "@/public/images/F1-images/newlogo3.png";
 
@@ -16,12 +16,30 @@ const links = [
 
 export default function Header(): React.ReactElement {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const updateScrolled = () => setScrolled(window.scrollY > 16);
+
+    updateScrolled();
+    window.addEventListener("scroll", updateScrolled, { passive: true });
+
+    return () => window.removeEventListener("scroll", updateScrolled);
+  }, []);
 
   return (
-    <header className="sticky top-0 z-50 shrink-0 border-b border-white/10 bg-[#1c1c1c] text-white shadow-[0_8px_30px_rgba(0,0,0,0.18)]">
+    <header className={`sticky top-0 z-50 shrink-0 bg-[#1c1c1c] pb-px text-white transition-shadow duration-300 motion-reduce:transition-none ${scrolled ? "shadow-none" : "shadow-[0_8px_30px_rgba(0,0,0,0.18)]"}`}>
+      <div
+        aria-hidden="true"
+        className={`pointer-events-none absolute inset-0 bg-[linear-gradient(100deg,#682840_0%,#3b2130_48%,#1c1c1c_100%)] transition-opacity duration-300 motion-reduce:transition-none ${scrolled ? "opacity-100" : "opacity-0"}`}
+      />
+      <div
+        aria-hidden="true"
+        className={`pointer-events-none absolute inset-x-0 bottom-0 h-px bg-white/10 transition-opacity duration-300 motion-reduce:transition-none ${scrolled ? "opacity-0" : "opacity-100"}`}
+      />
       <nav
         aria-label="Main navigation"
-        className="relative mx-auto flex w-full max-w-[77.5rem] items-center justify-between px-6 py-5 lg:px-10"
+        className="relative z-10 mx-auto flex w-full max-w-[77.5rem] items-center justify-between px-6 py-5 lg:px-10"
       >
         <Link href="/" onClick={() => setMenuOpen(false)} aria-label="Fast Girls Club home">
           <Image

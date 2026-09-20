@@ -6,7 +6,11 @@ import type { KeyboardEvent } from "react";
 
 import Container from "@/components/ui/Container";
 import SectionHeading from "@/components/ui/SectionHeading";
-import type { F1Driver } from "@/lib/f1/types";
+import type {
+    F1ConstructorStandingsResponse,
+    F1Driver,
+    F1DriverStandingsResponse,
+} from "@/lib/f1/types";
 
 import ConstructorStandings from "../ConstructorStandings";
 import DriverStandings from "../DriverStandings";
@@ -20,8 +24,16 @@ const views: { id: ChampionshipView; label: string; detail: string }[] = [
 
 export default function ChampionshipPanel({
     liveDrivers,
+    driverStandings,
+    constructorStandings,
+    driverError,
+    constructorError,
 }: {
     liveDrivers: F1Driver[];
+    driverStandings: F1DriverStandingsResponse | null;
+    constructorStandings: F1ConstructorStandingsResponse | null;
+    driverError: string | null;
+    constructorError: string | null;
 }): React.ReactElement {
     const [activeView, setActiveView] = useState<ChampionshipView>("drivers");
     const reducedMotion = useReducedMotion();
@@ -123,7 +135,11 @@ export default function ChampionshipPanel({
                     transition={{ duration: reducedMotion ? 0 : 0.3, ease: [0.22, 1, 0.36, 1] }}
                     className="mt-6 overflow-hidden border border-white/10 bg-white/[0.025]"
                 >
-                    <DriverStandings liveDrivers={liveDrivers} />
+                    <DriverStandings
+                        liveDrivers={liveDrivers}
+                        data={driverStandings}
+                        error={driverError}
+                    />
                 </motion.section>
 
                 <motion.section
@@ -136,7 +152,10 @@ export default function ChampionshipPanel({
                     transition={{ duration: reducedMotion ? 0 : 0.3, ease: [0.22, 1, 0.36, 1] }}
                     className="mt-6 overflow-hidden border border-white/10 bg-white/[0.025]"
                 >
-                    <ConstructorStandings />
+                    <ConstructorStandings
+                        data={constructorStandings}
+                        error={constructorError}
+                    />
                 </motion.section>
             </motion.section>
         </Container>

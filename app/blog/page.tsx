@@ -200,6 +200,7 @@ export default async function BlogPage({
         <main className="min-h-screen bg-[#e6e6e6] text-[#1c1c1c]">
             <Header />
             <section className="relative isolate overflow-hidden bg-[#1c1c1c] px-6 py-14 text-white lg:px-10 lg:py-20">
+                <div aria-hidden="true" className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#ff729f,#ee8434,transparent_85%)]" />
                 <div className="absolute inset-0 -z-20 bg-[linear-gradient(115deg,#1c1c1c_35%,#37232b_75%,#52312c_130%)]" />
                 <div className="absolute -right-24 -top-32 -z-10 h-[32rem] w-[32rem] rounded-full bg-[#ff729f]/10 blur-3xl" />
                 <div aria-hidden="true" className="absolute -bottom-12 right-0 -z-10 hidden text-[clamp(11rem,23vw,23rem)] font-black uppercase leading-none tracking-[-0.1em] text-white/[0.025] lg:block">Read</div>

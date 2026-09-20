@@ -20,6 +20,7 @@ import GridHeader from "@/components/f1/dashboard/GridHeader";
 import GridNavigation, {
     type GridPanel,
 } from "@/components/f1/dashboard/GridNavigation";
+import GridLoadingState from "@/components/f1/dashboard/GridLoadingState";
 import GridOverview from "@/components/f1/dashboard/GridOverview";
 import LiveTimingPanel from "@/components/f1/dashboard/LiveTimingPanel";
 import RaceWeekendPanel from "@/components/f1/dashboard/RaceWeekendPanel";
@@ -29,40 +30,33 @@ import {
     type F1Race,
     type F1Series,
 } from "@/lib/f1/calendar";
-import { countryNameToCode } from "@/lib/f1/countries";
 import {
     getRaceStatus,
     selectDisplayedRace,
 } from "@/lib/f1/race-selection";
+import {
+    adaptApiRace,
+    loadRaceCalendar,
+    prefetchRaceBundle,
+} from "@/lib/f1/race-prefetch";
 
 import type {
+    F1ConstructorStandingsResponse,
+    F1DriverStandingsResponse,
     F1LiveResponse,
-    F1Race as ApiF1Race,
 } from "@/lib/f1/types";
 
-interface F1CalendarResponse {
-    season: number;
-    count: number;
-    races: ApiF1Race[];
-}
+async function fetchGridJson<T>(url: string): Promise<T> {
+    const response = await fetch(url, {
+        cache: "no-store",
+        signal: AbortSignal.timeout(12_000),
+    });
 
-function adaptApiRace(race: ApiF1Race): F1Race {
-    const raceDate =
-        race.schedule.race.date ?? "";
+    if (!response.ok) {
+        throw new Error(`${url} returned ${response.status}`);
+    }
 
-    const country =
-        race.circuit.country;
-
-    return {
-        round: race.round,
-        name: race.raceName,
-        circuit: race.circuit.name,
-        location: race.circuit.city,
-        country,
-        countryCode: countryNameToCode(country),
-        startDate: raceDate,
-        endDate: raceDate,
-    };
+    return response.json() as Promise<T>;
 }
 
 const panelMotion: Record<
@@ -141,16 +135,25 @@ export default function F1Dashboard(): React.ReactElement {
     const [liveData, setLiveData] =
         useState<F1LiveResponse | null>(null);
 
-    const [loading, setLoading] =
-        useState(true);
+    const [driverStandings, setDriverStandings] =
+        useState<F1DriverStandingsResponse | null>(null);
 
-    const [calendarLoading, setCalendarLoading] =
+    const [constructorStandings, setConstructorStandings] =
+        useState<F1ConstructorStandingsResponse | null>(null);
+
+    const [initialising, setInitialising] =
         useState(true);
 
     const [error, setError] =
         useState<string | null>(null);
 
     const [calendarError, setCalendarError] =
+        useState<string | null>(null);
+
+    const [driverError, setDriverError] =
+        useState<string | null>(null);
+
+    const [constructorError, setConstructorError] =
         useState<string | null>(null);
 
     const [currentTime, setCurrentTime] =
@@ -167,58 +170,67 @@ export default function F1Dashboard(): React.ReactElement {
     useEffect(() => {
         let cancelled = false;
 
-        async function loadCalendar(): Promise<void> {
-            try {
-                setCalendarLoading(true);
-                setCalendarError(null);
+        async function loadInitialGridData(): Promise<void> {
+            const liveRequest = fetchGridJson<F1LiveResponse>("/api/f1/live");
+            const calendarRequest = loadRaceCalendar().then(async (data) => {
+                const races = data.races
+                    .map(adaptApiRace)
+                    .sort((a, b) => a.round - b.round);
+                const live = await liveRequest.catch(() => null);
 
-                const response = await fetch(
-                    "/api/f1/calendar",
-                    {
-                        cache: "no-store",
-                    },
+                await prefetchRaceBundle(
+                    races,
+                    live?.isLive ? live.session : null,
                 );
 
-                if (!response.ok) {
-                    throw new Error(
-                        "Failed to load F1 calendar",
-                    );
-                }
+                return { races, season: data.season };
+            });
 
-                const data: F1CalendarResponse =
-                    await response.json();
+            const [calendarResult, liveResult, driverResult, constructorResult] =
+                await Promise.allSettled([
+                    calendarRequest,
+                    liveRequest,
+                    fetchGridJson<F1DriverStandingsResponse>("/api/f1/drivers"),
+                    fetchGridJson<F1ConstructorStandingsResponse>("/api/f1/constructors"),
+                ]);
 
-                const adaptedCalendar =
-                    data.races
-                        .map(adaptApiRace)
-                        .sort(
-                            (a, b) =>
-                                a.round - b.round,
-                        );
-
-                if (!cancelled) {
-                    setCalendar(
-                        adaptedCalendar,
-                    );
-                    setSeason(data.season);
-                    setCalendarError(null);
-                }
-            } catch (err) {
-                console.error(err);
-
-                if (!cancelled) {
-                    setCalendarError(
-                        "F1 calendar is currently unavailable.",
-                    );
-                }
-            } finally {
-                if (!cancelled) {
-                    setCalendarLoading(false);
-                }
+            if (cancelled) {
+                return;
             }
+
+            if (calendarResult.status === "fulfilled") {
+                setCalendar(calendarResult.value.races);
+                setSeason(calendarResult.value.season);
+            } else {
+                console.error("Failed to load F1 calendar:", calendarResult.reason);
+                setCalendarError("F1 calendar is currently unavailable.");
+            }
+
+            if (liveResult.status === "fulfilled") {
+                setLiveData(liveResult.value);
+            } else {
+                console.error("Failed to load F1 timing:", liveResult.reason);
+                setError("F1 timing is currently unavailable.");
+            }
+
+            if (driverResult.status === "fulfilled") {
+                setDriverStandings(driverResult.value);
+            } else {
+                console.error("Failed to load driver standings:", driverResult.reason);
+                setDriverError("Driver championship data is currently unavailable.");
+            }
+
+            if (constructorResult.status === "fulfilled") {
+                setConstructorStandings(constructorResult.value);
+            } else {
+                console.error("Failed to load constructor standings:", constructorResult.reason);
+                setConstructorError("Constructor championship data is currently unavailable.");
+            }
+
+            setInitialising(false);
         }
 
-        loadCalendar();
+        void loadInitialGridData();
 
         return () => {
             cancelled = true;
@@ -226,7 +238,7 @@ export default function F1Dashboard(): React.ReactElement {
     }, []);
 
     useEffect(() => {
-        if (activeSeries !== "f1") {
+        if (initialising || activeSeries !== "f1") {
             return;
         }
 
@@ -234,26 +246,11 @@ export default function F1Dashboard(): React.ReactElement {
 
         async function loadLiveData(): Promise<void> {
             try {
-                const response = await fetch(
-                    "/api/f1/live",
-                    {
-                        cache: "no-store",
-                    },
-                );
-
-                if (!response.ok) {
-                    throw new Error(
-                        "Failed to load F1 live data",
-                    );
-                }
-
-                const data: F1LiveResponse =
-                    await response.json();
+                const data = await fetchGridJson<F1LiveResponse>("/api/f1/live");
 
                 if (!cancelled) {
                     setLiveData(data);
                     setError(null);
-                    setLoading(false);
                 }
             } catch (err) {
                 console.error(err);
@@ -262,12 +259,9 @@ export default function F1Dashboard(): React.ReactElement {
                     setError(
                         "F1 timing is currently unavailable.",
                     );
-                    setLoading(false);
                 }
             }
         }
-
-        loadLiveData();
 
         const refreshInterval =
             activePanel === "live" || liveData?.isLive
@@ -280,7 +274,7 @@ export default function F1Dashboard(): React.ReactElement {
             cancelled = true;
             clearInterval(interval);
         };
-    }, [activePanel, activeSeries, liveData?.isLive]);
+    }, [activePanel, activeSeries, initialising, liveData?.isLive]);
 
     const activeSeriesData =
         activeSeries === "f1"
@@ -387,15 +381,22 @@ export default function F1Dashboard(): React.ReactElement {
                     }
                 />
 
-                <GridNavigation
-                    activePanel={activePanel}
-                    onPanelChange={
-                        handlePanelChange
-                    }
-                />
+                {!initialising && (
+                    <GridNavigation
+                        activePanel={activePanel}
+                        onPanelChange={handlePanelChange}
+                    />
+                )}
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto">
+                {initialising && (
+                    <GridLoadingState
+                        label="Getting The Grid ready"
+                        description="Loading races, live timing and standings"
+                    />
+                )}
+                {!initialising && (
                 <AnimatePresence
                     mode="wait"
                     initial={false}
@@ -444,24 +445,6 @@ export default function F1Dashboard(): React.ReactElement {
 
                         {activePanel === "race" &&
                             activeSeries === "f1" &&
-                            calendarLoading && (
-                                <section className="flex min-h-[60vh] items-center justify-center">
-                                    <div className="text-center">
-                                        <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#ff729f]">
-                                            Formula 1
-                                        </p>
-
-                                        <p className="mt-4 text-sm font-medium text-white/50">
-                                            Loading race
-                                            calendar...
-                                        </p>
-                                    </div>
-                                </section>
-                            )}
-
-                        {activePanel === "race" &&
-                            activeSeries === "f1" &&
-                            !calendarLoading &&
                             calendarError && (
                                 <section className="flex min-h-[60vh] items-center justify-center">
                                     <div className="px-6 text-center">
@@ -482,10 +465,29 @@ export default function F1Dashboard(): React.ReactElement {
 
                         {activePanel === "race" &&
                             activeSeries === "f1" &&
-                            !calendarLoading &&
+                            !calendarError &&
+                            !displayedRace && (
+                                <section className="flex min-h-[60vh] items-center justify-center px-6 text-center">
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#ff729f]">
+                                            The Grid
+                                        </p>
+                                        <h2 className="mt-4 text-3xl font-black uppercase tracking-[-0.05em] text-white">
+                                            No race data available
+                                        </h2>
+                                        <p className="mt-3 text-sm text-white/55">
+                                            There are no races to show for this season yet.
+                                        </p>
+                                    </div>
+                                </section>
+                            )}
+
+                        {activePanel === "race" &&
+                            activeSeries === "f1" &&
                             !calendarError &&
                             displayedRace && (
                                 <RaceWeekendPanel
+                                    key={`${displayedRace.round}-${previousRace?.round ?? 0}-${nextRace?.round ?? 0}`}
                                     race={
                                         displayedRace
                                     }
@@ -505,16 +507,20 @@ export default function F1Dashboard(): React.ReactElement {
                             activeSeries === "f1" && (
                                 <LiveTimingPanel
                                     data={liveData}
-                                    loading={
-                                        loading
-                                    }
+                                    loading={false}
                                     error={error}
                                 />
                             )}
 
                         {activePanel === "championship" &&
                             activeSeries === "f1" && (
-                                <ChampionshipPanel liveDrivers={liveData?.drivers ?? []} />
+                                <ChampionshipPanel
+                                    liveDrivers={liveData?.drivers ?? []}
+                                    driverStandings={driverStandings}
+                                    constructorStandings={constructorStandings}
+                                    driverError={driverError}
+                                    constructorError={constructorError}
+                                />
                             )}
 
                         {activePanel ===
@@ -574,6 +580,7 @@ export default function F1Dashboard(): React.ReactElement {
                             )}
                     </motion.div>
                 </AnimatePresence>
+                )}
             </div>
         </main>
     );

@@ -14,10 +14,17 @@ import {
     useTransform,
 } from "framer-motion";
 import { useEffect, useRef } from "react";
+import ReactDOM from "react-dom";
 
 import Footer from "@/components/layout/Footer";
 import Header from "@/components/layout/Header";
 import LatestPosts from "@/components/stories/LatestPosts";
+import { prefetchRaceTabData } from "@/lib/f1/race-prefetch";
+import {
+    HERO_CAR_ENVIRONMENT_PATH,
+    HERO_CAR_LIVERY_PATH,
+    HERO_CAR_MODEL_PATH,
+} from "@/lib/hero-car-assets";
 import gridPreview from "@/public/images/F1-images/enter-the-grid.webp";
 import newLogo from "@/public/images/F1-images/newlogo3.png";
 
@@ -101,6 +108,10 @@ const GRID_DETAILS_VARIANTS: Variants = {
 };
 
 export default function Home(): React.ReactElement {
+    ReactDOM.preload(HERO_CAR_MODEL_PATH, { as: "fetch", crossOrigin: "anonymous" });
+    ReactDOM.preload(HERO_CAR_LIVERY_PATH, { as: "image" });
+    ReactDOM.preload(HERO_CAR_ENVIRONMENT_PATH, { as: "fetch", crossOrigin: "anonymous" });
+
     const heroSectionRef = useRef<HTMLElement>(null);
     const gridSectionRef = useRef<HTMLElement>(null);
     const gridHasEnteredRef = useRef(false);
@@ -131,6 +142,10 @@ export default function Home(): React.ReactElement {
         [0, 0.42, 0.82],
         [0, 0, -35],
     );
+
+    useEffect(() => {
+        void prefetchRaceTabData();
+    }, []);
 
     useMotionValueEvent(scrollY, "change", (currentScrollY) => {
         const previousScrollY = scrollY.getPrevious();

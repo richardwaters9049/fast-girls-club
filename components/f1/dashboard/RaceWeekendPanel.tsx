@@ -4,8 +4,15 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 
 import RaceMap3D from "@/components/3d/RaceMap3D";
+import GridLoadingState from "@/components/f1/dashboard/GridLoadingState";
 import { countryCodeToEmoji } from "@/lib/f1/countries";
 import { getCircuitMap } from "@/lib/f1/circuits";
+import {
+    loadRaceDetails,
+    loadRaceResults,
+    peekRaceDetails,
+    peekRaceResults,
+} from "@/lib/f1/race-prefetch";
 import { getVerifiedCircuitFacts } from "@/lib/f1/race-facts";
 import type { F1Race } from "@/lib/f1/calendar";
 
@@ -526,6 +533,46 @@ function normaliseResults(
     return [];
 }
 
+function buildRaceData(
+    currentResponse: unknown,
+    previousResponse: unknown,
+    nextResponse: unknown,
+    resultsResponse: unknown,
+): RaceDataState {
+    const current = normaliseRaceResponse(currentResponse);
+    const previous = normaliseRaceResponse(previousResponse);
+
+    return {
+        current,
+        previous: previous
+            ? { ...previous, results: normaliseResults(resultsResponse) }
+            : null,
+        next: normaliseRaceResponse(nextResponse),
+    };
+}
+
+function getPrefetchedRaceData(
+    round: number,
+    previousRound: number | null,
+    nextRound: number | null,
+): RaceDataState | null {
+    const current = peekRaceDetails(round);
+    const previous = previousRound ? peekRaceDetails(previousRound) : null;
+    const next = nextRound ? peekRaceDetails(nextRound) : null;
+    const results = previousRound ? peekRaceResults(previousRound) : null;
+
+    if (current === undefined) {
+        return null;
+    }
+
+    return buildRaceData(
+        current,
+        previous ?? null,
+        next ?? null,
+        results ?? null,
+    );
+}
+
 export default function RaceWeekendPanel({
     race,
     previousRace,
@@ -533,15 +580,13 @@ export default function RaceWeekendPanel({
     status,
 }: RaceWeekendPanelProps): React.ReactElement {
     const reducedMotion = useReducedMotion();
-    const [data, setData] = useState<RaceDataState>({
-        current: null,
-        previous: null,
-        next: null,
-    });
-
     const [now, setNow] = useState(() => Date.now());
+    const [retryCount, setRetryCount] = useState(0);
     const previousRound = previousRace?.round ?? null;
     const nextRound = nextRace?.round ?? null;
+    const [data, setData] = useState<RaceDataState | null>(() =>
+        getPrefetchedRaceData(race.round, previousRound, nextRound),
+    );
 
     useEffect(() => {
         const interval = window.setInterval(() => {
@@ -556,90 +601,25 @@ export default function RaceWeekendPanel({
     useEffect(() => {
         let cancelled = false;
 
-        const loadRace = async (
-            round: number,
-        ): Promise<NormalisedRaceData | null> => {
-            try {
-                const response = await fetch(
-                    `/api/f1/race/${round}`,
-                    {
-                        cache: "no-store",
-                    },
-                );
-
-                if (!response.ok) {
-                    return null;
-                }
-
-                const json: unknown = await response.json();
-
-                return normaliseRaceResponse(json);
-            } catch {
-                return null;
-            }
-        };
-
-        const loadResults = async (
-            round: number,
-        ): Promise<RaceResult[]> => {
-            try {
-                const response = await fetch(
-                    `/api/f1/race/${round}/results`,
-                    {
-                        cache: "no-store",
-                    },
-                );
-
-                if (!response.ok) {
-                    return [];
-                }
-
-                const json: unknown = await response.json();
-
-                return normaliseResults(json);
-            } catch {
-                return [];
-            }
-        };
-
         const loadRaceData = async (): Promise<void> => {
-            const [current, previous, next] = await Promise.all([
-                loadRace(race.round),
+            const [current, previous, next, previousResults] = await Promise.all([
+                loadRaceDetails(race.round).catch(() => null),
                 previousRound
-                    ? loadRace(previousRound)
+                    ? loadRaceDetails(previousRound).catch(() => null)
                     : Promise.resolve(null),
                 nextRound
-                    ? loadRace(nextRound)
+                    ? loadRaceDetails(nextRound).catch(() => null)
+                    : Promise.resolve(null),
+                previousRound
+                    ? loadRaceResults(previousRound).catch(() => null)
                     : Promise.resolve(null),
             ]);
-
-            let previousResults: RaceResult[] = [];
-
-            if (previousRound) {
-                previousResults = await loadResults(
-                    previousRound,
-                );
-            }
 
             if (cancelled) {
                 return;
             }
 
-            setData({
-                current: current
-                    ? {
-                        ...current,
-                        results: [],
-                    }
-                    : null,
-                previous: previous
-                    ? {
-                        ...previous,
-                        results: previousResults,
-                    }
-                    : null,
-                next,
-            });
+            setData(buildRaceData(current, previous, next, previousResults));
         };
 
         void loadRaceData();
@@ -651,11 +631,12 @@ export default function RaceWeekendPanel({
         nextRound,
         previousRound,
         race.round,
+        retryCount,
     ]);
 
-    const currentData = data.current;
-    const previousData = data.previous;
-    const nextData = data.next;
+    const currentData = data?.current ?? null;
+    const previousData = data?.previous ?? null;
+    const nextData = data?.next ?? null;
 
     const displayedName =
         currentData?.race.name ??
@@ -712,6 +693,36 @@ export default function RaceWeekendPanel({
         nextRaceDate,
         now,
     );
+
+    if (data === null) {
+        return <GridLoadingState label="Loading race weekend" />;
+    }
+
+    if (data.current === null) {
+        return (
+            <section className="flex min-h-[60vh] flex-col items-center justify-center px-6 text-center">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#ff729f]">
+                    The Grid
+                </p>
+                <h2 className="mt-4 text-3xl font-black uppercase tracking-[-0.05em] text-white">
+                    Race details unavailable
+                </h2>
+                <p className="mt-3 max-w-md text-sm leading-6 text-white/55">
+                    We couldn&apos;t load this race weekend. Please try again.
+                </p>
+                <button
+                    type="button"
+                    onClick={() => {
+                        setData(null);
+                        setRetryCount((count) => count + 1);
+                    }}
+                    className="mt-6 cursor-pointer border border-[#ff729f] px-6 py-3 text-xs font-bold uppercase tracking-[0.18em] text-[#ff729f] transition hover:bg-[#ff729f] hover:text-[#1c1c1c] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#ff729f]"
+                >
+                    Retry race data
+                </button>
+            </section>
+        );
+    }
 
     return (
         <div className="h-full overflow-hidden">

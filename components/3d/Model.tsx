@@ -1,8 +1,7 @@
 "use client";
 
 import { useGLTF, useTexture } from "@react-three/drei";
-import { ThreeEvent, useFrame, useThree } from "@react-three/fiber";
-import gsap from "gsap";
+import { useFrame, useThree } from "@react-three/fiber";
 import {
     useEffect,
     useLayoutEffect,
@@ -11,9 +10,10 @@ import {
 } from "react";
 import * as THREE from "three";
 
-const MODEL_PATH = "/images/3Dimages/formula-1.glb";
-const LIVERY_TEXTURE_PATH =
-    "/images/3Dimages/formula 1/formula1_BlackPink_Diffuse.png";
+import {
+    HERO_CAR_LIVERY_PATH,
+    HERO_CAR_MODEL_PATH,
+} from "@/lib/hero-car-assets";
 
 const BRAND_PINK = new THREE.Color("#ff729f");
 const BRAND_ORANGE = new THREE.Color("#ee8434");
@@ -27,11 +27,22 @@ interface PreparedModel {
     texture: THREE.Texture;
 }
 
-interface DragState {
-    active: boolean;
-    lastX: number;
-    lastY: number;
-    pointerId: number | null;
+interface ModelProps {
+    onReady: () => void;
+    ready: boolean;
+    interactive: boolean;
+}
+
+interface PointerPosition {
+    x: number;
+    y: number;
+}
+
+function pointerDistance(points: PointerPosition[]): number {
+    return Math.hypot(
+        points[0].x - points[1].x,
+        points[0].y - points[1].y,
+    );
 }
 
 function prepareModel(
@@ -119,25 +130,24 @@ function prepareModel(
     };
 }
 
-export default function Model(): React.ReactElement {
-    const { scene: sourceScene } = useGLTF(MODEL_PATH);
-    const sourceTexture = useTexture(LIVERY_TEXTURE_PATH);
+export default function Model({ onReady, ready, interactive }: ModelProps): React.ReactElement {
+    const { scene: sourceScene } = useGLTF(HERO_CAR_MODEL_PATH);
+    const sourceTexture = useTexture(HERO_CAR_LIVERY_PATH);
     const { gl } = useThree();
     const entranceRef = useRef<THREE.Group>(null);
     const interactionRef = useRef<THREE.Group>(null);
     const scrollRef = useRef<THREE.Group>(null);
     const scrollProgressRef = useRef(0);
+    const entranceProgressRef = useRef(0);
+    const reducedMotionRef = useRef(false);
+    const firstFramesRef = useRef(0);
+    const readyReportedRef = useRef(false);
     const carHasExitedRef = useRef(false);
     const rotationTargetRef = useRef({
         x: 0,
         y: BASE_ROTATION_Y,
     });
-    const dragRef = useRef<DragState>({
-        active: false,
-        lastX: 0,
-        lastY: 0,
-        pointerId: null,
-    });
+    const zoomTargetRef = useRef(1);
     const preparedModel = useMemo(
         () => prepareModel(sourceScene, sourceTexture),
         [sourceScene, sourceTexture],
@@ -159,82 +169,48 @@ export default function Model(): React.ReactElement {
             return;
         }
 
-        const reduceMotion = window.matchMedia(
+        reducedMotionRef.current = window.matchMedia(
             "(prefers-reduced-motion: reduce)",
         ).matches;
 
-        if (reduceMotion) {
+        if (reducedMotionRef.current) {
             model.position.set(0, 0, 0);
+            model.rotation.y = 0;
             model.scale.setScalar(MODEL_SCALE);
+            entranceProgressRef.current = 1;
             return;
         }
 
-        model.position.set(0.8, -0.1, 0);
-        model.scale.setScalar(0.0072);
-
-        const entrance = gsap.timeline({
-            delay: 0.15,
-        });
-
-        entrance.to(
-            model.position,
-            {
-                x: 0,
-                y: 0,
-                duration: 1.2,
-                ease: "power3.out",
-            },
-            0,
-        );
-
-        entrance.to(
-            model.scale,
-            {
-                x: MODEL_SCALE,
-                y: MODEL_SCALE,
-                z: MODEL_SCALE,
-                duration: 1.2,
-                ease: "power3.out",
-            },
-            0,
-        );
-
-        entrance.to(
-            model.rotation,
-            {
-                y: `+=${Math.PI * 2}`,
-                duration: 1.35,
-                ease: "power3.out",
-            },
-            0,
-        );
-
-        return () => {
-            entrance.kill();
-        };
+        model.position.set(0.35, -0.08, 0);
+        model.rotation.y = -Math.PI * 2;
+        model.scale.setScalar(0.008);
     }, []);
 
     useEffect(() => {
-        const desktopQuery = window.matchMedia("(min-width: 1024px)");
         const reduceMotionQuery = window.matchMedia(
             "(prefers-reduced-motion: reduce)",
         );
 
         const updateScrollProgress = (): void => {
-            if (!desktopQuery.matches || reduceMotionQuery.matches) {
+            if (reduceMotionQuery.matches) {
                 scrollProgressRef.current = 0;
                 return;
             }
 
             const exitDistance = Math.min(window.innerHeight * 0.8, 640);
+            const mobile = window.innerWidth < 1024;
+            const carTop = gl.domElement.getBoundingClientRect().top + window.scrollY;
+            const scrollStart = mobile
+                ? carTop - window.innerHeight * 0.1
+                : 0;
 
             const nextProgress = THREE.MathUtils.clamp(
-                window.scrollY / exitDistance,
+                (window.scrollY - scrollStart) / exitDistance,
                 0,
                 1,
             );
 
-            if (nextProgress >= 0.75) {
+            if (nextProgress >= 0.35) {
                 carHasExitedRef.current = true;
             }
 
@@ -243,8 +219,7 @@ export default function Model(): React.ReactElement {
                     x: 0,
                     y: BASE_ROTATION_Y,
                 };
-                dragRef.current.active = false;
-                dragRef.current.pointerId = null;
+                zoomTargetRef.current = 1;
                 carHasExitedRef.current = false;
             }
 
@@ -256,7 +231,6 @@ export default function Model(): React.ReactElement {
             passive: true,
         });
         window.addEventListener("resize", updateScrollProgress);
-        desktopQuery.addEventListener("change", updateScrollProgress);
         reduceMotionQuery.addEventListener(
             "change",
             updateScrollProgress,
@@ -265,18 +239,145 @@ export default function Model(): React.ReactElement {
         return () => {
             window.removeEventListener("scroll", updateScrollProgress);
             window.removeEventListener("resize", updateScrollProgress);
-            desktopQuery.removeEventListener(
-                "change",
-                updateScrollProgress,
-            );
             reduceMotionQuery.removeEventListener(
                 "change",
                 updateScrollProgress,
             );
         };
-    }, []);
+    }, [gl]);
+
+    useEffect(() => {
+        if (!interactive) {
+            return;
+        }
+
+        const canvas = gl.domElement;
+        const pointers = new Map<number, PointerPosition>();
+        let previousPinchDistance: number | null = null;
+
+        const handlePointerDown = (event: PointerEvent): void => {
+            if (event.pointerType === "mouse" && event.button !== 0) {
+                return;
+            }
+
+            event.preventDefault();
+            canvas.setPointerCapture(event.pointerId);
+            pointers.set(event.pointerId, {
+                x: event.clientX,
+                y: event.clientY,
+            });
+
+            if (pointers.size >= 2) {
+                previousPinchDistance = pointerDistance(
+                    Array.from(pointers.values()).slice(0, 2),
+                );
+            }
+        };
+
+        const handlePointerMove = (event: PointerEvent): void => {
+            const previous = pointers.get(event.pointerId);
+
+            if (!previous) {
+                return;
+            }
+
+            event.preventDefault();
+            pointers.set(event.pointerId, {
+                x: event.clientX,
+                y: event.clientY,
+            });
+
+            if (pointers.size >= 2) {
+                const nextDistance = pointerDistance(
+                    Array.from(pointers.values()).slice(0, 2),
+                );
+
+                if (previousPinchDistance && previousPinchDistance > 0) {
+                    zoomTargetRef.current = THREE.MathUtils.clamp(
+                        zoomTargetRef.current * nextDistance / previousPinchDistance,
+                        0.8,
+                        1.5,
+                    );
+                }
+
+                previousPinchDistance = nextDistance;
+                return;
+            }
+
+            rotationTargetRef.current.y += (event.clientX - previous.x) * 0.01;
+            rotationTargetRef.current.x = THREE.MathUtils.clamp(
+                rotationTargetRef.current.x + (event.clientY - previous.y) * 0.008,
+                -0.5,
+                0.5,
+            );
+        };
+
+        const handlePointerEnd = (event: PointerEvent): void => {
+            pointers.delete(event.pointerId);
+            previousPinchDistance = null;
+
+            if (canvas.hasPointerCapture(event.pointerId)) {
+                canvas.releasePointerCapture(event.pointerId);
+            }
+        };
+
+        canvas.addEventListener("pointerdown", handlePointerDown);
+        canvas.addEventListener("pointermove", handlePointerMove);
+        canvas.addEventListener("pointerup", handlePointerEnd);
+        canvas.addEventListener("pointercancel", handlePointerEnd);
+
+        return () => {
+            canvas.removeEventListener("pointerdown", handlePointerDown);
+            canvas.removeEventListener("pointermove", handlePointerMove);
+            canvas.removeEventListener("pointerup", handlePointerEnd);
+            canvas.removeEventListener("pointercancel", handlePointerEnd);
+            pointers.clear();
+        };
+    }, [gl, interactive]);
 
     useFrame((_, delta) => {
+        if (!readyReportedRef.current) {
+            firstFramesRef.current += 1;
+
+            if (firstFramesRef.current >= 2) {
+                readyReportedRef.current = true;
+                onReady();
+            }
+        }
+
+        const entranceGroup = entranceRef.current;
+
+        if (
+            ready &&
+            entranceGroup &&
+            !reducedMotionRef.current &&
+            entranceProgressRef.current < 1
+        ) {
+            entranceProgressRef.current = Math.min(
+                1,
+                entranceProgressRef.current + Math.min(delta, 0.05) / 1.35,
+            );
+            const progress = entranceProgressRef.current;
+            const ease = 1 - Math.pow(1 - progress, 3);
+            const spinEase = progress < 0.5
+                ? 4 * progress ** 3
+                : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+            entranceGroup.position.set(
+                THREE.MathUtils.lerp(0.35, 0, ease),
+                THREE.MathUtils.lerp(-0.08, 0, ease),
+                0,
+            );
+            entranceGroup.scale.setScalar(
+                THREE.MathUtils.lerp(0.008, MODEL_SCALE, ease),
+            );
+            entranceGroup.rotation.y = THREE.MathUtils.lerp(
+                -Math.PI * 2,
+                0,
+                spinEase,
+            );
+        }
+
         const scrollGroup = scrollRef.current;
         const interactionGroup = interactionRef.current;
 
@@ -346,66 +447,20 @@ export default function Model(): React.ReactElement {
             10,
             delta,
         );
-    });
-
-    const finishDrag = (event: ThreeEvent<PointerEvent>): void => {
-        if (
-            dragRef.current.pointerId === event.pointerId &&
-            gl.domElement.hasPointerCapture(event.pointerId)
-        ) {
-            gl.domElement.releasePointerCapture(event.pointerId);
-        }
-
-        dragRef.current.active = false;
-        dragRef.current.pointerId = null;
-    };
-
-    const handlePointerDown = (
-        event: ThreeEvent<PointerEvent>,
-    ): void => {
-        if (event.nativeEvent.pointerType !== "mouse" || event.button !== 0) {
-            return;
-        }
-
-        event.stopPropagation();
-        gl.domElement.setPointerCapture(event.pointerId);
-        dragRef.current = {
-            active: true,
-            lastX: event.clientX,
-            lastY: event.clientY,
-            pointerId: event.pointerId,
-        };
-    };
-
-    const handlePointerMove = (
-        event: ThreeEvent<PointerEvent>,
-    ): void => {
-        if (!dragRef.current.active) {
-            return;
-        }
-
-        const deltaX = event.clientX - dragRef.current.lastX;
-        const deltaY = event.clientY - dragRef.current.lastY;
-
-        rotationTargetRef.current.y += deltaX * 0.01;
-        rotationTargetRef.current.x = THREE.MathUtils.clamp(
-            rotationTargetRef.current.x + deltaY * 0.008,
-            -0.5,
-            0.5,
+        const zoom = THREE.MathUtils.damp(
+            interactionGroup.scale.x,
+            zoomTargetRef.current,
+            10,
+            delta,
         );
-        dragRef.current.lastX = event.clientX;
-        dragRef.current.lastY = event.clientY;
-    };
+        interactionGroup.scale.setScalar(zoom);
+    });
 
     return (
         <group ref={scrollRef}>
             <group
                 ref={interactionRef}
                 rotation={[0, BASE_ROTATION_Y, 0]}
-                onPointerDown={handlePointerDown}
-                onPointerMove={handlePointerMove}
-                onPointerUp={finishDrag}
-                onPointerCancel={finishDrag}
             >
                 <group ref={entranceRef}>
                     <primitive object={preparedModel.scene} />
@@ -415,5 +470,5 @@ export default function Model(): React.ReactElement {
     );
 }
 
-useGLTF.preload(MODEL_PATH);
-useTexture.preload(LIVERY_TEXTURE_PATH);
+useGLTF.preload(HERO_CAR_MODEL_PATH);
+useTexture.preload(HERO_CAR_LIVERY_PATH);

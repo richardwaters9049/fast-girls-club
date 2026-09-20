@@ -5,9 +5,17 @@ import { Canvas } from "@react-three/fiber";
 import { Environment } from "@react-three/drei";
 import * as THREE from "three";
 
+import { HERO_CAR_ENVIRONMENT_PATH } from "@/lib/hero-car-assets";
+
 import Model from "./Model";
 
-export default function Scene(): React.ReactElement {
+interface SceneProps {
+    onReady: () => void;
+    ready: boolean;
+    interactive: boolean;
+}
+
+export default function Scene({ onReady, ready, interactive }: SceneProps): React.ReactElement {
     return (
         <Canvas
             camera={{
@@ -27,10 +35,10 @@ export default function Scene(): React.ReactElement {
                 gl.toneMappingExposure = 0.85;
             }}
             role="img"
-            aria-label="Interactive 3D Formula 1 car. Drag with the mouse to rotate it."
+            aria-label="Interactive 3D Formula 1 car. Activate the controls, then drag to rotate or pinch to zoom."
             style={{
-                cursor: "grab",
-                touchAction: "pan-y",
+                cursor: interactive ? "grab" : "pointer",
+                touchAction: interactive ? "none" : "pan-y",
             }}
         >
             <ambientLight intensity={0.85} />
@@ -58,10 +66,9 @@ export default function Scene(): React.ReactElement {
                 color="#ee8434"
             />
 
-            <Environment preset="studio" />
-
             <Suspense fallback={null}>
-                <Model />
+                <Environment files={HERO_CAR_ENVIRONMENT_PATH} />
+                <Model onReady={onReady} ready={ready} interactive={interactive} />
             </Suspense>
         </Canvas>
     );
