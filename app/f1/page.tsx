@@ -3,6 +3,7 @@
 import {
     AnimatePresence,
     motion,
+    useReducedMotion,
 } from "framer-motion";
 
 import {
@@ -103,19 +104,10 @@ const panelMotion: Record<
             ease: [0.22, 1, 0.36, 1],
         },
     },
-    drivers: {
-        initial: { opacity: 0, x: -24 },
-        animate: { opacity: 1, x: 0 },
-        exit: { opacity: 0, x: 20 },
-        transition: {
-            duration: 0.4,
-            ease: [0.22, 1, 0.36, 1],
-        },
-    },
-    teams: {
-        initial: { opacity: 0, x: 24 },
-        animate: { opacity: 1, x: 0 },
-        exit: { opacity: 0, x: -20 },
+    championship: {
+        initial: { opacity: 0, y: 14 },
+        animate: { opacity: 1, y: 0 },
+        exit: { opacity: 0, y: -10 },
         transition: {
             duration: 0.4,
             ease: [0.22, 1, 0.36, 1],
@@ -133,6 +125,7 @@ const panelMotion: Record<
 };
 
 export default function F1Dashboard(): React.ReactElement {
+    const reducedMotion = useReducedMotion();
     const [activeSeries, setActiveSeries] =
         useState<F1Series>("f1");
 
@@ -409,16 +402,10 @@ export default function F1Dashboard(): React.ReactElement {
                 >
                     <motion.div
                         key={`${activeSeries}-${activePanel}`}
-                        initial={
-                            motionState.initial
-                        }
-                        animate={
-                            motionState.animate
-                        }
-                        exit={motionState.exit}
-                        transition={
-                            motionState.transition
-                        }
+                        initial={reducedMotion ? false : motionState.initial}
+                        animate={reducedMotion ? { opacity: 1, x: 0, y: 0, scale: 1 } : motionState.animate}
+                        exit={reducedMotion ? { opacity: 1 } : motionState.exit}
+                        transition={reducedMotion ? { duration: 0 } : motionState.transition}
                         className="min-h-full"
                     >
                         {activePanel ===
@@ -525,19 +512,9 @@ export default function F1Dashboard(): React.ReactElement {
                                 />
                             )}
 
-                        {activePanel ===
-                            "drivers" &&
-                            activeSeries ===
-                            "f1" && (
-                                <ChampionshipPanel />
-                            )}
-
-                        {activePanel === "teams" &&
-                            activeSeries ===
-                            "f1" && (
-                                <ChampionshipPanel
-                                    initialView="teams"
-                                />
+                        {activePanel === "championship" &&
+                            activeSeries === "f1" && (
+                                <ChampionshipPanel liveDrivers={liveData?.drivers ?? []} />
                             )}
 
                         {activePanel ===
@@ -560,9 +537,7 @@ export default function F1Dashboard(): React.ReactElement {
                             (activePanel ===
                                 "live" ||
                                 activePanel ===
-                                "drivers" ||
-                                activePanel ===
-                                "teams") && (
+                                "championship") && (
                                 <section className="flex h-full items-center justify-center">
                                     <div className="px-6 text-center">
                                         <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#ff729f]">

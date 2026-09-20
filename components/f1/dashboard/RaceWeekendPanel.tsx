@@ -882,7 +882,7 @@ export default function RaceWeekendPanel({
                                     </p>
                                 </div>
 
-                                <div className="pt-5 sm:pl-5">
+                                <div className="pl-5 pt-5">
                                     <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/30">
                                         Laps
                                     </p>
@@ -1149,7 +1149,7 @@ function NextRaceCard({
     return (
         <motion.section {...revealMotion(reducedMotion)} className="overflow-hidden border border-white/10 bg-[#242426] p-3">
             <div className="grid items-stretch gap-8 lg:grid-cols-[0.95fr_1.05fr]">
-                <div className="order-2 flex flex-col lg:order-1">
+                <div className="order-2 flex min-w-0 flex-col lg:order-1">
                     <motion.div {...revealMotion(reducedMotion, 0.06, -8)} className="border-b border-white/10 p-5 sm:p-6 lg:p-7">
                         <div className="flex items-start justify-between gap-6">
                             <div>
@@ -1283,7 +1283,7 @@ function NextRaceCard({
                     </motion.div>
                 </div>
 
-                <motion.div {...revealMotion(reducedMotion, 0.12, 12)} className="relative order-1 h-[360px] lg:order-2 lg:h-auto lg:self-stretch">
+                <motion.div {...revealMotion(reducedMotion, 0.12, 12)} className="relative order-1 h-[360px] min-w-0 lg:order-2 lg:h-auto lg:self-stretch">
                     <div aria-hidden="true" className="pointer-events-none absolute -inset-1 rounded-3xl bg-[radial-gradient(ellipse_at_25%_35%,rgba(255,114,159,0.22),transparent_60%),radial-gradient(ellipse_at_75%_70%,rgba(238,132,52,0.14),transparent_60%)] blur-xl" />
                     <div className="relative h-full overflow-hidden bg-black">
                         {circuitMap ? (

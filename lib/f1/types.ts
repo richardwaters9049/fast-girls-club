@@ -56,10 +56,9 @@ export interface F1DriverStanding {
 export interface F1ConstructorStanding {
   position: number;
   team: string;
-  countryCode: string;
   points: number;
-  pointsStart: number;
   teamColour: string;
+  logoUrl: string | null;
 }
 
 export interface F1TrackStatus {

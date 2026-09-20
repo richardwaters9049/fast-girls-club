@@ -2,22 +2,9 @@ import { NextResponse } from "next/server";
 
 import { F1_API_BASE_URL } from "@/lib/config";
 import { countryNameToCode } from "@/lib/f1/countries";
+import { getTeamColour } from "@/lib/f1/team-assets";
 
 export const revalidate = 1800;
-
-const TEAM_COLOURS: Record<string, string> = {
-  mercedes: "#27F4D2",
-  ferrari: "#E80020",
-  mclaren: "#FF8000",
-  red_bull: "#3671C6",
-  alpine: "#FF87BC",
-  rb: "#6692FF",
-  aston_martin: "#229971",
-  haas: "#B6BABD",
-  audi: "#F50537",
-  williams: "#64C4FF",
-  cadillac: "#D0D0D0",
-};
 
 interface ApiDriverStanding {
   position: number;
@@ -116,7 +103,7 @@ export async function GET() {
         points: standing.points,
         pointsStart: standing.points,
         headshotUrl: null,
-        teamColour: TEAM_COLOURS[standing.teamId ?? ""] ?? "#FFFFFF",
+        teamColour: getTeamColour(standing.teamId),
       };
     });
 

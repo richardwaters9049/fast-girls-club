@@ -1526,8 +1526,8 @@ export default function RaceMap3D({
                 camera={{
                     position: [
                         0,
-                        14,
-                        10,
+                        22,
+                        17,
                     ],
                     fov: 38,
                     near: 0.1,

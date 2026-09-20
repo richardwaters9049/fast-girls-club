@@ -1,12 +1,19 @@
 "use client";
 
-import { motion, type Variants, useReducedMotion } from "framer-motion";
+import {
+    motion,
+    type Variants,
+    useReducedMotion,
+    useScroll,
+    useTransform,
+} from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
+import { useRef } from "react";
 
 import Footer from "@/components/layout/Footer";
 import Header from "@/components/layout/Header";
-import gridPreview from "@/public/images/F1-images/enter-the-grid.webp";
+import aboutTrackside from "@/public/images/F1-images/about-trackside-engineer.webp";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -44,15 +51,22 @@ const values = [
 ];
 
 export default function AboutPage(): React.ReactElement {
+    const heroRef = useRef<HTMLElement>(null);
     const reduceMotion = useReducedMotion();
     const initialState = reduceMotion ? false : "hidden";
+    const { scrollYProgress } = useScroll({
+        target: heroRef,
+        offset: ["start start", "end start"],
+    });
+    const heroX = useTransform(scrollYProgress, [0, 0.45, 0.9], [0, 0, -60]);
+    const heroY = useTransform(scrollYProgress, [0, 0.45, 0.9], [0, 0, -40]);
 
     return (
         <>
             <Header />
 
             <main className="overflow-hidden bg-[#1c1c1c] text-white">
-            <section className="relative isolate overflow-hidden border-b border-white/10">
+            <section ref={heroRef} className="relative isolate overflow-hidden border-b border-white/10">
                 <div className="absolute inset-0 -z-30 bg-[linear-gradient(125deg,#1c1c1c_0%,#1c1c1c_48%,#38212b_78%,#6f372e_140%)]" />
 
                 <div className="absolute -right-40 top-20 -z-20 h-[34rem] w-[34rem] rounded-full bg-[#ff729f]/15 blur-3xl" />
@@ -66,7 +80,10 @@ export default function AboutPage(): React.ReactElement {
 
                 <div className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#ff729f,#ee8434,transparent_85%)]" />
 
-                <div className="relative mx-auto flex min-h-[39rem] max-w-[77.5rem] flex-col justify-center px-6 py-20 lg:px-10 lg:py-28">
+                <motion.div
+                    style={reduceMotion ? undefined : { x: heroX, y: heroY }}
+                    className="relative mx-auto flex min-h-[39rem] max-w-[77.5rem] flex-col justify-center px-6 py-20 lg:px-10 lg:py-28"
+                >
                     <motion.div
                         initial={
                             reduceMotion
@@ -153,7 +170,7 @@ export default function AboutPage(): React.ReactElement {
                             Est. for the next generation
                         </p>
                     </motion.div>
-                </div>
+                </motion.div>
             </section>
 
             <div className="border-b border-[#1c1c1c]/10 bg-[#ff729f] text-[#1c1c1c]">
@@ -178,7 +195,7 @@ export default function AboutPage(): React.ReactElement {
                         whileInView="visible"
                         viewport={{
                             amount: 0.25,
-                            once: true,
+                            once: false,
                         }}
                     >
                         <div className="flex items-center gap-3">
@@ -222,7 +239,7 @@ export default function AboutPage(): React.ReactElement {
                         }}
                         viewport={{
                             amount: 0.25,
-                            once: true,
+                            once: false,
                         }}
                         transition={{
                             duration: 0.85,
@@ -231,12 +248,12 @@ export default function AboutPage(): React.ReactElement {
                         className="relative aspect-[4/5] overflow-hidden bg-[#1c1c1c] sm:aspect-[16/11] lg:aspect-[4/5]"
                     >
                         <Image
-                            src={gridPreview}
-                            alt="A Formula 1 car racing through a neon-lit data tunnel"
+                            src={aboutTrackside}
+                            alt="A woman race engineer watches a car leave the pit lane at night"
                             fill
                             placeholder="blur"
                             sizes="(max-width: 1023px) 100vw, 50vw"
-                            className="object-cover object-center"
+                            className="object-cover object-center sm:object-[center_20%] lg:object-center"
                         />
 
                         <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_30%,rgba(28,28,28,0.88)_100%)]" />
@@ -264,7 +281,7 @@ export default function AboutPage(): React.ReactElement {
                         whileInView="visible"
                         viewport={{
                             amount: 0.4,
-                            once: true,
+                            once: false,
                         }}
                         className="flex flex-col justify-between gap-5 border-b border-white/10 pb-8 md:flex-row md:items-end"
                     >
@@ -301,7 +318,7 @@ export default function AboutPage(): React.ReactElement {
                                 }}
                                 viewport={{
                                     amount: 0.3,
-                                    once: true,
+                                    once: false,
                                 }}
                                 transition={{
                                     delay: index * 0.12,
@@ -345,7 +362,7 @@ export default function AboutPage(): React.ReactElement {
                     whileInView="visible"
                     viewport={{
                         amount: 0.35,
-                        once: true,
+                        once: false,
                     }}
                     className="relative mx-auto max-w-[77.5rem]"
                 >
@@ -378,7 +395,7 @@ export default function AboutPage(): React.ReactElement {
                     whileInView="visible"
                     viewport={{
                         amount: 0.35,
-                        once: true,
+                        once: false,
                     }}
                     className="mx-auto flex max-w-[77.5rem] flex-col justify-between gap-10 md:flex-row md:items-end"
                 >

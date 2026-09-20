@@ -34,7 +34,7 @@ export default function GridHeader({
                     size="wide"
                     className="relative py-5 md:py-6"
                 >
-                    <div className="flex items-center justify-between gap-6">
+                    <div className="flex flex-col items-center gap-5 md:flex-row md:justify-between md:gap-6">
                         <motion.div
                             initial={{
                                 opacity: 0,
@@ -47,11 +47,11 @@ export default function GridHeader({
                             transition={{
                                 duration: 0.5,
                             }}
-                            className="flex min-w-0 items-center gap-5"
+                            className="flex min-w-0 items-center justify-center gap-5 md:justify-start"
                         >
                             <Link
                                 href="/"
-                                className="shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff729f]"
+                                className="shrink-0 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff729f] md:text-left"
                                 aria-label="Return to Fast Girls Club home"
                             >
                                 <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-white/40">
@@ -66,9 +66,9 @@ export default function GridHeader({
                                 </h1>
                             </Link>
 
-                            <div className="hidden h-10 w-px bg-white/10 sm:block" />
+                            <div className="hidden h-10 w-px bg-white/10 md:block" />
 
-                            <div className="hidden items-center gap-3 sm:flex">
+                            <div className="hidden items-center gap-3 md:flex">
                                 <CategoryTag accent="pink">
                                     {season ?? "Current"}
                                 </CategoryTag>

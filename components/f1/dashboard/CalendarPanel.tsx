@@ -184,6 +184,11 @@ export default function CalendarPanel({
                     accent="orange"
                     action={
                         <Select
+                            items={{
+                                all: "All",
+                                upcoming: "Upcoming",
+                                completed: "Completed",
+                            }}
                             value={filter}
                             onValueChange={(
                                 value,
@@ -202,16 +207,28 @@ export default function CalendarPanel({
                                 <SelectValue />
                             </SelectTrigger>
 
-                            <SelectContent>
-                                <SelectItem value="all">
-                                    All rounds
+                            <SelectContent
+                                alignItemWithTrigger={false}
+                                className="border border-white/15 bg-[#242426] text-white shadow-xl"
+                            >
+                                <SelectItem
+                                    value="all"
+                                    className="text-white data-[highlighted]:bg-[#ff729f]/15 data-[highlighted]:text-white"
+                                >
+                                    All
                                 </SelectItem>
 
-                                <SelectItem value="upcoming">
+                                <SelectItem
+                                    value="upcoming"
+                                    className="text-white data-[highlighted]:bg-[#ff729f]/15 data-[highlighted]:text-white"
+                                >
                                     Upcoming
                                 </SelectItem>
 
-                                <SelectItem value="completed">
+                                <SelectItem
+                                    value="completed"
+                                    className="text-white data-[highlighted]:bg-[#ff729f]/15 data-[highlighted]:text-white"
+                                >
                                     Completed
                                 </SelectItem>
                             </SelectContent>

@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import {
     AnimatePresence,
     motion,
@@ -9,9 +8,11 @@ import {
     useMemo,
     useState,
 } from "react";
+import { ChevronDown } from "lucide-react";
 
 import CategoryTag from "@/components/ui/CategoryTag";
 import Pagination from "@/components/ui/Pagination";
+import DriverPortrait from "@/components/f1/DriverPortrait";
 
 import { countryCodeToEmoji } from "@/lib/f1/countries";
 import type {
@@ -25,46 +26,6 @@ interface LiveTimingProps {
     data: F1LiveResponse | null;
     loading: boolean;
     error: string | null;
-}
-
-function DriverAvatar({
-    driver,
-}: {
-    driver: F1Driver;
-}): React.ReactElement {
-    if (!driver.headshotUrl) {
-        return (
-            <div
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-xs font-black text-white/45"
-                style={{
-                    borderColor: driver.teamColour
-                        ? `#${driver.teamColour}`
-                        : undefined,
-                }}
-            >
-                {driver.acronym.slice(0, 2)}
-            </div>
-        );
-    }
-
-    return (
-        <div
-            className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-white/10 bg-white/[0.05]"
-            style={{
-                borderColor: driver.teamColour
-                    ? `#${driver.teamColour}`
-                    : undefined,
-            }}
-        >
-            <Image
-                src={driver.headshotUrl}
-                alt={driver.name}
-                fill
-                sizes="40px"
-                className="object-cover"
-            />
-        </div>
-    );
 }
 
 function AnimatedValue({
@@ -179,7 +140,12 @@ function DriverRow({
                 )}
             </motion.span>
 
-            <DriverAvatar driver={driver} />
+            <DriverPortrait
+                name={driver.name}
+                acronym={driver.acronym}
+                headshotUrl={driver.headshotUrl}
+                teamColour={driver.teamColour}
+            />
 
             <div className="min-w-0">
                 <div className="flex min-w-0 items-center gap-2">
@@ -693,35 +659,38 @@ export default function LiveTiming({
                         Filter by team
                     </label>
 
-                    <select
-                        id="team-filter"
-                        value={
-                            selectedTeam
-                        }
-                        onChange={
-                            handleTeamChange
-                        }
-                        className="h-10 min-w-40 cursor-pointer border border-white/10 bg-[#151515] px-3 text-xs font-semibold text-white outline-none focus:border-[#ff729f]/60"
-                    >
-                        <option value="all">
-                            All teams
-                        </option>
+                    <div className="relative min-w-40">
+                        <select
+                            id="team-filter"
+                            value={
+                                selectedTeam
+                            }
+                            onChange={
+                                handleTeamChange
+                            }
+                            className="h-10 w-full cursor-pointer appearance-none border border-white/10 bg-[#151515] pl-3 pr-8 text-xs font-semibold text-white outline-none focus:border-[#ff729f]/60"
+                        >
+                            <option value="all">
+                                All teams
+                            </option>
 
-                        {teams.map(
-                            (team) => (
-                                <option
-                                    key={
-                                        team
-                                    }
-                                    value={
-                                        team
-                                    }
-                                >
-                                    {team}
-                                </option>
-                            ),
-                        )}
-                    </select>
+                            {teams.map(
+                                (team) => (
+                                    <option
+                                        key={
+                                            team
+                                        }
+                                        value={
+                                            team
+                                        }
+                                    >
+                                        {team}
+                                    </option>
+                                ),
+                            )}
+                        </select>
+                        <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/50" />
+                    </div>
                 </div>
             </div>
 

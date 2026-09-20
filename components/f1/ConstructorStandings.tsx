@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 
 import type {
@@ -110,7 +111,7 @@ export default function ConstructorStandings(): React.ReactElement {
                 !error &&
                 standings.length > 0 && (
                     <div>
-                        <div className="grid grid-cols-[42px_minmax(0,1fr)_82px] items-center gap-3 border-b border-white/10 bg-black/[0.08] px-5 py-3 text-[8px] font-black uppercase tracking-[0.22em] text-white/25 sm:grid-cols-[55px_minmax(0,1fr)_90px] sm:px-8">
+                        <div className="grid grid-cols-[28px_minmax(0,1fr)_54px] items-center gap-2 border-b border-white/10 bg-black/[0.08] px-3 py-3 text-[8px] font-black uppercase tracking-[0.22em] text-white/25 sm:grid-cols-[55px_minmax(0,1fr)_90px] sm:gap-3 sm:px-8">
                             <span>Pos</span>
 
                             <span>Constructor</span>
@@ -197,17 +198,13 @@ function ConstructorRow({
     return (
         <div
             className={[
-                "group relative grid grid-cols-[42px_minmax(0,1fr)_82px] items-center gap-3 border-b border-white/[0.06] px-5 py-4 transition-colors duration-200 hover:bg-white/[0.04] sm:grid-cols-[55px_minmax(0,1fr)_90px] sm:px-8 sm:py-5",
+                "group relative grid grid-cols-[28px_minmax(0,1fr)_54px] items-center gap-2 border-b border-white/[0.06] px-3 py-4 transition-colors duration-200 hover:bg-white/[0.04] sm:grid-cols-[55px_minmax(0,1fr)_90px] sm:gap-3 sm:px-8 sm:py-5",
                 isLeader ? "bg-white/[0.025]" : "",
             ].join(" ")}
         >
             <span
-                className={[
-                    "absolute bottom-0 left-0 top-0 w-[3px] transition-opacity duration-200 group-hover:opacity-100",
-                    isLeader
-                        ? "bg-[#ff729f]"
-                        : "bg-white/10 opacity-70",
-                ].join(" ")}
+                className="absolute bottom-0 left-0 top-0 w-[3px] opacity-70 transition-opacity duration-200 group-hover:opacity-100"
+                style={{ backgroundColor: team.teamColour }}
             />
 
             {isLeader && (
@@ -229,15 +226,14 @@ function ConstructorRow({
 
             <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                 <TeamMark
-                    team={team.team}
-                    position={team.position}
+                    team={team}
                 />
 
                 <div className="min-w-0">
                     <div className="flex min-w-0 items-center gap-2">
                         <p
                             className={[
-                                "truncate text-sm font-black uppercase tracking-tight sm:text-base",
+                                "min-w-0 flex-1 line-clamp-2 text-sm font-black uppercase leading-tight tracking-tight sm:line-clamp-1 sm:text-base",
                                 isLeader
                                     ? "text-white"
                                     : "text-white/90",
@@ -281,27 +277,35 @@ function ConstructorRow({
 
 function TeamMark({
     team,
-    position,
 }: {
-    team: string;
-    position: number;
+    team: F1ConstructorStanding;
 }): React.ReactElement {
-    const initials = team
+    const [failedUrl, setFailedUrl] = useState<string | null>(null);
+    const initials = team.team
         .split(" ")
         .map((word) => word[0])
         .join("")
         .slice(0, 2);
 
+    const showLogo = Boolean(team.logoUrl && failedUrl !== team.logoUrl);
+
     return (
         <div
-            className={[
-                "flex h-10 w-10 shrink-0 items-center justify-center border text-[10px] font-black uppercase transition-colors duration-200",
-                position === 1
-                    ? "border-[#ff729f]/40 bg-[#ff729f]/10 text-[#ff729f]"
-                    : "border-white/10 bg-white/[0.04] text-white/40",
-            ].join(" ")}
+            className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden border border-white/15 bg-white/[0.04] text-[9px] font-black uppercase text-white/50 sm:h-10 sm:w-10"
+            style={{ borderColor: team.teamColour }}
         >
-            {initials}
+            {showLogo && team.logoUrl ? (
+                <Image
+                    src={team.logoUrl}
+                    alt=""
+                    fill
+                    sizes="40px"
+                    className="object-contain p-1"
+                    onError={() => setFailedUrl(team.logoUrl)}
+                />
+            ) : (
+                initials
+            )}
         </div>
     );
 }

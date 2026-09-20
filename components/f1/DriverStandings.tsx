@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import {
     useEffect,
     useMemo,
@@ -8,14 +7,21 @@ import {
 } from "react";
 
 import { countryCodeToEmoji } from "@/lib/f1/countries";
+import { getStandingHeadshotUrl } from "@/lib/f1/driver-portraits";
+import DriverPortrait from "@/components/f1/DriverPortrait";
 import type {
+    F1Driver,
     F1DriverStanding,
     F1DriverStandingsResponse,
 } from "@/lib/f1/types";
 
 const PAGE_SIZE = 10;
 
-export default function DriverStandings(): React.ReactElement {
+export default function DriverStandings({
+    liveDrivers,
+}: {
+    liveDrivers: F1Driver[];
+}): React.ReactElement {
     const [standings, setStandings] = useState<
         F1DriverStanding[]
     >([]);
@@ -135,7 +141,7 @@ export default function DriverStandings(): React.ReactElement {
                 !error &&
                 standings.length > 0 && (
                     <div>
-                        <div className="grid grid-cols-[42px_minmax(0,1fr)_82px] items-center gap-3 border-b border-white/10 bg-black/[0.08] px-5 py-3 text-[8px] font-black uppercase tracking-[0.22em] text-white/25 sm:grid-cols-[55px_minmax(0,1fr)_150px_90px] sm:px-8">
+                        <div className="grid grid-cols-[28px_minmax(0,1fr)_54px] items-center gap-2 border-b border-white/10 bg-black/[0.08] px-3 py-3 text-[8px] font-black uppercase tracking-[0.22em] text-white/25 sm:grid-cols-[55px_minmax(0,1fr)_150px_90px] sm:gap-3 sm:px-8 lg:grid-cols-[55px_minmax(0,1fr)_230px_90px]">
                             <span>Pos</span>
                             <span>Driver</span>
 
@@ -153,6 +159,7 @@ export default function DriverStandings(): React.ReactElement {
                                 <DriverRow
                                     key={`${driver.driverNumber}-${driver.position}`}
                                     driver={driver}
+                                    headshotUrl={getStandingHeadshotUrl(driver, liveDrivers)}
                                 />
                             ),
                         )}
@@ -233,8 +240,10 @@ function PanelHeader({ season }: { season: number | null }): React.ReactElement 
 
 function DriverRow({
     driver,
+    headshotUrl,
 }: {
     driver: F1DriverStanding;
+    headshotUrl: string | null;
 }): React.ReactElement {
     const isLeader = driver.position === 1;
     const isTopThree = driver.position <= 3;
@@ -242,7 +251,7 @@ function DriverRow({
     return (
         <div
             className={[
-                "group relative grid grid-cols-[42px_minmax(0,1fr)_82px] items-center gap-3 border-b border-white/[0.06] px-5 py-4 transition-colors duration-200 hover:bg-white/[0.04] sm:grid-cols-[55px_minmax(0,1fr)_150px_90px] sm:px-8 sm:py-5",
+                "group relative grid grid-cols-[28px_minmax(0,1fr)_54px] items-center gap-2 border-b border-white/[0.06] px-3 py-4 transition-colors duration-200 hover:bg-white/[0.04] sm:grid-cols-[55px_minmax(0,1fr)_150px_90px] sm:gap-3 sm:px-8 sm:py-5 lg:grid-cols-[55px_minmax(0,1fr)_230px_90px]",
                 isLeader
                     ? "bg-white/[0.025]"
                     : "",
@@ -275,9 +284,13 @@ function DriverRow({
                 </span>
             </div>
 
-            <div className="flex min-w-0 items-center gap-3">
-                <DriverImage
-                    driver={driver}
+            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                <DriverPortrait
+                    name={driver.driver}
+                    acronym={driver.acronym}
+                    headshotUrl={headshotUrl}
+                    teamColour={driver.teamColour}
+                    className="h-8 w-8 sm:h-10 sm:w-10"
                 />
 
                 <div className="min-w-0">
@@ -306,18 +319,20 @@ function DriverRow({
                             )}
                     </div>
 
-                    <p className="mt-0.5 truncate text-sm font-black uppercase tracking-tight text-white sm:text-base">
+                    <p className="mt-0.5 line-clamp-2 text-sm font-black uppercase leading-tight tracking-tight text-white sm:line-clamp-1 sm:text-base">
                         {driver.driver}
                     </p>
 
-                    <p className="truncate text-[9px] font-bold uppercase tracking-[0.14em] text-white/25 sm:hidden">
+                    <p className="flex min-w-0 items-center gap-1.5 truncate text-[9px] font-bold uppercase tracking-[0.14em] text-white/40 sm:hidden">
+                        <span className="h-1.5 w-1.5 shrink-0" style={{ backgroundColor: driver.teamColour }} />
                         {driver.team}
                     </p>
                 </div>
             </div>
 
             <div className="hidden min-w-0 sm:block">
-                <p className="truncate text-xs font-bold uppercase tracking-[0.1em] text-white/50">
+                <p className="flex items-center gap-2 truncate text-xs font-bold uppercase tracking-[0.1em] text-white/50">
+                    <span className="h-1.5 w-1.5 shrink-0" style={{ backgroundColor: driver.teamColour }} />
                     {driver.team}
                 </p>
             </div>
@@ -338,34 +353,6 @@ function DriverRow({
                     PTS
                 </p>
             </div>
-        </div>
-    );
-}
-
-function DriverImage({
-    driver,
-}: {
-    driver: F1DriverStanding;
-}): React.ReactElement {
-    if (driver.headshotUrl) {
-        return (
-            <div className="relative hidden h-10 w-10 shrink-0 overflow-hidden border border-white/10 bg-white/[0.06] sm:block">
-                <Image
-                    src={driver.headshotUrl}
-                    alt={driver.driver}
-                    fill
-                    sizes="40px"
-                    className="object-cover object-top grayscale-[15%] transition-all duration-300 group-hover:scale-105 group-hover:grayscale-0"
-                />
-            </div>
-        );
-    }
-
-    return (
-        <div className="hidden h-10 w-10 shrink-0 items-center justify-center border border-white/10 bg-white/[0.06] sm:flex">
-            <span className="text-[10px] font-black text-white/30">
-                {driver.acronym}
-            </span>
         </div>
     );
 }

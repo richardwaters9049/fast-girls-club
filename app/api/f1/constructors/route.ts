@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { F1_API_BASE_URL } from "@/lib/config";
+import { getTeamColour, getTeamLogoUrl } from "@/lib/f1/team-assets";
 
 export const revalidate = 1800;
 
@@ -53,6 +54,8 @@ export async function GET() {
       position: standing.position,
       team: standing.team.name,
       points: standing.points,
+      teamColour: getTeamColour(standing.teamId),
+      logoUrl: getTeamLogoUrl(standing.teamId, data.season),
     }));
 
     return NextResponse.json(
