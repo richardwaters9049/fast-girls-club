@@ -1168,7 +1168,7 @@ function NextRaceCard({
                                     Next race
                                 </p>
 
-                                <h3 className="mt-2 text-2xl font-semibold uppercase leading-[0.95] tracking-[-0.045em] text-white sm:text-3xl lg:text-4xl">
+                                <h3 className="mt-2 text-2xl font-semibold uppercase leading-[1.08] tracking-[-0.045em] text-white sm:text-3xl sm:leading-[1.02] lg:text-4xl">
                                     {data?.race.name ??
                                         race.name}
                                 </h3>

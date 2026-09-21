@@ -144,6 +144,9 @@ export default function F1Dashboard(): React.ReactElement {
     const [initialising, setInitialising] =
         useState(true);
 
+    const [loadingPhase, setLoadingPhase] =
+        useState<"red" | "yellow" | "green">("red");
+
     const [error, setError] =
         useState<string | null>(null);
 
@@ -170,7 +173,11 @@ export default function F1Dashboard(): React.ReactElement {
     useEffect(() => {
         let cancelled = false;
 
+        const pause = (duration: number): Promise<void> =>
+            new Promise((resolve) => setTimeout(resolve, duration));
+
         async function loadInitialGridData(): Promise<void> {
+            const startedAt = Date.now();
             const liveRequest = fetchGridJson<F1LiveResponse>("/api/f1/live");
             const calendarRequest = loadRaceCalendar().then(async (data) => {
                 const races = data.races
@@ -193,6 +200,9 @@ export default function F1Dashboard(): React.ReactElement {
                     fetchGridJson<F1DriverStandingsResponse>("/api/f1/drivers"),
                     fetchGridJson<F1ConstructorStandingsResponse>("/api/f1/constructors"),
                 ]);
+
+            // Keep the first light visible even when the responses are cached.
+            await pause(Math.max(0, 320 - (Date.now() - startedAt)));
 
             if (cancelled) {
                 return;
@@ -227,7 +237,19 @@ export default function F1Dashboard(): React.ReactElement {
                 setConstructorError("Constructor championship data is currently unavailable.");
             }
 
-            setInitialising(false);
+            setLoadingPhase("yellow");
+            await pause(280);
+
+            if (cancelled) {
+                return;
+            }
+
+            setLoadingPhase("green");
+            await pause(420);
+
+            if (!cancelled) {
+                setInitialising(false);
+            }
         }
 
         void loadInitialGridData();
@@ -392,8 +414,9 @@ export default function F1Dashboard(): React.ReactElement {
             <div className="min-h-0 flex-1 overflow-y-auto">
                 {initialising && (
                     <GridLoadingState
-                        label="Getting The Grid ready"
-                        description="Loading races, live timing and standings"
+                        phase={loadingPhase}
+                        label={loadingPhase === "green" ? "The Grid is ready" : loadingPhase === "yellow" ? "Almost on the grid" : "Getting The Grid ready"}
+                        description={loadingPhase === "green" ? "Lights out. Let's go." : "Loading races, live timing and standings"}
                     />
                 )}
                 {!initialising && (

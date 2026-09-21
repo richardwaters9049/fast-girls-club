@@ -411,7 +411,7 @@ export default function Home(): React.ReactElement {
                                 <span className="h-px w-10 bg-[#ff729f]" />
                             </div>
 
-                            <h2 className="text-5xl font-black uppercase leading-[0.84] tracking-[-0.065em] md:text-7xl">
+                            <h2 className="text-5xl font-black uppercase leading-[0.95] tracking-[-0.065em] md:text-7xl md:leading-[0.89]">
                                 Race
                                 <br />
                                 <span className="relative inline-block">
@@ -505,7 +505,7 @@ export default function Home(): React.ReactElement {
                         </div>
 
                         <h2
-                            className="mt-7 text-[clamp(3.75rem,10vw,8.5rem)] font-black uppercase leading-[0.78] tracking-[-0.075em]"
+                            className="mt-7 text-[clamp(3.75rem,10vw,8.5rem)] font-black uppercase leading-[0.92] tracking-[-0.075em] md:leading-[0.84]"
                             style={{
                                 textShadow:
                                     "0 5px 34px rgba(0, 0, 0, 0.8)",
@@ -640,7 +640,7 @@ export default function Home(): React.ReactElement {
                                 duration: 0.8,
                                 ease: [0.22, 1, 0.36, 1],
                             }}
-                            className="text-[clamp(3.5rem,8vw,8rem)] font-black uppercase leading-[0.82] tracking-[-0.055em]"
+                            className="text-[clamp(3.5rem,8vw,8rem)] font-black uppercase leading-[0.94] tracking-[-0.055em] md:leading-[0.86]"
                         >
                             Fast
                             <br />

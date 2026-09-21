@@ -214,7 +214,7 @@ export default async function BlogPage({
                             <span className="h-px w-9 bg-[#ee8434]" />
                         </div>
 
-                        <h1 className="mt-7 text-[clamp(3.1rem,10vw,9rem)] font-black uppercase leading-[0.78] tracking-[-0.075em]">
+                        <h1 className="mt-7 text-[clamp(3.1rem,10vw,9rem)] font-black uppercase leading-[0.92] tracking-[-0.075em] md:leading-[0.84]">
                             The<br /><span className="text-[#ff729f]">paddock</span><span className="text-[#ee8434]">.</span>
                         </h1>
 
@@ -254,7 +254,7 @@ export default async function BlogPage({
                                     : "Straight from the paddock"}
                             </p>
 
-                            <h2 className="mt-3 max-w-[45rem] break-words text-4xl font-black uppercase leading-[0.9] tracking-[-0.06em] md:text-6xl">
+                            <h2 className="mt-3 max-w-[45rem] break-words text-4xl font-black uppercase leading-[1.04] tracking-[-0.06em] md:text-6xl md:leading-[0.96]">
                                 {query
                                     ? `Search: ${query}`
                                     : selectedCategory
@@ -333,7 +333,7 @@ export default async function BlogPage({
                                 No matches
                             </p>
 
-                            <h2 className="mt-4 text-4xl font-black uppercase tracking-[-0.06em]">
+                            <h2 className="mt-4 text-4xl font-black uppercase leading-[1.05] tracking-[-0.06em]">
                                 Nothing found.
                             </h2>
 

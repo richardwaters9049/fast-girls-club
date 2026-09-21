@@ -109,7 +109,7 @@ export default async function BlogArticlePage({
                             </p>
                         )}
 
-                        <h1 className="mt-5 text-[clamp(3rem,7vw,7rem)] font-black uppercase leading-[0.84] tracking-[-0.07em]">
+                        <h1 className="mt-5 text-[clamp(3rem,7vw,7rem)] font-black uppercase leading-[0.99] tracking-[-0.07em] md:leading-[0.9]">
                             {post.title}
                             <span className="text-[#ff729f]">
                                 .
@@ -175,7 +175,7 @@ export default async function BlogArticlePage({
                             Fast Girls Club
                         </p>
 
-                        <h2 className="mt-4 text-2xl font-black uppercase leading-none tracking-[-0.04em]">
+                        <h2 className="mt-4 text-2xl font-black uppercase leading-[1.12] tracking-[-0.04em]">
                             More from
                             <br />
                             the club.

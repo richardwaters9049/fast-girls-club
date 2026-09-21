@@ -33,7 +33,7 @@ export default function ArticleContent({
                 [&_h2]:text-3xl
                 [&_h2]:font-black
                 [&_h2]:uppercase
-                [&_h2]:leading-[0.95]
+                [&_h2]:leading-[1.12]
                 [&_h2]:tracking-[-0.05em]
 
                 [&_h3]:mb-4
@@ -41,7 +41,7 @@ export default function ArticleContent({
                 [&_h3]:text-2xl
                 [&_h3]:font-black
                 [&_h3]:uppercase
-                [&_h3]:leading-none
+                [&_h3]:leading-[1.14]
                 [&_h3]:tracking-[-0.04em]
 
                 [&_img]:h-auto

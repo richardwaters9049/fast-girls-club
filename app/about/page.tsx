@@ -130,7 +130,7 @@ export default function AboutPage(): React.ReactElement {
                                 duration: 0.9,
                                 ease: EASE,
                             }}
-                            className="mt-8 max-w-[65rem] text-[clamp(4rem,11vw,9.75rem)] font-black uppercase leading-[0.77] tracking-[-0.075em]"
+                            className="mt-8 max-w-[65rem] text-[clamp(4rem,11vw,9.75rem)] font-black uppercase leading-[0.9] tracking-[-0.075em] md:leading-[0.82]"
                         >
                             Racing is
                             <br />
@@ -205,7 +205,7 @@ export default function AboutPage(): React.ReactElement {
                                 </p>
                             </div>
 
-                            <h2 className="mt-6 text-[clamp(3.5rem,7vw,7rem)] font-black uppercase leading-[0.82] tracking-[-0.07em]">
+                            <h2 className="mt-6 text-[clamp(3.5rem,7vw,7rem)] font-black uppercase leading-[0.93] tracking-[-0.07em] md:leading-[0.87]">
                                 A different
                                 <br />
                                 lens on
@@ -264,7 +264,7 @@ export default function AboutPage(): React.ReactElement {
                                 <p className="text-[9px] font-black uppercase tracking-[0.26em] text-[#ffafc8]">
                                     Our point of view
                                 </p>
-                                <p className="mt-4 text-2xl font-black uppercase leading-[0.95] tracking-[-0.04em] md:text-4xl">
+                                <p className="mt-4 text-2xl font-black uppercase leading-[1.08] tracking-[-0.04em] md:text-4xl md:leading-[1.02]">
                                     Serious about racing. Never too serious about
                                     ourselves.
                                 </p>
@@ -289,7 +289,7 @@ export default function AboutPage(): React.ReactElement {
                                 <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#ff729f]">
                                     What drives us
                                 </p>
-                                <h2 className="mt-4 text-5xl font-black uppercase tracking-[-0.06em] md:text-7xl">
+                                <h2 className="mt-4 text-5xl font-black uppercase leading-[1.04] tracking-[-0.06em] md:text-7xl md:leading-[0.98]">
                                     Our values<span className="text-[#ee8434]">.</span>
                                 </h2>
                             </div>
@@ -334,7 +334,7 @@ export default function AboutPage(): React.ReactElement {
                                         <span className="h-px w-10 bg-white/15 transition-all duration-500 group-hover:w-20 group-hover:bg-[#ee8434]" />
                                     </div>
 
-                                    <h3 className="mt-16 text-4xl font-black uppercase tracking-[-0.055em] transition-colors duration-300 group-hover:text-[#ff729f]">
+                                    <h3 className="mt-16 text-4xl font-black uppercase leading-[1.06] tracking-[-0.055em] transition-colors duration-300 group-hover:text-[#ff729f]">
                                         {value.title}
                                         <span className="text-[#ee8434]">.</span>
                                     </h3>
@@ -370,7 +370,7 @@ export default function AboutPage(): React.ReactElement {
                             The manifesto
                         </p>
 
-                        <blockquote className="mt-7 max-w-[69rem] text-[clamp(3.2rem,8vw,8rem)] font-black uppercase leading-[0.82] tracking-[-0.07em]">
+                        <blockquote className="mt-7 max-w-[69rem] text-[clamp(3.2rem,8vw,8rem)] font-black uppercase leading-[0.97] tracking-[-0.07em] md:leading-[0.88]">
                             <span className=" text-white">We</span> don&apos;t wait for permission to take up space.
                         </blockquote>
 
@@ -403,7 +403,7 @@ export default function AboutPage(): React.ReactElement {
                             <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#c85f22]">
                                 Start your engines
                             </p>
-                            <h2 className="mt-5 text-[clamp(3.5rem,7vw,7rem)] font-black uppercase leading-[0.84] tracking-[-0.07em]">
+                            <h2 className="mt-5 text-[clamp(3.5rem,7vw,7rem)] font-black uppercase leading-[0.95] tracking-[-0.07em] md:leading-[0.88]">
                                 Find your place
                                 <br />
                                 on the grid<span className="text-[#d94f7d]">.</span>

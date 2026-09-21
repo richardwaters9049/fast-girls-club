@@ -6,3 +6,5 @@ build/
 .env.local
 .DS_Store
 *.log
+docs/deployment-audit-2026-09-20.md
+docs/dns-baseline-2026-09-20.txt

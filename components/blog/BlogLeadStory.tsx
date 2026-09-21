@@ -48,7 +48,7 @@ export default function BlogLeadStory({
                             <time dateTime={post.date}>{date}</time>
                         </div>
 
-                        <h3 className="mt-7 text-[clamp(2.4rem,4vw,4.75rem)] font-black uppercase leading-[0.9] tracking-[-0.065em] transition-colors duration-300 group-hover:text-[#ff98b9]">
+                        <h3 className="mt-7 text-[clamp(2.4rem,4vw,4.75rem)] font-black uppercase leading-[1.04] tracking-[-0.065em] transition-colors duration-300 group-hover:text-[#ff98b9] md:leading-[0.96]">
                             {post.title}
                         </h3>
 
