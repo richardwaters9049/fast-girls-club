@@ -21,6 +21,17 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+
+  async redirects() {
+    return [
+      {
+        source: "/wp-content/uploads/:path*",
+        destination:
+          "https://cms.fastgirlsclub.co.uk/wp-content/uploads/:path*",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
