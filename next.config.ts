@@ -14,6 +14,11 @@ const nextConfig: NextConfig = {
         hostname: "fastgirlsclub.co.uk",
         pathname: "/wp-content/uploads/**",
       },
+      {
+        protocol: "https",
+        hostname: "cms.fastgirlsclub.co.uk",
+        pathname: "/wp-content/uploads/**",
+      },
     ],
   },
 };
