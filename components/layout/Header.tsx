@@ -9,10 +9,11 @@ import { useEffect, useState } from "react";
 import newLogo from "@/public/images/F1-images/newlogo3.png";
 
 const links = [
-  { href: "/#latest", label: "Latest" },
-  { href: "/blog", label: "Blog" },
-  { href: "/f1", label: "The Grid" },
   { href: "/about", label: "About" },
+  { href: "/blog", label: "Blog" },
+  { href: "/#latest", label: "Latest" },
+  { href: "/f1", label: "The Grid" },
+
 ];
 
 export default function Header(): React.ReactElement {
