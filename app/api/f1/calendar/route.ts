@@ -4,13 +4,15 @@ import { F1_API_BASE_URL } from "@/lib/config";
 
 export const revalidate = 21_600;
 
+const F1_API_TIMEOUT_MS = 55_000;
+
 export async function GET(): Promise<NextResponse> {
   try {
     const response = await fetch(`${F1_API_BASE_URL}/races`, {
       next: {
         revalidate: 21_600,
       },
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(F1_API_TIMEOUT_MS),
     });
 
     if (!response.ok) {

@@ -5,6 +5,8 @@ import { getTeamColour, getTeamLogoUrl } from "@/lib/f1/team-assets";
 
 export const revalidate = 1800;
 
+const F1_API_TIMEOUT_MS = 55_000;
+
 interface ApiConstructorStanding {
   classificationId: number;
   position: number;
@@ -34,7 +36,7 @@ export async function GET() {
       next: {
         revalidate: 1800,
       },
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(F1_API_TIMEOUT_MS),
     });
 
     if (!response.ok) {

@@ -4,6 +4,8 @@ import { F1_API_BASE_URL } from "@/lib/config";
 
 export const revalidate = 60;
 
+const F1_API_TIMEOUT_MS = 55_000;
+
 interface BackendResult {
   position: number | null;
   number: number | null;
@@ -110,14 +112,17 @@ export async function GET(
       next: {
         revalidate: 1_800,
       },
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(F1_API_TIMEOUT_MS),
     });
 
     if (!raceResponse.ok) {
       throw new Error(`F1 race request returned ${raceResponse.status}`);
     }
 
-    const raceData = (await raceResponse.json()) as { season?: number };
+    const raceData = (await raceResponse.json()) as {
+      season?: number;
+    };
+
     const season = raceData.season;
 
     if (!Number.isInteger(season)) {
@@ -125,6 +130,7 @@ export async function GET(
     }
 
     const url = `${F1_API_BASE_URL}/results/${season}/${round}`;
+
     const response = await fetch(url, {
       headers: {
         Accept: "application/json",
@@ -132,7 +138,7 @@ export async function GET(
       next: {
         revalidate: 60,
       },
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(F1_API_TIMEOUT_MS),
     });
 
     if (response.status === 404) {

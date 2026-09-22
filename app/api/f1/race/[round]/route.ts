@@ -10,6 +10,8 @@ import {
 
 export const revalidate = 1_800;
 
+const F1_API_TIMEOUT_MS = 55_000;
+
 interface BackendScheduleSession {
   date: string | null;
   time: string | null;
@@ -157,7 +159,7 @@ export async function GET(
       next: {
         revalidate: 1_800,
       },
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(F1_API_TIMEOUT_MS),
     });
 
     if (response.status === 404) {

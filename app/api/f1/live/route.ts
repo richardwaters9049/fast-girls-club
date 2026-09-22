@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 
 import { F1_API_BASE_URL } from "@/lib/config";
 
+const F1_API_TIMEOUT_MS = 55_000;
+
 type JsonRecord = Record<string, unknown>;
 
 interface NormalisedDriver {
@@ -91,6 +93,25 @@ function getNestedRecord(
     const value = record[key];
 
     if (isRecord(value)) {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+function getNestedArray(
+  record: JsonRecord | null,
+  ...keys: string[]
+): unknown[] | null {
+  if (!record) {
+    return null;
+  }
+
+  for (const key of keys) {
+    const value = record[key];
+
+    if (Array.isArray(value)) {
       return value;
     }
   }
@@ -209,6 +230,18 @@ function extractSectorTime(
     return directSectorValue;
   }
 
+  const sectorArray = getNestedArray(timing, "Sectors");
+
+  if (sectorArray) {
+    const sector = sectorArray[sectorNumber - 1];
+
+    if (isRecord(sector)) {
+      return getString(sector, "Value", "Time");
+    }
+
+    return null;
+  }
+
   const sectors = getNestedRecord(timing, "Sectors");
 
   if (!sectors) {
@@ -225,6 +258,18 @@ function extractSectorTime(
   }
 
   return getString(sector, "Value", "Time");
+}
+
+function extractInterval(timing: JsonRecord | null): string | null {
+  const directValue = getString(timing, "Interval", "DiffToAhead");
+
+  if (directValue) {
+    return directValue;
+  }
+
+  const nestedInterval = getNestedRecord(timing, "IntervalToPositionAhead");
+
+  return getString(nestedInterval, "Value", "Time", "Interval");
 }
 
 function extractDriver(
@@ -246,12 +291,7 @@ function extractDriver(
   const nationality = getString(driver, "Nationality") ?? "";
   const countryCode = getString(driver, "CountryCode") ?? "";
 
-  const interval = getString(
-    timing,
-    "IntervalToPositionAhead",
-    "Interval",
-    "DiffToAhead",
-  );
+  const interval = extractInterval(timing);
 
   const gapToLeader = getString(timing, "GapToLeader", "DiffToLeader");
 
@@ -265,8 +305,17 @@ function extractDriver(
 
   const stopped = getRecordValue(timing, "Stopped") === true;
   const inPit = getRecordValue(timing, "InPit") === true;
+  const retired = getRecordValue(timing, "Retired") === true;
+  const didNotStart = getRecordValue(timing, "DidNotStart") === true;
+  const disqualified = getRecordValue(timing, "Disqualified") === true;
 
-  const status = getString(timing, "Status", "RaceStatus");
+  const status = getString(
+    timing,
+    "RaceStatus",
+    "StatusText",
+    "ClassificationStatus",
+  );
+
   const normalisedStatus = status?.toLowerCase();
 
   return {
@@ -282,9 +331,16 @@ function extractDriver(
     gapToLeader,
     fastestLap,
     headshotUrl: getString(driver, "HeadshotUrl", "HeadshotURL"),
-    dnf: normalisedStatus === "dnf",
-    dns: normalisedStatus === "dns",
-    dsq: normalisedStatus === "dsq",
+    dnf:
+      retired || normalisedStatus === "dnf" || normalisedStatus === "retired",
+    dns:
+      didNotStart ||
+      normalisedStatus === "dns" ||
+      normalisedStatus === "did not start",
+    dsq:
+      disqualified ||
+      normalisedStatus === "dsq" ||
+      normalisedStatus === "disqualified",
     stopped,
     inPit,
     lastLap,
@@ -625,7 +681,7 @@ export async function GET(): Promise<NextResponse> {
   try {
     const response = await fetch(`${F1_API_BASE_URL}/live`, {
       cache: "no-store",
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(F1_API_TIMEOUT_MS),
     });
 
     if (!response.ok) {
