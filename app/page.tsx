@@ -2,7 +2,9 @@ import React from 'react'
 
 const page = () => {
     return (
-        <div>page</div>
+        <div className="w-full flex justify-centre items-centre">
+            <h1 className="text-[#ff729f] text-4xl font-bold">COMING SOON</h1>
+        </div>
     )
 }
 
