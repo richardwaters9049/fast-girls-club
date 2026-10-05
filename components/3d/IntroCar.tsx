@@ -8,7 +8,7 @@ import { HERO_CAR_LIVERY_PATH, HERO_CAR_MODEL_PATH } from "@/lib/hero-car-assets
 import { prepareModel } from "./Model";
 import type { MotionValue } from "framer-motion";
 
-export const INTRO_DRIVE_DURATION_MS = 3200;
+export const INTRO_DRIVE_DURATION_MS = 2200;
 
 function Car({ driving, progress }: { driving: boolean; progress: MotionValue<number> }): React.ReactElement {
     const { scene } = useGLTF(HERO_CAR_MODEL_PATH);
@@ -23,13 +23,12 @@ function Car({ driving, progress }: { driving: boolean; progress: MotionValue<nu
 
     useFrame(() => {
         if (!driving || !turn.current) return;
-        // Share the travel timeline: begin slightly sideways, swing the rear
-        // through the oval bend, then countersteer dramatically on exit.
+        // Steer in one direction through the corner-to-corner arc. The rear
+        // stays swung out instead of reversing into a second countersteer.
         const travel = progress.get();
-        const bend = THREE.MathUtils.smoothstep(travel, 0.08, 0.58);
-        const exit = THREE.MathUtils.smoothstep(travel, 0.58, 1);
-        turn.current.rotation.y = 0.55 - bend * 1.6 + exit * 2;
-        turn.current.rotation.z = Math.cos(travel * Math.PI) * -0.08;
+        const bend = THREE.MathUtils.smoothstep(travel, 0.05, 0.9);
+        turn.current.rotation.y = 0.35 - bend * 1.05;
+        turn.current.rotation.z = Math.atan2(192 * (1 - 2 * travel), window.innerWidth + size.width);
         if (travel < 1) invalidate();
     });
     const model = useMemo(() => {
@@ -51,14 +50,14 @@ function Car({ driving, progress }: { driving: boolean; progress: MotionValue<nu
     return (
         <>
             <OrthographicCamera makeDefault position={[0, 2, 8]} rotation={[-Math.atan2(2, 8), 0, 0]} zoom={size.width / 5.8} near={0.01} far={100} />
-            <group ref={turn} rotation={[0, 0.55, -0.08]}>
+            <group ref={turn} rotation={[0, 0.35, 0.1]}>
                 <primitive object={model.scene} />
             </group>
         </>
     );
 }
 
-// Render the changing 3D angle only during the shared oval-drive timeline,
+// Render the changing 3D angle only during the shared corner-to-corner drive timeline,
 // then return to demand rendering.
 export default function IntroCar({ driving, progress }: { driving: boolean; progress: MotionValue<number> }): React.ReactElement {
     return (

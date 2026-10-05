@@ -10,7 +10,7 @@
 .runway {
     position: absolute;
     inset-inline: 0;
-    top: 72%;
+    bottom: 0;
     height: 120px;
     pointer-events: none;
 }

@@ -23,11 +23,9 @@ export default function RacingIntro({ carReady, articleSlugs }: {
     const skipRef = useRef<HTMLButtonElement>(null);
     const finishing = useRef(false);
     const driveProgress = useMotionValue(0);
-    const carX = useTransform(driveProgress, (progress) => {
-        const travel = (1 - Math.cos(progress * Math.PI)) / 2;
-        return `calc(${travel * 100}vw - ${(1 - travel) * 100}%)`;
-    });
-    const carY = useTransform(driveProgress, (progress) => Math.sin(progress * Math.PI) * 64);
+    const carX = useTransform(driveProgress, (progress) => `calc(${progress * 100}vw - ${(1 - progress) * 100}%)`);
+    // One shallow outward arc between the bottom corners, without looping inward.
+    const carY = useTransform(driveProgress, (progress) => -192 * progress * (1 - progress));
 
     const dismiss = useCallback(() => {
         setVisible(false);
