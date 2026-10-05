@@ -2,12 +2,13 @@
 /**
  * Plugin Name: Fast Girls Club Headless
  * Description: Controlled public-page redirects from the CMS to the Next.js publication.
- * Version: 0.1.0
+ * Version: 0.2.0
  * Requires PHP: 7.4
  * License: GPL-2.0-or-later
  */
 if (!defined('ABSPATH')) exit;
 require_once __DIR__ . '/routes.php';
+require_once __DIR__ . '/homepage.php';
 
 function fgc_headless_mode(): string {
     if (defined('FGC_HEADLESS_DISABLED') && FGC_HEADLESS_DISABLED) return 'off';

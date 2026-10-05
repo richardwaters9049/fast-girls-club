@@ -83,3 +83,11 @@ Official hook references:
 - https://developer.wordpress.org/reference/hooks/template_redirect/
 - https://developer.wordpress.org/reference/functions/wp_safe_redirect/
 - https://developer.wordpress.org/reference/hooks/allowed_redirect_hosts/
+
+## Homepage placement (0.2.0)
+
+Each post editor has a **Homepage placement** panel. Save/publish the post, choose Automatic, Hide, Left, Middle or Right, then click **Save homepage placement**. Fixed slots require a published, unprotected post. Automatic fills unassigned slots newest first. A story appears only once. Replacing a currently displayed story asks for confirmation naming it; cancellation changes nothing. The replaced article remains in the blog but is hidden from the homepage until its placement is changed back to Automatic or a fixed slot. Moving a selected article releases its old slot. Unpublished/deleted pins are ignored. On mobile the same left-to-right order stacks vertically.
+
+The public `/wp-json/fgc/v1/homepage` endpoint returns exactly three published post IDs or nulls. Next.js reads those IDs, retrieves their WordPress summaries and retains slot order. An old plugin without the endpoint retains the previous newest-first behaviour. CMS/network failures are surfaced rather than silently ignoring editorial exclusions. Changes can take several minutes through the existing caches.
+
+Before rollout run `php deploy/wordpress/test-homepage.php`, `php deploy/wordpress/test-homepage-actions.php`, `php deploy/wordpress/test-routing.php`, PHP lint, and frontend lint/typecheck/tests/build. Update the existing plugin with the ZIP (do not delete it), retain Test redirect mode, deploy the frontend, then verify replacement/cancel, moving slots, hidden articles and draft/publish behaviour in the real CMS. The local checks do not substitute for this live verification.

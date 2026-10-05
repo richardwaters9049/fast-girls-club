@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
 
-import { getBlogPosts } from "@/lib/wordpress/client";
+import { getHomepagePosts } from "@/lib/wordpress/client";
 
 export const revalidate = 60;
 
 export async function GET(): Promise<NextResponse> {
   try {
-    const result = await getBlogPosts({ perPage: 3 });
+    const posts = await getHomepagePosts();
 
     return NextResponse.json(
-      { posts: result.posts },
+      { posts },
       {
         headers: {
           "Cache-Control": "public, max-age=0, s-maxage=60, stale-while-revalidate=300",

@@ -253,3 +253,28 @@ export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
 
   return mapPost(post);
 }
+
+/** Fixed editorial slots from the CMS; legacy installations retain newest-first behaviour. */
+export async function getHomepagePosts(): Promise<Array<BlogPostSummary | null>> {
+  const url = WORDPRESS_API_URL.replace(/\/wp\/v2\/?$/, "/fgc/v1/homepage");
+  const response = await fetch(url, {
+    signal: AbortSignal.timeout(10000), next: { revalidate: 60 },
+  });
+  if (response.status === 404) return (await getBlogPosts({ perPage: 3 })).posts;
+  if (!response.ok) throw new WordPressRequestError(response.status);
+  const data = await response.json() as { post_ids?: unknown };
+  if (!Array.isArray(data.post_ids) || data.post_ids.length !== 3 ||
+      !data.post_ids.every((id: unknown) => id === null || (Number.isInteger(id) && Number(id) > 0))) {
+    throw new Error("Invalid homepage slots from WordPress");
+  }
+  const ids = data.post_ids as Array<number | null>;
+  const include = ids.filter((id): id is number => id !== null);
+  if (!include.length) return [null, null, null];
+  const postsResponse = await fetch(`${WORDPRESS_API_URL}/posts?include=${include.join(",")}&per_page=3&status=publish&_embed=1`, {
+    signal: AbortSignal.timeout(10000), next: { revalidate: 60 },
+  });
+  if (!postsResponse.ok) throw new WordPressRequestError(postsResponse.status);
+  const posts = await postsResponse.json() as WordPressPost[];
+  const summaries = new Map(posts.map((post) => [post.id, mapPostSummary(post)]));
+  return ids.map((id) => id === null ? null : summaries.get(id) ?? null);
+}

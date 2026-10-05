@@ -7,7 +7,7 @@ import BlogCard from "@/components/blog/BlogCard";
 import type { BlogPostSummary } from "@/lib/wordpress/types";
 
 export default function LatestPosts(): React.ReactElement {
-  const [posts, setPosts] = useState<BlogPostSummary[]>([]);
+  const [posts, setPosts] = useState<Array<BlogPostSummary | null>>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -17,7 +17,7 @@ export default function LatestPosts(): React.ReactElement {
     void fetch("/api/blog/latest", { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error("Latest stories unavailable");
-        const data = (await response.json()) as { posts?: BlogPostSummary[] };
+        const data = (await response.json()) as { posts?: Array<BlogPostSummary | null> };
         if (!cancelled) setPosts(data.posts ?? []);
       })
       .catch((error: unknown) => {
@@ -44,7 +44,7 @@ export default function LatestPosts(): React.ReactElement {
     );
   }
 
-  if (posts.length === 0) {
+  if (!posts.some(Boolean)) {
     return (
       <div className="mt-10 border border-[#1c1c1c]/10 bg-white p-8">
         <p className="text-sm text-[#1c1c1c]/60">Latest stories are temporarily unavailable.</p>
@@ -58,7 +58,7 @@ export default function LatestPosts(): React.ReactElement {
   return (
     <div className="mt-10 grid gap-5 md:grid-cols-3">
       {posts.map((post, index) => (
-        <BlogCard key={post.id} post={post} index={index} />
+        post ? <BlogCard key={post.id} post={post} index={index} /> : <div key={`empty-${index}`} className="hidden md:block" aria-hidden="true" />
       ))}
     </div>
   );
