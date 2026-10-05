@@ -125,7 +125,7 @@ export default function RacingIntro({ carReady, articleSlugs }: {
                                     if (event.target === event.currentTarget) dismiss();
                                 }}
                             >
-                                <IntroCar />
+                                <IntroCar driving={lightsOut} />
                             </div>
                         </div>
                         <button ref={skipRef} onClick={dismiss} className="absolute bottom-6 right-6 border-b border-white/30 pb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white/60 transition-colors hover:text-[#ff729f] focus-visible:outline-2 focus-visible:outline-[#ff729f]">Skip intro →</button>
