@@ -119,8 +119,8 @@ export default function AnalyticsConsent() {
           </div>
         </section>
       )}
-      <button type="button" onClick={() => setSettingsOpen(true)} className="fixed bottom-3 left-3 z-[100] border border-white/30 bg-[#1C1C1C] px-3 py-2 text-xs font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF729F]">
-        Cookie settings
+      <button type="button" aria-label="Cookie settings" title="Cookie settings" onClick={() => setSettingsOpen(true)} className="fixed bottom-3 right-3 z-[100] flex h-10 w-10 items-center justify-center rounded-full border border-white/30 bg-[#1C1C1C] text-xl text-white shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF729F]">
+        <span aria-hidden="true">🍪</span>
       </button>
     </>
   );
