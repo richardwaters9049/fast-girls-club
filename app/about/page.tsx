@@ -412,6 +412,7 @@ export default function AboutPage(): React.ReactElement {
 
                         <div className="flex flex-wrap gap-3">
                             <Link
+                                prefetch={true}
                                 href="/blog"
                                 className="bg-[#1c1c1c] px-7 py-4 text-xs font-black uppercase tracking-[0.18em] text-white transition hover:-translate-y-1 hover:bg-[#d94f7d] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#d94f7d]"
                             >
@@ -419,6 +420,7 @@ export default function AboutPage(): React.ReactElement {
                             </Link>
 
                             <Link
+                                prefetch={true}
                                 href="/f1"
                                 className="border border-[#1c1c1c]/25 px-7 py-4 text-xs font-black uppercase tracking-[0.18em] transition hover:-translate-y-1 hover:border-[#d94f7d] hover:text-[#d94f7d] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#d94f7d]"
                             >

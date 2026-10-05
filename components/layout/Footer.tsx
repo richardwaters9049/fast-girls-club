@@ -8,7 +8,7 @@ export default function Footer(): React.ReactElement {
     >
       <div className="mx-auto flex max-w-[77.5rem] flex-col justify-between gap-6 md:flex-row md:items-center">
         <div>
-          <Link href="/" className="text-xl font-black uppercase tracking-[-0.05em]">
+          <Link prefetch={true} href="/" className="text-xl font-black uppercase tracking-[-0.05em]">
             Fast Girls<span className="text-[#ff729f]">.</span>
           </Link>
           <p className="mt-2 text-xs uppercase tracking-[0.2em] text-white/30">

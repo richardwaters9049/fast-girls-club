@@ -5,7 +5,7 @@ import { normaliseResult } from "@/lib/f1/results-adapter";
 export async function GET() {
   try {
     const response = await fetch(`${F1_API_BASE_URL}/results/current`, {
-      cache: "no-store", signal: AbortSignal.timeout(55_000),
+      next: { revalidate: 60 }, signal: AbortSignal.timeout(55_000),
     });
     if (response.status === 404) return NextResponse.json({ race: null, results: [] }, { headers: { "Cache-Control": "no-store" } });
     if (!response.ok) throw new Error(`Results service returned ${response.status}`);

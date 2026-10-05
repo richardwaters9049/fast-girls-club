@@ -1,5 +1,7 @@
 "use client";
 
+import type { BlogPostSummary } from "@/lib/wordpress/types";
+
 import Image from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -107,7 +109,7 @@ const GRID_DETAILS_VARIANTS: Variants = {
     },
 };
 
-export default function Home(): React.ReactElement {
+export default function Home({ initialPosts }: { initialPosts: Array<BlogPostSummary | null> }): React.ReactElement {
     ReactDOM.preload(HERO_CAR_MODEL_PATH, { as: "fetch", crossOrigin: "anonymous" });
     ReactDOM.preload(HERO_CAR_LIVERY_PATH, { as: "image" });
     ReactDOM.preload(HERO_CAR_ENVIRONMENT_PATH, { as: "fetch", crossOrigin: "anonymous" });
@@ -457,11 +459,12 @@ export default function Home(): React.ReactElement {
                             </motion.div>
                         </div>
 
-                        <LatestPosts />
+                        <LatestPosts initialPosts={initialPosts} />
                     </div>
                     <div className="mx-auto flex max-w-[77.5rem] items-center justify-end gap-2 py-6">
                         <Link
                             href="/blog"
+                            prefetch={true}
                             className="group inline-flex w-fit items-center gap-5 bg-[#ff729f] px-7 py-4 text-xs font-black uppercase tracking-[0.2em] text-[#1c1c1c] shadow-[0_12px_40px_rgba(255,114,159,0.28)] transition hover:-translate-y-1 hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
                         >
                             <span className="pr-1">Read More </span>

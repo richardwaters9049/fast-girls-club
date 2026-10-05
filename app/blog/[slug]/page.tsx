@@ -12,7 +12,16 @@ import Header from "@/components/layout/Header";
 import { SITE_URL } from "@/lib/config";
 import {
     getPostBySlug,
+    getBlogPosts,
 } from "@/lib/wordpress/client";
+
+export const revalidate = 15;
+export const dynamic = "force-static";
+
+export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
+    const { posts } = await getBlogPosts({ perPage: 100 });
+    return posts.map((post) => ({ slug: post.slug }));
+}
 
 interface BlogArticlePageProps {
     params: Promise<{
@@ -98,6 +107,7 @@ export default async function BlogArticlePage({
                     <BlogReveal direction="left">
                         <Link
                             href="/blog"
+                            prefetch={true}
                             className="inline-flex text-[10px] font-black uppercase tracking-[0.2em] text-white/45 transition-colors hover:text-[#ff729f]"
                         >
                             ← Back to news
@@ -188,6 +198,7 @@ export default async function BlogArticlePage({
 
                             <Link
                                 href="/blog"
+                                prefetch={true}
                                 className="mt-8 inline-flex border-b-2 border-[#ff729f] pb-2 text-[10px] font-black uppercase tracking-[0.2em] text-white transition-colors hover:text-[#ff729f]"
                             >
                                 View all stories →

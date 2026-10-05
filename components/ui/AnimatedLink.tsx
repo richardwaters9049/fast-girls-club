@@ -19,6 +19,7 @@ export default function AnimatedLink({
 }: AnimatedLinkProps): React.ReactElement {
     return (
         <Link
+            prefetch={true}
             className={cn(
                 "group inline-flex cursor-pointer items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] transition-colors",
                 variant === "accent"

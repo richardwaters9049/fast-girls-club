@@ -1,3 +1,5 @@
+import { unstable_cache } from "next/cache";
+import { cache } from "react";
 import type {
   BlogDateRange,
   BlogPost,
@@ -16,21 +18,43 @@ import { cleanSeoTitle, decodeHtmlText } from "@/lib/wordpress/utils";
 // 15-second key bounds that cache's age without creating a new URL per visitor.
 const WORDPRESS_REFRESH_INTERVAL_MS = 15_000;
 
-async function fetchWordPressResponse(url: string): Promise<Response> {
+class WordPressRequestError extends Error {
+  constructor(public readonly status: number) {
+    super(`WordPress request failed: ${status}`);
+  }
+}
+
+// Cache against the stable endpoint, not the rotating Pressable bypass URL.
+// Expired entries serve immediately while Next refreshes them in the background.
+const getCachedWordPressResponse = unstable_cache(async (url: string) => {
   const freshUrl = new URL(url);
   freshUrl.searchParams.set(
     "fgc_refresh",
     String(Math.floor(Date.now() / WORDPRESS_REFRESH_INTERVAL_MS)),
   );
-  return fetch(freshUrl.toString(), {
+  const response = await fetch(freshUrl.toString(), {
     cache: "no-store",
     signal: AbortSignal.timeout(10_000),
   });
-}
+  if (!response.ok) throw new WordPressRequestError(response.status);
+  return {
+    body: await response.text(),
+    status: response.status,
+    headers: Array.from(response.headers.entries()),
+  };
+}, ["wordpress-editorial-v1"], { revalidate: 15, tags: ["wordpress"] });
 
-class WordPressRequestError extends Error {
-  constructor(public readonly status: number) {
-    super(`WordPress request failed: ${status}`);
+async function fetchWordPressResponse(url: string): Promise<Response> {
+  try {
+    const cached = await getCachedWordPressResponse(url);
+    return new Response(cached.body, { status: cached.status, headers: cached.headers });
+  } catch (error) {
+    // Keep existing pagination/legacy-plugin fallbacks; failed responses are
+    // never stored as successful empty editorial content.
+    if (error instanceof WordPressRequestError) {
+      return new Response(null, { status: error.status });
+    }
+    throw error;
   }
 }
 
@@ -129,6 +153,8 @@ function getDateAfter(dateRange: BlogDateRange): string | null {
   }
 
   const now = new Date();
+  // Day-based filters share a stable cache key throughout the UTC day.
+  now.setUTCHours(0, 0, 0, 0);
 
   if (dateRange === "7d") {
     now.setUTCDate(now.getUTCDate() - 7);
@@ -249,7 +275,7 @@ export async function getBlogCategories(): Promise<WordPressCategory[]> {
   return data;
 }
 
-export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
+export const getPostBySlug = cache(async (slug: string): Promise<BlogPost | null> => {
   const { data } = await wordpressFetch<WordPressPost[]>(
     `/posts?slug=${encodeURIComponent(slug)}&status=publish&_embed=1`,
   );
@@ -261,7 +287,7 @@ export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
   }
 
   return mapPost(post);
-}
+});
 
 /** Fixed editorial slots from the CMS; legacy installations retain newest-first behaviour. */
 export async function getHomepagePosts(): Promise<Array<BlogPostSummary | null>> {

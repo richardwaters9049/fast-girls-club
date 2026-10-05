@@ -3,6 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: false,
 
+  // Fully prefetched editorial pages must not retain the default five-minute
+  // client cache after the editor changes or trashes a story.
+  experimental: { staleTimes: { dynamic: 15, static: 30 } },
+
   images: {
     remotePatterns: [
       {

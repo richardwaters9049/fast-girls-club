@@ -6,9 +6,9 @@ import { useEffect, useState } from "react";
 import BlogCard from "@/components/blog/BlogCard";
 import type { BlogPostSummary } from "@/lib/wordpress/types";
 
-export default function LatestPosts(): React.ReactElement {
-  const [posts, setPosts] = useState<Array<BlogPostSummary | null>>([]);
-  const [loading, setLoading] = useState(true);
+export default function LatestPosts({ initialPosts = [] }: { initialPosts?: Array<BlogPostSummary | null> }): React.ReactElement {
+  const [posts, setPosts] = useState<Array<BlogPostSummary | null>>(initialPosts);
+  const [loading, setLoading] = useState(initialPosts.length === 0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -63,7 +63,7 @@ export default function LatestPosts(): React.ReactElement {
     return (
       <div className="mt-10 border border-[#1c1c1c]/10 bg-white p-8">
         <p className="text-sm text-[#1c1c1c]/60">Latest stories are temporarily unavailable.</p>
-        <Link href="/blog" className="mt-5 inline-block border-b-2 border-[#ff729f] pb-1 text-xs font-black uppercase tracking-[0.18em]">
+        <Link prefetch={true} href="/blog" className="mt-5 inline-block border-b-2 border-[#ff729f] pb-1 text-xs font-black uppercase tracking-[0.18em]">
           Visit the news desk →
         </Link>
       </div>

@@ -68,6 +68,7 @@ export default function BlogCard({
             <span className="absolute left-0 top-0 z-20 h-1 w-12 bg-[linear-gradient(90deg,#ff729f,#ee8434)] transition-all duration-500 group-hover:w-full" />
 
             <Link
+                prefetch={true}
                 href={`/blog/${post.slug}`}
                 className="flex h-full flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#ff729f]"
             >

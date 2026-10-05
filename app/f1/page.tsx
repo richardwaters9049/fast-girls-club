@@ -40,6 +40,9 @@ import {
 import {
     adaptApiRace,
     loadRaceCalendar,
+    loadDriverStandings,
+    loadConstructorStandings,
+    peekGridData,
     prefetchRaceBundle,
 } from "@/lib/f1/race-prefetch";
 
@@ -147,9 +150,6 @@ export default function F1Dashboard(): React.ReactElement {
     const [initialising, setInitialising] =
         useState(true);
 
-    const [loadingPhase, setLoadingPhase] =
-        useState<"red" | "yellow" | "green">("red");
-
     const [error, setError] =
         useState<string | null>(null);
 
@@ -178,83 +178,41 @@ export default function F1Dashboard(): React.ReactElement {
     useEffect(() => {
         let cancelled = false;
 
-        const pause = (duration: number): Promise<void> =>
-            new Promise((resolve) => setTimeout(resolve, duration));
-
         async function loadInitialGridData(): Promise<void> {
-            const startedAt = Date.now();
-            const liveRequest = fetchGridJson<F1LiveResponse>("/api/f1/live");
-            const calendarRequest = loadRaceCalendar().then(async (data) => {
-                const races = data.races
-                    .map(adaptApiRace)
-                    .sort((a, b) => a.round - b.round);
-                const live = await liveRequest.catch(() => null);
+            // Panels become usable as their own data arrives. Race bundles and
+            // live timing must not hold the whole dashboard behind a loader.
+            const calendarRequest = loadRaceCalendar().then((data) => {
+                if (cancelled) return;
+                const races = data.races.map(adaptApiRace).sort((a, b) => a.round - b.round);
+                setCalendar(races);
+                setSeason(data.season);
+                void prefetchRaceBundle(races);
+            }).catch(() => {
+                if (!cancelled) setCalendarError("F1 calendar is currently unavailable.");
+            }).finally(() => { if (!cancelled) setInitialising(false); });
 
-                await prefetchRaceBundle(
-                    races,
-                    live?.isLive ? live.session : null,
-                );
-
-                return { races, season: data.season };
+            const liveRequest = fetchGridJson<F1LiveResponse>("/api/f1/live").then((data) => {
+                if (!cancelled) {
+                    setLiveData(data);
+                    const freshCalendar = peekGridData().calendar;
+                    if (data.isLive && freshCalendar) {
+                        void prefetchRaceBundle(freshCalendar.races.map(adaptApiRace), data.session);
+                    }
+                }
+            }).catch(() => {
+                if (!cancelled) setError("F1 timing is currently unavailable.");
             });
-
-            const [calendarResult, liveResult, driverResult, constructorResult] =
-                await Promise.allSettled([
-                    calendarRequest,
-                    liveRequest,
-                    fetchGridJson<F1DriverStandingsResponse>("/api/f1/drivers"),
-                    fetchGridJson<F1ConstructorStandingsResponse>("/api/f1/constructors"),
-                ]);
-
-            // Keep the first light visible even when the responses are cached.
-            await pause(Math.max(0, 320 - (Date.now() - startedAt)));
-
-            if (cancelled) {
-                return;
-            }
-
-            if (calendarResult.status === "fulfilled") {
-                setCalendar(calendarResult.value.races);
-                setSeason(calendarResult.value.season);
-            } else {
-                console.error("Failed to load F1 calendar:", calendarResult.reason);
-                setCalendarError("F1 calendar is currently unavailable.");
-            }
-
-            if (liveResult.status === "fulfilled") {
-                setLiveData(liveResult.value);
-            } else {
-                console.error("Failed to load F1 timing:", liveResult.reason);
-                setError("F1 timing is currently unavailable.");
-            }
-
-            if (driverResult.status === "fulfilled") {
-                setDriverStandings(driverResult.value);
-            } else {
-                console.error("Failed to load driver standings:", driverResult.reason);
-                setDriverError("Driver championship data is currently unavailable.");
-            }
-
-            if (constructorResult.status === "fulfilled") {
-                setConstructorStandings(constructorResult.value);
-            } else {
-                console.error("Failed to load constructor standings:", constructorResult.reason);
-                setConstructorError("Constructor championship data is currently unavailable.");
-            }
-
-            setLoadingPhase("yellow");
-            await pause(280);
-
-            if (cancelled) {
-                return;
-            }
-
-            setLoadingPhase("green");
-            await pause(420);
-
-            if (!cancelled) {
-                setInitialising(false);
-            }
+            const driverRequest = loadDriverStandings().then((data) => {
+                if (!cancelled) setDriverStandings(data);
+            }).catch(() => {
+                if (!cancelled) setDriverError("Driver championship data is currently unavailable.");
+            });
+            const constructorRequest = loadConstructorStandings().then((data) => {
+                if (!cancelled) setConstructorStandings(data);
+            }).catch(() => {
+                if (!cancelled) setConstructorError("Constructor championship data is currently unavailable.");
+            });
+            await Promise.allSettled([calendarRequest, liveRequest, driverRequest, constructorRequest]);
         }
 
         void loadInitialGridData();
@@ -459,9 +417,9 @@ export default function F1Dashboard(): React.ReactElement {
             <div className="min-h-0 flex-1 overflow-y-auto">
                 {initialising && (
                     <GridLoadingState
-                        phase={loadingPhase}
-                        label={loadingPhase === "green" ? "The Grid is ready" : loadingPhase === "yellow" ? "Almost on the grid" : "Getting The Grid ready"}
-                        description={loadingPhase === "green" ? "Lights out. Let's go." : "Loading races, live timing and standings"}
+                        phase="red"
+                        label="Getting The Grid ready"
+                        description="Loading races, live timing and standings"
                     />
                 )}
                 {!initialising && (

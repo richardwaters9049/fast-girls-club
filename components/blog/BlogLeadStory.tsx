@@ -19,6 +19,7 @@ export default function BlogLeadStory({
     return (
         <article className="group overflow-hidden bg-[#1c1c1c] text-white">
             <Link
+                prefetch={true}
                 href={`/blog/${post.slug}`}
                 className="grid focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#ff729f] lg:grid-cols-[1.15fr_0.85fr]"
             >

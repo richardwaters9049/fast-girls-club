@@ -88,6 +88,7 @@ export default function BlogPagination({
             className="mt-10 flex flex-col gap-4 border-t border-[#1c1c1c]/10 pt-6 sm:flex-row sm:items-center sm:justify-between"
         >
             <Link
+                prefetch={true}
                 href={buildPageUrl(
                     Math.max(
                         1,
@@ -121,6 +122,7 @@ export default function BlogPagination({
 
                     return (
                         <Link
+                            prefetch={true}
                             key={page}
                             href={buildPageUrl(
                                 page,
@@ -150,6 +152,7 @@ export default function BlogPagination({
             </div>
 
             <Link
+                prefetch={true}
                 href={buildPageUrl(
                     Math.min(
                         totalPages,

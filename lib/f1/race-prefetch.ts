@@ -1,7 +1,7 @@
 import type { F1Race } from "@/lib/f1/calendar";
 import { countryNameToCode } from "@/lib/f1/countries";
 import { selectDisplayedRace } from "@/lib/f1/race-selection";
-import type { F1Race as ApiF1Race, F1Session } from "@/lib/f1/types";
+import type { F1Race as ApiF1Race, F1Session, F1DriverStandingsResponse, F1ConstructorStandingsResponse } from "@/lib/f1/types";
 
 export interface F1CalendarResponse {
     season: number;
@@ -85,6 +85,28 @@ export function adaptApiRace(race: ApiF1Race): F1Race {
 
 export function loadRaceCalendar(): Promise<F1CalendarResponse> {
     return loadJson<F1CalendarResponse>("/api/f1/calendar", CALENDAR_TTL);
+}
+
+export function loadDriverStandings(): Promise<F1DriverStandingsResponse> {
+    return loadJson("/api/f1/drivers", 60_000);
+}
+
+export function loadConstructorStandings(): Promise<F1ConstructorStandingsResponse> {
+    return loadJson("/api/f1/constructors", 60_000);
+}
+
+export function peekGridData() {
+    return {
+        calendar: peekJson<F1CalendarResponse>("/api/f1/calendar"),
+        drivers: peekJson<F1DriverStandingsResponse>("/api/f1/drivers"),
+        constructors: peekJson<F1ConstructorStandingsResponse>("/api/f1/constructors"),
+    };
+}
+
+export async function prefetchGridData(): Promise<void> {
+    await Promise.allSettled([
+        prefetchRaceTabData(), loadDriverStandings(), loadConstructorStandings(),
+    ]);
 }
 
 export function loadLatestRaceResults(): Promise<unknown> {

@@ -162,6 +162,7 @@ export default function BlogDashboardControls({
                         <span className="mr-2 text-[9px] font-black uppercase tracking-[0.18em] text-[#1c1c1c]/45">Topics</span>
 
                         <Link
+                        prefetch={true}
                             href={buildUrl(pathname, { query, category: "", dateRange, sort })}
                             aria-current={!category ? "page" : undefined}
                             className={`border px-4 py-2 text-[10px] font-black uppercase tracking-[0.12em] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d45580] ${!category ? "border-[#1c1c1c] bg-[#1c1c1c] text-white" : "border-[#1c1c1c]/15 text-[#1c1c1c]/65 hover:border-[#d45580]"}`}
@@ -171,6 +172,7 @@ export default function BlogDashboardControls({
 
                         {featuredCategories.map((item) => (
                             <Link
+                        prefetch={true}
                                 key={item.id}
                                 href={buildUrl(pathname, { query, category: item.slug, dateRange, sort })}
                                 aria-current={category === item.slug ? "page" : undefined}
@@ -204,6 +206,7 @@ export default function BlogDashboardControls({
 
                     {hasFilters && (
                         <Link
+                        prefetch={true}
                             href="/blog#stories"
                             className="inline-flex shrink-0 items-center gap-2 self-start text-[10px] font-black uppercase tracking-[0.14em] text-[#b34d70] transition-colors hover:text-[#1c1c1c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d45580]"
                         >

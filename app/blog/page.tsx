@@ -135,8 +135,17 @@ export default async function BlogPage({
             getFirstValue(params.page),
         );
 
-    const categories =
-        await getBlogCategories();
+    const postOptions = {
+        page: requestedPage,
+        perPage: PAGE_SIZE,
+        query,
+        dateRange,
+        sort,
+    };
+    const [categories, unfilteredResult] = await Promise.all([
+        getBlogCategories(),
+        category ? Promise.resolve(null) : getBlogPosts(postOptions),
+    ]);
 
     const selectedCategory =
         categories.find(
@@ -154,16 +163,10 @@ export default async function BlogPage({
         }));
     }
 
-    const result =
-        await getBlogPosts({
-            page: requestedPage,
-            perPage: PAGE_SIZE,
-            query,
-            categoryId:
-                selectedCategory?.id,
-            dateRange,
-            sort,
-        });
+    const result = unfilteredResult ?? await getBlogPosts({
+        ...postOptions,
+        categoryId: selectedCategory?.id,
+    });
 
     if (result.page !== requestedPage) {
         redirect(buildBlogUrl({

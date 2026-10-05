@@ -1,6 +1,9 @@
-import { afterEach, expect, spyOn, test } from "bun:test";
-import { getBlogPosts, getHomepagePosts, getPostBySlug } from "./client";
-import { GET } from "@/app/api/blog/latest/route";
+import { afterEach, expect, mock, spyOn, test } from "bun:test";
+// Unit tests exercise CMS policies with controlled transport; the persistent
+// Next cache is verified against the production server, which owns its runtime.
+mock.module("next/cache", () => ({ unstable_cache: (fn: (...args: unknown[]) => unknown) => fn }));
+const { getBlogPosts, getHomepagePosts, getPostBySlug } = await import("./client");
+const { GET } = await import("@/app/api/blog/latest/route");
 const originalFetch = globalThis.fetch;
 afterEach(() => { globalThis.fetch = originalFetch; });
 const post = (id: number) => ({ id, slug: `story-${id}`, date: '2026-10-05', modified: '2026-10-05', title: { rendered: `Story ${id}` }, excerpt: { rendered: '' }, _embedded: {} });
@@ -24,7 +27,7 @@ test('rejects malformed CMS slot data', async () => {
   await expect(getHomepagePosts()).rejects.toThrow('Invalid homepage slots');
 });
 
-test('CMS requests bypass Next caching and rotate the upstream cache key for editorial changes', async () => {
+test('cache refreshes bypass Pressable caching and request only published editorial content', async () => {
   const clock = spyOn(Date, 'now').mockReturnValue(30_000);
   const requests: Array<{ url: URL; init?: RequestInit }> = [];
   globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {

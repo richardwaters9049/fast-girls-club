@@ -50,6 +50,7 @@ export default function GridHeader({
                             className="flex min-w-0 items-center justify-center gap-5 md:justify-start"
                         >
                             <Link
+                                prefetch={true}
                                 href="/"
                                 className="shrink-0 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff729f] md:text-left"
                                 aria-label="Return to Fast Girls Club home"

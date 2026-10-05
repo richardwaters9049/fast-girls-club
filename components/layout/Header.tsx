@@ -79,6 +79,7 @@ export default function Header(): React.ReactElement {
         className="relative z-10 mx-auto flex w-full max-w-[77.5rem] items-center justify-between px-6 py-5 lg:px-10"
       >
         <Link
+            prefetch={true}
           href="/"
           onClick={() => setMenuOpen(false)}
           aria-label="Fast Girls Club home"
@@ -98,6 +99,7 @@ export default function Header(): React.ReactElement {
 
             return (
               <Link
+                  prefetch={true}
                 key={link.href}
                 href={link.href}
                 aria-current={active ? "page" : undefined}
@@ -150,6 +152,7 @@ export default function Header(): React.ReactElement {
 
               return (
                 <Link
+                    prefetch={true}
                   key={link.href}
                   href={link.href}
                   onClick={() => setMenuOpen(false)}

@@ -1,6 +1,6 @@
-import { expect, test } from "bun:test";
+import { expect, spyOn, test } from "bun:test";
 
-import { loadRaceDetails, peekRaceDetails } from "./race-prefetch";
+import { loadRaceDetails, peekRaceDetails, loadDriverStandings } from "./race-prefetch";
 
 test("shares an in-flight race request and reuses its completed response", async () => {
     const originalFetch = globalThis.fetch;
@@ -45,6 +45,29 @@ test("does not cache a failed race request", async () => {
         expect(await loadRaceDetails(902)).toEqual({ round: 902 });
         expect(requests).toBe(2);
     } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+
+test("standings share requests and expire instead of surviving a new result indefinitely", async () => {
+    const originalFetch = globalThis.fetch;
+    const clock = spyOn(Date, "now").mockReturnValue(1_000);
+    let requests = 0;
+    globalThis.fetch = (async () => {
+        requests++;
+        return Response.json({ standings: [], revision: requests });
+    }) as typeof fetch;
+    try {
+        const [first, second] = await Promise.all([loadDriverStandings(), loadDriverStandings()]);
+        expect(second).toEqual(first);
+        await loadDriverStandings();
+        expect(requests).toBe(1);
+        clock.mockReturnValue(61_001);
+        await loadDriverStandings();
+        expect(requests).toBe(2);
+    } finally {
+        clock.mockRestore();
         globalThis.fetch = originalFetch;
     }
 });
