@@ -1,6 +1,6 @@
 const DEFAULT_SITE_URL = "http://localhost:3000";
 const DEFAULT_WORDPRESS_API_URL =
-  "https://fastgirlsclub.co.uk/wp-json/wp/v2";
+  "https://cms.fastgirlsclub.co.uk/wp-json/wp/v2";
 const DEFAULT_F1_API_BASE_URL = "http://127.0.0.1:8787/api";
 
 function withoutTrailingSlash(value: string): string {

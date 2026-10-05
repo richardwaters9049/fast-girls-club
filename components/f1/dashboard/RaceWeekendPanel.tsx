@@ -5,11 +5,13 @@ import { useEffect, useMemo, useState } from "react";
 
 import RaceMap3D from "@/components/3d/RaceMap3D";
 import GridLoadingState from "@/components/f1/dashboard/GridLoadingState";
+import DriverPortrait from "@/components/f1/DriverPortrait";
+import { DRIVER_PORTRAITS_2026 } from "@/lib/f1/driver-portrait-assets";
 import { countryCodeToEmoji } from "@/lib/f1/countries";
 import { getCircuitMap } from "@/lib/f1/circuits";
 import {
     loadRaceDetails,
-    loadRaceResults,
+    loadLatestRaceResults,
     peekRaceDetails,
     peekRaceResults,
 } from "@/lib/f1/race-prefetch";
@@ -46,6 +48,7 @@ interface RaceResult {
 }
 
 interface RaceDriver {
+    code?: string | null;
     driverId?: string | null;
     givenName?: string | null;
     familyName?: string | null;
@@ -575,17 +578,15 @@ function getPrefetchedRaceData(
 
 export default function RaceWeekendPanel({
     race,
-    previousRace,
     nextRace,
     status,
 }: RaceWeekendPanelProps): React.ReactElement {
     const reducedMotion = useReducedMotion();
     const [now, setNow] = useState(() => Date.now());
     const [retryCount, setRetryCount] = useState(0);
-    const previousRound = previousRace?.round ?? null;
     const nextRound = nextRace?.round ?? null;
     const [data, setData] = useState<RaceDataState | null>(() =>
-        getPrefetchedRaceData(race.round, previousRound, nextRound),
+        getPrefetchedRaceData(race.round, null, nextRound),
     );
 
     useEffect(() => {
@@ -602,24 +603,16 @@ export default function RaceWeekendPanel({
         let cancelled = false;
 
         const loadRaceData = async (): Promise<void> => {
-            const [current, previous, next, previousResults] = await Promise.all([
+            const [current, next] = await Promise.all([
                 loadRaceDetails(race.round).catch(() => null),
-                previousRound
-                    ? loadRaceDetails(previousRound).catch(() => null)
-                    : Promise.resolve(null),
-                nextRound
-                    ? loadRaceDetails(nextRound).catch(() => null)
-                    : Promise.resolve(null),
-                previousRound
-                    ? loadRaceResults(previousRound).catch(() => null)
-                    : Promise.resolve(null),
+                nextRound ? loadRaceDetails(nextRound).catch(() => null) : Promise.resolve(null),
             ]);
 
             if (cancelled) {
                 return;
             }
 
-            setData(buildRaceData(current, previous, next, previousResults));
+            setData(buildRaceData(current, null, next, null));
         };
 
         void loadRaceData();
@@ -629,13 +622,11 @@ export default function RaceWeekendPanel({
         };
     }, [
         nextRound,
-        previousRound,
         race.round,
         retryCount,
     ]);
 
     const currentData = data?.current ?? null;
-    const previousData = data?.previous ?? null;
     const nextData = data?.next ?? null;
 
     const displayedName =
@@ -662,9 +653,6 @@ export default function RaceWeekendPanel({
         currentData?.sessions ??
         [];
 
-    const previousResults =
-        previousData?.results.slice(0, 3) ??
-        [];
 
     const nextCircuit =
         nextData?.circuit ??
@@ -907,11 +895,7 @@ export default function RaceWeekendPanel({
                         </div>
                     </motion.section>
 
-                    <PreviousRaceCard
-                        race={previousRace}
-                        data={previousData}
-                        results={previousResults}
-                    />
+                    <LatestRaceResults />
                 </div>
 
                 {nextRace && (
@@ -927,14 +911,51 @@ export default function RaceWeekendPanel({
     );
 }
 
+export function LatestRaceResults({ full = false }: { full?: boolean }): React.ReactElement {
+    const [state, setState] = useState<{ race: F1Race; data: NormalisedRaceData; season: number } | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
+    const [retry, setRetry] = useState(0);
+    useEffect(() => {
+        let cancelled = false;
+        loadLatestRaceResults().then((input) => {
+            const response = input as { race: RawRaceResponse | null; results: RaceResult[]; round: number; season: number };
+            const data = normaliseRaceResponse(response.race);
+            if (cancelled) return;
+            if (!data || !response.results.length) { setState(null); return; }
+            data.results = response.results;
+            setState({ season: response.season, data, race: {
+                round: response.round, name: data.race.name ?? "Previous race",
+                circuit: data.circuit.name ?? "", country: data.circuit.country ?? "",
+                location: data.circuit.city ?? "", countryCode: "",
+                startDate: data.race.date ?? "", endDate: data.race.date ?? "",
+            } });
+        }).catch(() => { if (!cancelled) setError(true); })
+          .finally(() => { if (!cancelled) setLoading(false); });
+        return () => { cancelled = true; };
+    }, [retry]);
+    if (loading) return <div role="status" className="border border-white/10 p-6 text-white/60">Loading previous race results…</div>;
+    if (error) return <div role="alert" className="border border-white/10 p-6 text-white/70">
+        <p>Previous race results are temporarily unavailable.</p>
+        <button type="button" className="mt-4 border border-[#ff729f] px-4 py-2" onClick={() => { setError(false); setLoading(true); setRetry((value) => value + 1); }}>Try again</button>
+    </div>;
+    if (!state) return <div className="border border-white/10 p-6 text-white/60">No published race results are available yet.</div>;
+    return <div className={full ? "h-full overflow-y-auto" : ""}>
+        <p className="mb-3 text-xs text-white/60">Latest published results · {state.season} · Round {state.race.round} · {state.race.startDate}. Completed race results, not live timing.</p>
+        <PreviousRaceCard race={state.race} data={state.data} season={state.season} results={full ? state.data.results : state.data.results.slice(0, 3)} />
+    </div>;
+}
+
 function PreviousRaceCard({
     race,
     data,
     results,
+    season,
 }: {
     race: F1Race | null;
     data: NormalisedRaceData | null;
     results: RaceResult[];
+    season?: number;
 }): React.ReactElement {
     const reducedMotion = useReducedMotion();
 
@@ -1031,18 +1052,22 @@ function PreviousRaceCard({
                                 {getResultPosition(result)}
                             </p>
 
-                            <div className="min-w-0">
-                                <p className="truncate text-sm font-semibold uppercase tracking-[0.04em] text-white">
-                                    {getDriverName(
-                                        result,
-                                    )}
-                                </p>
+                            <div className="flex min-w-0 items-center gap-3">
+                                <DriverPortrait
+                                    name={getDriverName(result)}
+                                    acronym={typeof result.driver === "object" ? result.driver?.code ?? "" : ""}
+                                    headshotUrl={season === 2026 && typeof result.driver === "object" ? DRIVER_PORTRAITS_2026[result.driver?.code?.trim().toUpperCase() ?? ""] ?? null : null}
+                                    teamColour=""
+                                />
+                                <div className="min-w-0">
+                                    <p className="truncate text-sm font-semibold uppercase tracking-[0.04em] text-white">
+                                        {getDriverName(result)}
+                                    </p>
 
-                                <p className="mt-1 truncate text-[10px] font-medium uppercase tracking-[0.14em] text-white/25">
-                                    {getTeamName(
-                                        result,
-                                    )}
-                                </p>
+                                    <p className="mt-1 truncate text-[10px] font-medium uppercase tracking-[0.14em] text-white/25">
+                                        {getTeamName(result)}
+                                    </p>
+                                </div>
                             </div>
 
                             <p className="pl-3 text-right text-[12px] font-semibold uppercase tracking-[0.04em] text-white/60">

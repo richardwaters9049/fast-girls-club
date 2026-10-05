@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { isFreshLiveSession, normaliseFeedDate } from "@/lib/f1/live-freshness";
+
 import { F1_API_BASE_URL } from "@/lib/config";
 
 const F1_API_TIMEOUT_MS = 55_000;
@@ -521,8 +523,8 @@ function buildSession(
     countryCode,
     circuitName,
     location,
-    dateStart,
-    dateEnd,
+    dateStart: normaliseFeedDate(dateStart, sessionInfo.GmtOffset ?? session?.GmtOffset),
+    dateEnd: normaliseFeedDate(dateEnd, sessionInfo.GmtOffset ?? session?.GmtOffset),
     status,
   };
 }
@@ -708,9 +710,7 @@ export async function GET(): Promise<NextResponse> {
 
     const raceControl = buildRaceControl(rawData.raceControlMessages);
 
-    const sessionStatus = session?.status?.toLowerCase();
-
-    const isLive = rawData.connected === true && sessionStatus === "started";
+    const isLive = isFreshLiveSession(rawData.connected, session, rawData.lastUpdateAt);
 
     return NextResponse.json({
       session,
@@ -724,7 +724,7 @@ export async function GET(): Promise<NextResponse> {
       lastUpdated:
         typeof rawData.lastUpdateAt === "string" ? rawData.lastUpdateAt : null,
       connected: rawData.connected === true,
-    });
+    }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("Failed to connect to F1 live service:", error);
 
@@ -743,6 +743,7 @@ export async function GET(): Promise<NextResponse> {
       },
       {
         status: 503,
+        headers: { "Cache-Control": "no-store" },
       },
     );
   }

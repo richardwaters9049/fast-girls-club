@@ -1,3 +1,5 @@
+import styles from "./ArticleContent.module.css";
+
 interface ArticleContentProps {
     content: string;
 }
@@ -7,7 +9,7 @@ export default function ArticleContent({
 }: ArticleContentProps): React.ReactElement {
     return (
         <div
-            className="
+            className={`${styles.content}
                 [&_a]:font-bold
                 [&_a]:text-[#ee8434]
                 [&_a]:underline
@@ -72,7 +74,7 @@ export default function ArticleContent({
 
                 [&_.wp-block-heading]:font-black
                 [&_.wp-block-list]:leading-7
-            "
+            `}
             dangerouslySetInnerHTML={{
                 __html: content,
             }}

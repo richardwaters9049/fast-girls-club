@@ -1,0 +1,25 @@
+.content {
+  letter-spacing: 0.025rem;
+}
+
+.content :is(p, li, span, a, strong, em, blockquote, figcaption) {
+  letter-spacing: 0.025rem;
+}
+
+.content :global(.wp-block-embed-youtube),
+.content :global(.wp-block-embed-youtube .wp-block-embed__wrapper) {
+  width: 100%;
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.content iframe[src*="youtube.com/embed/"],
+.content iframe[src*="youtube-nocookie.com/embed/"] {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  border: 0;
+}

@@ -35,7 +35,7 @@ export default function DriverPortrait({
                     alt={name}
                     fill
                     sizes="40px"
-                    className="object-cover"
+                    className={headshotUrl.startsWith("/images/f1-drivers/") ? "object-cover object-top" : "object-cover"}
                     onError={() => setFailedUrl(headshotUrl)}
                 />
             ) : (

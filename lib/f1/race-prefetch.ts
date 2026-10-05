@@ -87,6 +87,10 @@ export function loadRaceCalendar(): Promise<F1CalendarResponse> {
     return loadJson<F1CalendarResponse>("/api/f1/calendar", CALENDAR_TTL);
 }
 
+export function loadLatestRaceResults(): Promise<unknown> {
+    return loadJson<unknown>("/api/f1/results/latest", RESULTS_TTL);
+}
+
 export function loadRaceDetails(round: number): Promise<unknown> {
     return loadJson<unknown>(`/api/f1/race/${round}`, RACE_TTL);
 }
@@ -116,14 +120,11 @@ export async function prefetchRaceBundle(
     const selectedIndex = calendar.findIndex(
         (race) => race.round === selectedRace.round,
     );
-    const previousRound = calendar[selectedIndex - 1]?.round;
     const nextRound = calendar[selectedIndex + 1]?.round;
 
     await Promise.allSettled([
         loadRaceDetails(selectedRace.round),
-        ...(previousRound
-            ? [loadRaceDetails(previousRound), loadRaceResults(previousRound)]
-            : []),
+        loadLatestRaceResults(),
         ...(nextRound ? [loadRaceDetails(nextRound)] : []),
     ]);
 }

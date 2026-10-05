@@ -15,6 +15,7 @@ import Pagination from "@/components/ui/Pagination";
 import DriverPortrait from "@/components/f1/DriverPortrait";
 
 import { countryCodeToEmoji } from "@/lib/f1/countries";
+import { getStandingHeadshotUrl } from "@/lib/f1/driver-portraits";
 import type {
     F1Driver,
     F1LiveResponse,
@@ -68,8 +69,10 @@ function AnimatedValue({
 
 function DriverRow({
     driver,
+    season,
 }: {
     driver: F1Driver;
+    season?: number;
 }): React.ReactElement {
     let status: string | null = null;
 
@@ -143,7 +146,7 @@ function DriverRow({
             <DriverPortrait
                 name={driver.name}
                 acronym={driver.acronym}
-                headshotUrl={driver.headshotUrl}
+                headshotUrl={getStandingHeadshotUrl(driver, [], season)}
                 teamColour={driver.teamColour}
             />
 
@@ -249,20 +252,22 @@ function LoadingState(): React.ReactElement {
     );
 }
 
-function EmptyState(): React.ReactElement {
+function EmptyState({ connected }: { connected: boolean }): React.ReactElement {
     return (
         <div className="flex h-full items-center justify-center border border-white/10 bg-white/[0.025] p-8 text-center">
             <div>
                 <CategoryTag accent="white">
-                    No timing
+                    {connected ? "Standing by" : "Connecting"}
                 </CategoryTag>
 
                 <p className="mt-4 text-base font-semibold text-white/70">
-                    No driver timing data is currently available.
+                    {connected ? "Ready for the next session." : "Connecting to the timing feed."}
                 </p>
 
                 <p className="mt-2 text-sm text-white/45">
-                    The Grid will continue checking for the next update.
+                    {connected
+                        ? "Live timing will appear here when fresh practice, qualifying, sprint or race data arrives."
+                        : "We’re waiting for the timing connection. Please check back shortly."}
                 </p>
             </div>
         </div>
@@ -597,7 +602,7 @@ export default function LiveTiming({
     }
 
     if (!drivers.length) {
-        return <EmptyState />;
+        return <EmptyState connected={data?.connected === true} />;
     }
 
     return (
@@ -729,6 +734,7 @@ export default function LiveTiming({
                         (driver) => (
                             <DriverRow
                                 key={`${driver.driverNumber}-${driver.acronym}`}
+                                season={data?.session?.dateStart ? new Date(data.session.dateStart).getUTCFullYear() : undefined}
                                 driver={
                                     driver
                                 }

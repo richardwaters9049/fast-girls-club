@@ -12,6 +12,9 @@ import {
     useState,
 } from "react";
 
+import { livePollingDelay } from "@/lib/f1/live-polling";
+import { isFreshLiveSession } from "@/lib/f1/live-freshness";
+
 import AnimatedLink from "@/components/ui/AnimatedLink";
 
 import ChampionshipPanel from "@/components/f1/dashboard/ChampionshipPanel";
@@ -159,6 +162,8 @@ export default function F1Dashboard(): React.ReactElement {
     const [constructorError, setConstructorError] =
         useState<string | null>(null);
 
+    const [liveView, setLiveView] = useState<"live" | "previous">("live");
+
     const [currentTime, setCurrentTime] =
         useState(() => Date.now());
 
@@ -265,38 +270,78 @@ export default function F1Dashboard(): React.ReactElement {
         }
 
         let cancelled = false;
+        let loading = false;
+        let failures = 0;
+        let latestIsLive = liveData?.isLive === true;
+        let timeout: ReturnType<typeof setTimeout> | undefined;
+        const controller = new AbortController();
+        const canPoll = () => document.visibilityState === "visible" && navigator.onLine;
+
+        function schedule(): void {
+            clearTimeout(timeout);
+            if (!cancelled && canPoll()) {
+                timeout = setTimeout(loadLiveData, livePollingDelay(latestIsLive, activePanel === "live" && liveView === "live", failures));
+            }
+        }
 
         async function loadLiveData(): Promise<void> {
+            if (cancelled || loading || !canPoll()) return;
+            loading = true;
             try {
-                const data = await fetchGridJson<F1LiveResponse>("/api/f1/live");
-
+                const response = await fetch("/api/f1/live", {
+                    cache: "no-store",
+                    signal: AbortSignal.any([controller.signal, AbortSignal.timeout(12_000)]),
+                });
+                if (!response.ok) throw new Error(`Live timing returned ${response.status}`);
+                const data = await response.json() as F1LiveResponse;
                 if (!cancelled) {
+                    latestIsLive = data.isLive;
+                    failures = 0;
                     setLiveData(data);
                     setError(null);
                 }
             } catch (err) {
-                console.error(err);
-
                 if (!cancelled) {
-                    setError(
-                        "F1 timing is currently unavailable.",
-                    );
+                    console.error(err);
+                    failures += 1;
+                    latestIsLive = false;
+                    setLiveData(null);
+                    setError("F1 timing is currently unavailable.");
                 }
+            } finally {
+                loading = false;
+                schedule();
             }
         }
 
-        const refreshInterval =
-            activePanel === "live" || liveData?.isLive
-                ? 5_000
-                : 30_000;
+        function resume(): void {
+            clearTimeout(timeout);
+            if (canPoll()) void loadLiveData();
+        }
 
-        const interval = setInterval(loadLiveData, refreshInterval);
+        // Initial grid loading already fetched timing; avoid an immediate duplicate.
+        schedule();
+        document.addEventListener("visibilitychange", resume);
+        window.addEventListener("online", resume);
+        window.addEventListener("offline", resume);
+        window.addEventListener("pageshow", resume);
+        const expiry = setInterval(() => {
+            setLiveData((previous) => previous?.isLive &&
+                !isFreshLiveSession(previous.connected, previous.session, previous.lastUpdated)
+                ? { ...previous, isLive: false } : previous);
+        }, 5_000);
 
         return () => {
             cancelled = true;
-            clearInterval(interval);
+            controller.abort();
+            clearTimeout(timeout);
+            clearInterval(expiry);
+            document.removeEventListener("visibilitychange", resume);
+            window.removeEventListener("online", resume);
+            window.removeEventListener("offline", resume);
+            window.removeEventListener("pageshow", resume);
         };
-    }, [activePanel, activeSeries, initialising, liveData?.isLive]);
+    }, [activePanel, activeSeries, initialising, liveData?.isLive, liveView]);
 
     const activeSeriesData =
         activeSeries === "f1"
@@ -529,6 +574,8 @@ export default function F1Dashboard(): React.ReactElement {
                         {activePanel === "live" &&
                             activeSeries === "f1" && (
                                 <LiveTimingPanel
+                                    view={liveView}
+                                    onViewChange={setLiveView}
                                     data={liveData}
                                     loading={false}
                                     error={error}

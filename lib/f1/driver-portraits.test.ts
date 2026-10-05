@@ -18,3 +18,11 @@ test("keeps the standings fallback when the driver is absent from live data", ()
     [{ acronym: "OTHER", driverNumber: 6, headshotUrl: "wrong.png" }],
   )).toBe("standings.png");
 });
+
+test("championship portraits remain available without live timing", () => {
+  const standing = { acronym: "NOR", driverNumber: 1, headshotUrl: null };
+  expect(getStandingHeadshotUrl(standing, [], 2026)).toBe("/images/f1-drivers/2026/nor.webp");
+  expect(getStandingHeadshotUrl(standing, [], 2027)).toBeNull();
+  expect(getStandingHeadshotUrl({ ...standing, acronym: "UNKNOWN" }, [], 2026)).toBeNull();
+  expect(getStandingHeadshotUrl(standing, [{ ...standing, headshotUrl: "live.webp" }], 2026)).toBe("live.webp");
+});

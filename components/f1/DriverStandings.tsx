@@ -100,7 +100,7 @@ export default function DriverStandings({
                                 <DriverRow
                                     key={`${driver.driverNumber}-${driver.position}`}
                                     driver={driver}
-                                    headshotUrl={getStandingHeadshotUrl(driver, liveDrivers)}
+                                    headshotUrl={getStandingHeadshotUrl(driver, liveDrivers, data?.season)}
                                 />
                             ),
                         )}

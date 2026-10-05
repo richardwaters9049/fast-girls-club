@@ -50,7 +50,7 @@ export async function generateMetadata({
             post.seo.description ??
             post.excerpt,
         alternates: {
-            canonical: `${SITE_URL}/blog/${slug}`,
+            canonical: `${SITE_URL}/blog/${post.slug}`,
         },
         openGraph: {
             title:
@@ -60,7 +60,7 @@ export async function generateMetadata({
                 post.seo.description ??
                 post.excerpt,
             type: "article",
-            url: `${SITE_URL}/blog/${slug}`,
+            url: `${SITE_URL}/blog/${post.slug}`,
             publishedTime: post.date,
             modifiedTime: post.modified,
             images: post.seo.image
