@@ -15,13 +15,13 @@ import {
     useScroll,
     useTransform,
 } from "framer-motion";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
 
 import Footer from "@/components/layout/Footer";
 import Header from "@/components/layout/Header";
 import LatestPosts from "@/components/stories/LatestPosts";
-import { prefetchRaceTabData } from "@/lib/f1/race-prefetch";
+import RacingIntro from "@/components/RacingIntro";
 import {
     HERO_CAR_ENVIRONMENT_PATH,
     HERO_CAR_LIVERY_PATH,
@@ -109,10 +109,13 @@ const GRID_DETAILS_VARIANTS: Variants = {
     },
 };
 
-export default function Home({ initialPosts }: { initialPosts: Array<BlogPostSummary | null> }): React.ReactElement {
-    ReactDOM.preload(HERO_CAR_MODEL_PATH, { as: "fetch", crossOrigin: "anonymous" });
+export default function Home({ initialPosts, articleSlugs }: { initialPosts: Array<BlogPostSummary | null>; articleSlugs: string[] }): React.ReactElement {
+    ReactDOM.preload(HERO_CAR_MODEL_PATH, { as: "fetch", crossOrigin: "anonymous", fetchPriority: "high" });
     ReactDOM.preload(HERO_CAR_LIVERY_PATH, { as: "image" });
-    ReactDOM.preload(HERO_CAR_ENVIRONMENT_PATH, { as: "fetch", crossOrigin: "anonymous" });
+    ReactDOM.preload(HERO_CAR_ENVIRONMENT_PATH, { as: "fetch", crossOrigin: "anonymous", fetchPriority: "low" });
+
+    const [carReady, setCarReady] = useState(false);
+    const handleCarReady = useCallback(() => setCarReady(true), []);
 
     const heroSectionRef = useRef<HTMLElement>(null);
     const gridSectionRef = useRef<HTMLElement>(null);
@@ -145,9 +148,6 @@ export default function Home({ initialPosts }: { initialPosts: Array<BlogPostSum
         [0, 0, -35],
     );
 
-    useEffect(() => {
-        void prefetchRaceTabData();
-    }, []);
 
     useMotionValueEvent(scrollY, "change", (currentScrollY) => {
         const previousScrollY = scrollY.getPrevious();
@@ -194,6 +194,7 @@ export default function Home({ initialPosts }: { initialPosts: Array<BlogPostSum
 
     return (
         <>
+            <RacingIntro carReady={carReady} articleSlugs={articleSlugs} />
             <Header />
 
             <main className="overflow-hidden bg-[#1c1c1c] text-white">
@@ -320,7 +321,7 @@ export default function Home({ initialPosts }: { initialPosts: Array<BlogPostSum
                                 FGC / 001
                             </div>
 
-                            <HeroScene />
+                            <HeroScene onReady={handleCarReady} />
 
                             <div className="absolute bottom-0 right-0 z-10 text-right">
                                 <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/35">

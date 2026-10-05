@@ -4,10 +4,10 @@ import { useCallback, useState } from "react";
 
 import Scene from "./Scene";
 
-export default function HeroScene(): React.ReactElement {
+export default function HeroScene({ onReady }: { onReady?: () => void }): React.ReactElement {
     const [ready, setReady] = useState(false);
     const [interactive, setInteractive] = useState(false);
-    const handleReady = useCallback(() => setReady(true), []);
+    const handleReady = useCallback(() => { setReady(true); onReady?.(); }, [onReady]);
 
     return (
         <div className="absolute inset-0">

@@ -26,6 +26,17 @@ const nextConfig: NextConfig = {
     ],
   },
 
+  async headers() {
+    return [
+      "/images/3Dimages/formula-1-brand-meshopt.glb",
+      "/images/3Dimages/studio_small_03_512.hdr",
+      "/images/3Dimages/formula1-livery-2k.webp",
+    ].map((source) => ({
+      source,
+      headers: [{ key: "Cache-Control", value: "public, max-age=86400" }],
+    }));
+  },
+
   async redirects() {
     return [
       {

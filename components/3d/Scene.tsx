@@ -68,6 +68,8 @@ export default function Scene({ onReady, ready, interactive }: SceneProps): Reac
 
             <Suspense fallback={null}>
                 <Environment files={HERO_CAR_ENVIRONMENT_PATH} />
+            </Suspense>
+            <Suspense fallback={null}>
                 <Model onReady={onReady} ready={ready} interactive={interactive} />
             </Suspense>
         </Canvas>
