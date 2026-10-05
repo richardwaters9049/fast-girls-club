@@ -1,3 +1,6 @@
+"use client";
+
+import useViewportReveal from "./useViewportReveal";
 import styles from "./ArticleContent.module.css";
 
 interface ArticleContentProps {
@@ -7,8 +10,11 @@ interface ArticleContentProps {
 export default function ArticleContent({
     content,
 }: ArticleContentProps): React.ReactElement {
+    const scope = useViewportReveal({ selector: ":scope > *" });
+
     return (
         <div
+            ref={scope}
             className={`${styles.content}
                 [&_a]:font-bold
                 [&_a]:text-[#ee8434]

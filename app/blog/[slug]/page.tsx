@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import BlogReveal from "@/components/blog/BlogReveal";
 import ArticleContent from "@/components/blog/ArticleContent";
 import Footer from "@/components/layout/Footer";
 import Header from "@/components/layout/Header";
@@ -94,14 +95,16 @@ export default async function BlogArticlePage({
             <section className="relative bg-[#1c1c1c] px-6 py-10 text-white lg:px-10 lg:py-14">
                 <div aria-hidden="true" className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#ff729f,#ee8434,transparent_85%)]" />
                 <div className="mx-auto max-w-[77.5rem]">
-                    <Link
-                        href="/blog"
-                        className="inline-flex text-[10px] font-black uppercase tracking-[0.2em] text-white/45 transition-colors hover:text-[#ff729f]"
-                    >
-                        ← Back to news
-                    </Link>
+                    <BlogReveal direction="left">
+                        <Link
+                            href="/blog"
+                            className="inline-flex text-[10px] font-black uppercase tracking-[0.2em] text-white/45 transition-colors hover:text-[#ff729f]"
+                        >
+                            ← Back to news
+                        </Link>
+                    </BlogReveal>
 
-                    <div className="mt-10 max-w-5xl">
+                    <BlogReveal className="mt-10 max-w-5xl" delay={0.1}>
                         {primaryCategory && (
                             <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#ff729f]">
                                 {
@@ -137,14 +140,14 @@ export default async function BlogArticlePage({
                                 </>
                             )}
                         </div>
-                    </div>
+                    </BlogReveal>
                 </div>
             </section>
 
             {post.featuredImage && (
                 <section className="px-6 pt-6 lg:px-10 lg:pt-10">
                     <div className="mx-auto max-w-[77.5rem]">
-                        <div className="relative aspect-[16/8] overflow-hidden bg-[#1c1c1c]">
+                        <BlogReveal className="relative aspect-[16/8] overflow-hidden bg-[#1c1c1c]">
                             <Image
                                 src={post.featuredImage.heroUrl}
                                 alt={
@@ -158,7 +161,7 @@ export default async function BlogArticlePage({
                                 sizes="(max-width: 1280px) 100vw, 1240px"
                                 className="object-cover"
                             />
-                        </div>
+                        </BlogReveal>
                     </div>
                 </section>
             )}
@@ -171,23 +174,25 @@ export default async function BlogArticlePage({
                         />
                     </article>
 
-                    <aside className="self-start bg-[#1c1c1c] p-6 text-white lg:sticky lg:top-6">
-                        <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#ff729f]">
-                            Fast Girls Club
-                        </p>
+                    <aside className="self-start lg:sticky lg:top-6">
+                        <BlogReveal className="bg-[#1c1c1c] p-6 text-white">
+                            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#ff729f]">
+                                Fast Girls Club
+                            </p>
 
-                        <h2 className="mt-4 text-2xl font-black uppercase leading-[1.12] tracking-[-0.04em]">
-                            More from
-                            <br />
-                            the club.
-                        </h2>
+                            <h2 className="mt-4 text-2xl font-black uppercase leading-[1.12] tracking-[-0.04em]">
+                                More from
+                                <br />
+                                the club.
+                            </h2>
 
-                        <Link
-                            href="/blog"
-                            className="mt-8 inline-flex border-b-2 border-[#ff729f] pb-2 text-[10px] font-black uppercase tracking-[0.2em] text-white transition-colors hover:text-[#ff729f]"
-                        >
-                            View all stories →
-                        </Link>
+                            <Link
+                                href="/blog"
+                                className="mt-8 inline-flex border-b-2 border-[#ff729f] pb-2 text-[10px] font-black uppercase tracking-[0.2em] text-white transition-colors hover:text-[#ff729f]"
+                            >
+                                View all stories →
+                            </Link>
+                        </BlogReveal>
                     </aside>
                 </div>
             </section>

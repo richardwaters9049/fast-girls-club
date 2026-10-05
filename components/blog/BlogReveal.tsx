@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import useViewportReveal from "./useViewportReveal";
 
 interface BlogRevealProps {
     children: React.ReactNode;
@@ -15,29 +15,11 @@ export default function BlogReveal({
     delay = 0,
     direction = "up",
 }: BlogRevealProps): React.ReactElement {
-    const reduceMotion = useReducedMotion();
+    const scope = useViewportReveal({ delay, direction });
 
     return (
-        <motion.div
-            className={className}
-            initial={
-                reduceMotion
-                    ? false
-                    : {
-                          opacity: 0,
-                          x: direction === "left" ? -48 : 0,
-                          y: direction === "up" ? 42 : 0,
-                      }
-            }
-            whileInView={{ opacity: 1, x: 0, y: 0 }}
-            viewport={{ once: true, amount: 0.12 }}
-            transition={{
-                duration: 0.7,
-                delay,
-                ease: [0.22, 1, 0.36, 1],
-            }}
-        >
+        <div ref={scope} className={className}>
             {children}
-        </motion.div>
+        </div>
     );
 }
