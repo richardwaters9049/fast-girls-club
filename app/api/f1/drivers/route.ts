@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { connection, NextResponse } from "next/server";
 
 import { F1_API_BASE_URL } from "@/lib/config";
 import { countryNameToCode } from "@/lib/f1/countries";
@@ -45,6 +45,8 @@ interface ApiDriversResponse {
 }
 
 export async function GET() {
+  // Cache successful upstream data, never prerender an outage as the API response.
+  await connection();
   try {
     const [standingsResponse, driversResponse] = await Promise.all([
       fetch(`${F1_API_BASE_URL}/standings/drivers`, {
@@ -131,6 +133,7 @@ export async function GET() {
       },
       {
         status: 500,
+        headers: { "Cache-Control": "no-store" },
       },
     );
   }

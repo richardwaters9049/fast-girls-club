@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { connection, NextResponse } from "next/server";
 
 import { normaliseResult } from "@/lib/f1/results-adapter";
 
@@ -28,10 +28,13 @@ export async function GET(
       },
       {
         status: 400,
+        headers: { "Cache-Control": "no-store" },
       },
     );
   }
 
+  // Cache successful upstream data, never prerender an outage as the API response.
+  await connection();
   try {
     const raceResponse = await fetch(`${F1_API_BASE_URL}/races/${round}`, {
       headers: {
@@ -104,6 +107,7 @@ export async function GET(
         },
         {
           status: 502,
+          headers: { "Cache-Control": "no-store" },
         },
       );
     }
@@ -134,6 +138,7 @@ export async function GET(
       },
       {
         status: 502,
+        headers: { "Cache-Control": "no-store" },
       },
     );
   }

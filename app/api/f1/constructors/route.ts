@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { connection, NextResponse } from "next/server";
 
 import { F1_API_BASE_URL } from "@/lib/config";
 import { getTeamColour, getTeamLogoUrl } from "@/lib/f1/team-assets";
@@ -31,6 +31,8 @@ interface ApiConstructorStandingsResponse {
 }
 
 export async function GET() {
+  // Cache successful upstream data, never prerender an outage as the API response.
+  await connection();
   try {
     const response = await fetch(`${F1_API_BASE_URL}/standings/constructors`, {
       next: {
@@ -46,6 +48,7 @@ export async function GET() {
         },
         {
           status: response.status,
+          headers: { "Cache-Control": "no-store" },
         },
       );
     }
@@ -80,6 +83,7 @@ export async function GET() {
       },
       {
         status: 500,
+        headers: { "Cache-Control": "no-store" },
       },
     );
   }

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { connection, NextResponse } from "next/server";
 
 import { F1_API_BASE_URL } from "@/lib/config";
 
@@ -7,6 +7,8 @@ export const revalidate = 21_600;
 const F1_API_TIMEOUT_MS = 55_000;
 
 export async function GET(): Promise<NextResponse> {
+  // Cache successful upstream data, never prerender an outage as the API response.
+  await connection();
   try {
     const response = await fetch(`${F1_API_BASE_URL}/races`, {
       next: {
@@ -24,6 +26,7 @@ export async function GET(): Promise<NextResponse> {
         },
         {
           status: response.status,
+          headers: { "Cache-Control": "no-store" },
         },
       );
     }
@@ -45,6 +48,7 @@ export async function GET(): Promise<NextResponse> {
       },
       {
         status: 503,
+        headers: { "Cache-Control": "no-store" },
       },
     );
   }
