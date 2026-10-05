@@ -13,13 +13,19 @@ import { SITE_URL } from "@/lib/config";
 import {
     getPostBySlug,
     getBlogPosts,
+    getBlogCategories,
 } from "@/lib/wordpress/client";
 
 export const revalidate = 15;
 export const dynamic = "force-static";
 
 export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
-    const { posts } = await getBlogPosts({ perPage: 100 });
+    // Populate the default news desk cache before a deployment receives traffic.
+    const [{ posts }] = await Promise.all([
+        getBlogPosts({ perPage: 100 }),
+        getBlogPosts({ perPage: 4 }),
+        getBlogCategories(),
+    ]);
     return posts.map((post) => ({ slug: post.slug }));
 }
 
