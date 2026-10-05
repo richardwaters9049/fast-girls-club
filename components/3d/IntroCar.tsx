@@ -8,7 +8,7 @@ import { HERO_CAR_LIVERY_PATH, HERO_CAR_MODEL_PATH } from "@/lib/hero-car-assets
 import { prepareModel } from "./Model";
 import type { MotionValue } from "framer-motion";
 
-export const INTRO_DRIVE_DURATION_MS = 2200;
+export const INTRO_DRIVE_DURATION_MS = 1600;
 
 function Car({ driving, progress }: { driving: boolean; progress: MotionValue<number> }): React.ReactElement {
     const { scene } = useGLTF(HERO_CAR_MODEL_PATH);
@@ -23,11 +23,11 @@ function Car({ driving, progress }: { driving: boolean; progress: MotionValue<nu
 
     useFrame(() => {
         if (!driving || !turn.current) return;
-        // Steer in one direction through the corner-to-corner arc. The rear
-        // stays swung out instead of reversing into a second countersteer.
+        // One continuous full spin with a sideways finish. Travel stays on
+        // the same corner-to-corner arc without a reverse countersteer.
         const travel = progress.get();
-        const bend = THREE.MathUtils.smoothstep(travel, 0.05, 0.9);
-        turn.current.rotation.y = 0.35 - bend * 1.05;
+        const bend = THREE.MathUtils.smoothstep(travel, 0.12, 0.9);
+        turn.current.rotation.y = 0.35 - bend * (Math.PI * 2 + 1.05);
         turn.current.rotation.z = Math.atan2(192 * (1 - 2 * travel), window.innerWidth + size.width);
         if (travel < 1) invalidate();
     });
