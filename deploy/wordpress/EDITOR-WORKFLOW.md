@@ -6,7 +6,7 @@
 4. Save draft, then Preview. Authenticated previews stay on the CMS. Publish when ready; the public article is served at `https://fastgirlsclub.co.uk/blog/SLUG`.
 5. With plugin 0.2.0 installed and the updated frontend deployed: use **Homepage placement**. Choose **Automatic** for newest-first selection, **Hide** to keep the story in the blog only, or **Left / Middle / Right** for a fixed position. Click **Save homepage placement** after publishing. Confirm the named replacement if wanted. Replaced stories remain in the blog and are hidden from the homepage. Set them back to Automatic to make them eligible again.
 
-Public changes can take several minutes through caches. Preview is currently a WordPress preview; it is not a Next.js design preview.
+The website reads editorial data without Next.js caching and rotates the Pressable REST cache key every 15 seconds. Reload the page after publishing or trashing; an already-open homepage also refreshes every 30 seconds while visible and when you return to it. Allow roughly 45 seconds plus request time for an open homepage to pick up a change. Preview is currently a WordPress preview; it is not a Next.js design preview.
 
 ## Verification record — 5 October 2026
 

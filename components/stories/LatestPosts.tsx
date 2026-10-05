@@ -13,24 +13,39 @@ export default function LatestPosts(): React.ReactElement {
   useEffect(() => {
     const controller = new AbortController();
     let cancelled = false;
+    let inFlight = false;
 
-    void fetch("/api/blog/latest", { signal: controller.signal })
-      .then(async (response) => {
+    const refresh = async () => {
+      if (inFlight || document.visibilityState === "hidden") return;
+      inFlight = true;
+      try {
+        const response = await fetch("/api/blog/latest", {
+          cache: "no-store",
+          signal: controller.signal,
+        });
         if (!response.ok) throw new Error("Latest stories unavailable");
         const data = (await response.json()) as { posts?: Array<BlogPostSummary | null> };
         if (!cancelled) setPosts(data.posts ?? []);
-      })
-      .catch((error: unknown) => {
+      } catch (error: unknown) {
         if (error instanceof DOMException && error.name === "AbortError") return;
         if (!cancelled) setPosts([]);
-      })
-      .finally(() => {
+      } finally {
+        inFlight = false;
         if (!cancelled) setLoading(false);
-      });
+      }
+    };
+
+    void refresh();
+    const interval = window.setInterval(() => { void refresh(); }, 30_000);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
 
     return () => {
       cancelled = true;
       controller.abort();
+      window.clearInterval(interval);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
     };
   }, []);
 

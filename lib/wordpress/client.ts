@@ -12,7 +12,21 @@ import type {
 import { WORDPRESS_API_URL } from "@/lib/config";
 import { cleanSeoTitle, decodeHtmlText } from "@/lib/wordpress/utils";
 
-const WORDPRESS_REVALIDATE_SECONDS = 60;
+// Pressable caches anonymous REST responses independently of Next.js. A shared
+// 15-second key bounds that cache's age without creating a new URL per visitor.
+const WORDPRESS_REFRESH_INTERVAL_MS = 15_000;
+
+async function fetchWordPressResponse(url: string): Promise<Response> {
+  const freshUrl = new URL(url);
+  freshUrl.searchParams.set(
+    "fgc_refresh",
+    String(Math.floor(Date.now() / WORDPRESS_REFRESH_INTERVAL_MS)),
+  );
+  return fetch(freshUrl.toString(), {
+    cache: "no-store",
+    signal: AbortSignal.timeout(10_000),
+  });
+}
 
 class WordPressRequestError extends Error {
   constructor(public readonly status: number) {
@@ -97,12 +111,7 @@ async function wordpressFetch<T>(endpoint: string): Promise<{
   data: T;
   response: Response;
 }> {
-  const response = await fetch(`${WORDPRESS_API_URL}${endpoint}`, {
-    next: {
-      revalidate: WORDPRESS_REVALIDATE_SECONDS,
-    },
-    signal: AbortSignal.timeout(10_000),
-  });
+  const response = await fetchWordPressResponse(`${WORDPRESS_API_URL}${endpoint}`);
 
   if (!response.ok) {
     throw new WordPressRequestError(response.status);
@@ -257,9 +266,7 @@ export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
 /** Fixed editorial slots from the CMS; legacy installations retain newest-first behaviour. */
 export async function getHomepagePosts(): Promise<Array<BlogPostSummary | null>> {
   const url = WORDPRESS_API_URL.replace(/\/wp\/v2\/?$/, "/fgc/v1/homepage");
-  const response = await fetch(url, {
-    signal: AbortSignal.timeout(10000), next: { revalidate: 60 },
-  });
+  const response = await fetchWordPressResponse(url);
   if (response.status === 404) return (await getBlogPosts({ perPage: 3 })).posts;
   if (!response.ok) throw new WordPressRequestError(response.status);
   const data = await response.json() as { post_ids?: unknown };
@@ -270,9 +277,7 @@ export async function getHomepagePosts(): Promise<Array<BlogPostSummary | null>>
   const ids = data.post_ids as Array<number | null>;
   const include = ids.filter((id): id is number => id !== null);
   if (!include.length) return [null, null, null];
-  const postsResponse = await fetch(`${WORDPRESS_API_URL}/posts?include=${include.join(",")}&per_page=3&status=publish&_embed=1`, {
-    signal: AbortSignal.timeout(10000), next: { revalidate: 60 },
-  });
+  const postsResponse = await fetchWordPressResponse(`${WORDPRESS_API_URL}/posts?include=${include.join(",")}&per_page=3&status=publish&_embed=1`);
   if (!postsResponse.ok) throw new WordPressRequestError(postsResponse.status);
   const posts = await postsResponse.json() as WordPressPost[];
   const summaries = new Map(posts.map((post) => [post.id, mapPostSummary(post)]));

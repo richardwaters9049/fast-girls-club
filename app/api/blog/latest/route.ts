@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 
 import { getHomepagePosts } from "@/lib/wordpress/client";
 
-export const revalidate = 60;
+export const revalidate = 0;
+
+const headers = { "Cache-Control": "no-store" };
 
 export async function GET(): Promise<NextResponse> {
   try {
@@ -11,14 +13,12 @@ export async function GET(): Promise<NextResponse> {
     return NextResponse.json(
       { posts },
       {
-        headers: {
-          "Cache-Control": "public, max-age=0, s-maxage=60, stale-while-revalidate=300",
-        },
+        headers,
       },
     );
   } catch (error) {
     console.error("Failed to load latest WordPress stories:", error);
 
-    return NextResponse.json({ posts: [] }, { status: 503 });
+    return NextResponse.json({ posts: [] }, { status: 503, headers });
   }
 }
