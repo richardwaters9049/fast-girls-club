@@ -116,7 +116,7 @@ export default function BlogCard({
                         </span>
                     </div>
 
-                    <h2 className="mt-5 text-2xl font-black uppercase leading-[1.08] tracking-[-0.05em] transition-colors duration-300 group-hover:text-[#ff9abd] sm:leading-[1.02]">
+                    <h2 className="mt-5 text-2xl font-black uppercase leading-[1.15] tracking-[-0.05em] transition-colors duration-300 group-hover:text-[#ff9abd]">
                         {post.title}
                     </h2>
 

@@ -459,7 +459,7 @@ export default function Home(): React.ReactElement {
 
                         <LatestPosts />
                     </div>
-                    <div className="py-6 flex justify-end items-center gap-2">
+                    <div className="mx-auto flex max-w-[77.5rem] items-center justify-end gap-2 py-6">
                         <Link
                             href="/blog"
                             className="group inline-flex w-fit items-center gap-5 bg-[#ff729f] px-7 py-4 text-xs font-black uppercase tracking-[0.2em] text-[#1c1c1c] shadow-[0_12px_40px_rgba(255,114,159,0.28)] transition hover:-translate-y-1 hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
