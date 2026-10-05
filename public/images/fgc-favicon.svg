@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="7" fill="#1c1c1c"/>
+  <!-- Forward-leaning racing F, kept bold enough for a 16px browser tab. -->
+  <path fill="#ff729f" d="M10 6h18l-2 6H15l-1 3h10l-2 5H12l-2 6H4z"/>
+</svg>
