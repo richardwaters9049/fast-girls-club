@@ -2,12 +2,12 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, animate, motion, useMotionValue, useTransform } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { loadRaceCalendar, loadDriverStandings, loadConstructorStandings, prefetchGridData } from "@/lib/f1/race-prefetch";
 import logo from "@/public/images/F1-images/newlogo3.png";
 import styles from "./RacingIntro.module.css";
-import IntroCar from "./3d/IntroCar";
+import IntroCar, { INTRO_DRIVE_DURATION_MS } from "./3d/IntroCar";
 
 const SESSION_KEY = "fgc-racing-intro-v2";
 
@@ -22,6 +22,12 @@ export default function RacingIntro({ carReady, articleSlugs }: {
     const [lightsOut, setLightsOut] = useState(false);
     const skipRef = useRef<HTMLButtonElement>(null);
     const finishing = useRef(false);
+    const driveProgress = useMotionValue(0);
+    const carX = useTransform(driveProgress, (progress) => {
+        const travel = (1 - Math.cos(progress * Math.PI)) / 2;
+        return `calc(${travel * 100}vw - ${(1 - travel) * 100}%)`;
+    });
+    const carY = useTransform(driveProgress, (progress) => Math.sin(progress * Math.PI) * 64);
 
     const dismiss = useCallback(() => {
         setVisible(false);
@@ -71,10 +77,15 @@ export default function RacingIntro({ carReady, articleSlugs }: {
     }, [carReady, dataReady, minimumElapsed, startFinish, visible]);
 
     useEffect(() => {
-        if (!lightsOut) return;
-        const timer = window.setTimeout(dismiss, 1300);
-        return () => window.clearTimeout(timer);
-    }, [dismiss, lightsOut]);
+        if (!lightsOut || !visible) return;
+        const drive = animate(driveProgress, 1, {
+            duration: INTRO_DRIVE_DURATION_MS / 1000,
+            ease: [0.3, 0, 0.65, 1],
+            onComplete: dismiss,
+        });
+        const timer = window.setTimeout(dismiss, INTRO_DRIVE_DURATION_MS + 250);
+        return () => { drive.stop(); window.clearTimeout(timer); };
+    }, [dismiss, driveProgress, lightsOut, visible]);
 
     useEffect(() => {
         if (!visible) return;
@@ -119,14 +130,9 @@ export default function RacingIntro({ carReady, articleSlugs }: {
                             </div>
                         </motion.div>
                         <div aria-hidden="true" className={styles.runway}>
-                            <div
-                                className={`${styles.car} ${lightsOut ? styles.driving : ""}`}
-                                onAnimationEnd={(event) => {
-                                    if (event.target === event.currentTarget) dismiss();
-                                }}
-                            >
-                                <IntroCar driving={lightsOut} />
-                            </div>
+                            <motion.div className={styles.car} style={{ x: carX, y: carY }} data-driving={lightsOut}>
+                                <IntroCar driving={lightsOut} progress={driveProgress} />
+                            </motion.div>
                         </div>
                         <button ref={skipRef} onClick={dismiss} className="absolute bottom-6 right-6 border-b border-white/30 pb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white/60 transition-colors hover:text-[#ff729f] focus-visible:outline-2 focus-visible:outline-[#ff729f]">Skip intro →</button>
                     </motion.div>
