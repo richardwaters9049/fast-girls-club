@@ -7,8 +7,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { loadRaceCalendar, loadDriverStandings, loadConstructorStandings, prefetchGridData } from "@/lib/f1/race-prefetch";
 import logo from "@/public/images/F1-images/newlogo3.png";
 import styles from "./RacingIntro.module.css";
+import IntroCar from "./3d/IntroCar";
 
-const SESSION_KEY = "fgc-racing-intro-v1";
+const SESSION_KEY = "fgc-racing-intro-v2";
 
 export default function RacingIntro({ carReady, articleSlugs }: {
     carReady: boolean;
@@ -53,8 +54,8 @@ export default function RacingIntro({ carReady, articleSlugs }: {
         const open = window.setTimeout(() => setVisible(true), 0);
         const onPreference = () => { if (preference.matches) dismiss(); };
         preference.addEventListener("change", onPreference);
-        const minimum = window.setTimeout(() => setMinimumElapsed(true), 1600);
-        const maximum = window.setTimeout(startFinish, 3500);
+        const minimum = window.setTimeout(() => setMinimumElapsed(true), 1400);
+        const maximum = window.setTimeout(startFinish, 2200);
         return () => {
             window.clearTimeout(open);
             window.clearTimeout(minimum);
@@ -71,7 +72,7 @@ export default function RacingIntro({ carReady, articleSlugs }: {
 
     useEffect(() => {
         if (!lightsOut) return;
-        const timer = window.setTimeout(dismiss, 450);
+        const timer = window.setTimeout(dismiss, 1300);
         return () => window.clearTimeout(timer);
     }, [dismiss, lightsOut]);
 
@@ -98,8 +99,8 @@ export default function RacingIntro({ carReady, articleSlugs }: {
                         aria-modal="true"
                         aria-label="Fast Girls Club starting grid"
                         initial={false}
-                        exit={{ opacity: 0, y: -24 }}
-                        transition={{ duration: 0.35 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.5, ease: "easeInOut" }}
                         onKeyDown={(event) => {
                             if (event.key === "Escape") dismiss();
                             if (event.key === "Tab") { event.preventDefault(); skipRef.current?.focus(); }
@@ -117,7 +118,16 @@ export default function RacingIntro({ carReady, articleSlugs }: {
                                 ))}
                             </div>
                         </motion.div>
-                        <motion.div aria-hidden="true" className={`${styles.chequered} absolute inset-x-0 bottom-16 h-8 opacity-20`} initial={{ x: "-100%" }} animate={{ x: lightsOut ? "100%" : "0%", opacity: lightsOut ? 0.7 : 0.2 }} transition={{ duration: lightsOut ? 0.4 : 1.2, ease: "easeInOut" }} />
+                        <div aria-hidden="true" className={styles.runway}>
+                            <div
+                                className={`${styles.car} ${lightsOut ? styles.driving : ""}`}
+                                onAnimationEnd={(event) => {
+                                    if (event.target === event.currentTarget) dismiss();
+                                }}
+                            >
+                                <IntroCar />
+                            </div>
+                        </div>
                         <button ref={skipRef} onClick={dismiss} className="absolute bottom-6 right-6 border-b border-white/30 pb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white/60 transition-colors hover:text-[#ff729f] focus-visible:outline-2 focus-visible:outline-[#ff729f]">Skip intro →</button>
                     </motion.div>
                 )}

@@ -45,7 +45,7 @@ function pointerDistance(points: PointerPosition[]): number {
     );
 }
 
-function prepareModel(
+export function prepareModel(
     sourceScene: THREE.Group,
     sourceTexture: THREE.Texture,
 ): PreparedModel {
