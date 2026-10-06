@@ -212,7 +212,7 @@ export default function Home({ initialPosts, articleSlugs }: { initialPosts: Arr
 
                     <div className="absolute left-0 top-0 h-1 w-full bg-[linear-gradient(90deg,#ff729f,#ee8434)]" />
 
-                    <div className="relative mx-auto grid max-w-[77.5rem] items-center px-6 pb-16 pt-8 lg:grid-cols-[0.85fr_1.15fr] lg:px-10 lg:pb-24 lg:pt-12">
+                    <div className="relative mx-auto grid grid-cols-1 max-w-[77.5rem] items-center px-6 pb-16 pt-8 lg:grid-cols-[0.85fr_1.15fr] lg:px-10 lg:pb-24 lg:pt-12">
                         <motion.div
                             style={
                                 reduceMotion
@@ -223,7 +223,7 @@ export default function Home({ initialPosts, articleSlugs }: { initialPosts: Arr
                                         y: heroContentY,
                                     }
                             }
-                            className="relative z-10 max-w-[36.25rem]"
+                            className="relative z-10 min-w-0 max-w-[36.25rem]"
                         >
                             <motion.div
                                 initial={reduceMotion ? false : {
