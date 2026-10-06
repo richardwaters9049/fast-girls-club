@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import newLogo from "@/public/images/F1-images/newlogo3.png";
+import { applyNavigationScroll, requestNavigationScroll } from "@/lib/navigation-scroll";
 
 const links = [
   { href: "/about", label: "About" },
@@ -22,6 +23,16 @@ export default function Header(): React.ReactElement {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [hash, setHash] = useState("");
+
+  useEffect(() => {
+    applyNavigationScroll(pathname);
+  }, [pathname]);
+
+  const navigate = (href: string) => {
+    setMenuOpen(false);
+    setHash(href.includes("#") ? "#latest" : "");
+    requestNavigationScroll(href, pathname);
+  };
 
   useEffect(() => {
     const updateScrolled = () => setScrolled(window.scrollY > 16);
@@ -81,7 +92,8 @@ export default function Header(): React.ReactElement {
         <Link
             prefetch={true}
           href="/"
-          onClick={() => setMenuOpen(false)}
+          scroll={false}
+          onNavigate={() => navigate("/")}
           aria-label="Fast Girls Club home"
         >
           <Image
@@ -102,6 +114,8 @@ export default function Header(): React.ReactElement {
                   prefetch={true}
                 key={link.href}
                 href={link.href}
+                scroll={false}
+                onNavigate={() => navigate(link.href)}
                 aria-current={active ? "page" : undefined}
                 className={`transition-colors hover:text-[#ff729f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff729f] ${active
                   ? "text-[#ff729f]"
@@ -155,7 +169,8 @@ export default function Header(): React.ReactElement {
                     prefetch={true}
                   key={link.href}
                   href={link.href}
-                  onClick={() => setMenuOpen(false)}
+                  scroll={false}
+                  onNavigate={() => navigate(link.href)}
                   aria-current={
                     active ? "page" : undefined
                   }

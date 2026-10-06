@@ -60,7 +60,9 @@ export default function RacingIntro({ carReady, articleSlugs, onComplete }: {
 
     useEffect(() => {
         const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
-        if (preference.matches || introPlayedInDocument) {
+        // An editorial anchor must land directly on its content, including
+        // when the first homepage visit starts from another route/new tab.
+        if (preference.matches || introPlayedInDocument || window.location.hash === "#latest") {
             introPlayedInDocument = true;
             onComplete();
             return;
