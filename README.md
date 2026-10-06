@@ -193,14 +193,7 @@ The frontend defaults to port 3000 and the backend to 8787. Set `NEXT_PUBLIC_F1_
 
 ### Frontend configuration
 
-| Variable | Production value / purpose |
-| --- | --- |
-| `NEXT_PUBLIC_SITE_URL` | `https://fastgirlsclub.co.uk` — canonicals, sitemap and metadata |
-| `WORDPRESS_API_URL` | `https://cms.fastgirlsclub.co.uk/wp-json/wp/v2` |
-| `F1_API_BASE_URL` | `https://f1-api-009n.onrender.com/api` — include `/api` |
-| `NEXT_PUBLIC_F1_WAKE_URL` | `https://f1-api-009n.onrender.com/api/health` |
-| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | `G-76CV16SY23` |
-| `NEXT_PUBLIC_ANALYTICS_ENABLED` | `true` only for intended production tracking |
+Configure the frontend through a private local environment file or the hosting dashboard. Use the project’s environment template for the required variable names; keep deployment-specific values out of this README.
 
 Public `NEXT_PUBLIC_*` values are compiled into the client build. Rebuild after changing them. Never put secrets in public variables or commit `.env.local`.
 
