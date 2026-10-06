@@ -140,3 +140,10 @@ Validation: typecheck, lint and production build passed. A production-mode local
 The intro's sessionStorage seen flag survived backend/frontend sleep and prevented it playing on subsequent loads in the same tab. Replaced that persistent flag with an in-memory document flag, set only when the intro is dismissed or reduced motion bypasses it. A fresh homepage document (including refresh or return after Render's holding page) now plays the opening sequence; client-side navigation back home in the same app does not repeat it. The intro still cannot display before Render serves the app. Existing homepage entrance handoff and prefetch remain intact.
 
 Validation: typecheck, lint and production build passed. Production-mode browser verified fresh entry, same-tab reload showing the dialog with hero opacity zero, and Grid → home client navigation without replay; console error log empty. This check exercises document reload, not a new forced hosting sleep cycle.
+
+
+## 6 October 2026 — Race Report card and Read More scroll motion
+
+Homepage story slots now slide in and out from left, bottom and right respectively; Read More follows the rightward entrance/exit. A shared DirectionalScrollReveal observes a stationary wrapper with a low intersection threshold, so transforms cannot cause viewport-edge feedback. Entrance delays are short and exits are immediate. Reduced-motion users get stationary content, and keyboard focus makes the content visible. BlogCard's existing one-time entrance is disabled only inside the homepage wrapper to avoid competing motion; other blog cards retain their existing entrance.
+
+Validation: typecheck, lint and production build passed. Production-mode browser measured offscreen offsets of (-90,0), (0,80), (90,0), opacity zero, followed by opacity one and no transform after returning to the cards. Read More also changed from its right offset to opacity one at rest. Desktop and stacked mobile layout checked; browser console errors empty.

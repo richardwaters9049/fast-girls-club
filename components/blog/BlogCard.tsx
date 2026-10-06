@@ -9,6 +9,7 @@ import type { BlogPostSummary } from "@/lib/wordpress/types";
 interface BlogCardProps {
     post: BlogPostSummary;
     index: number;
+    animateEntrance?: boolean;
 }
 
 function formatDate(
@@ -27,6 +28,7 @@ function formatDate(
 export default function BlogCard({
     post,
     index,
+    animateEntrance = true,
 }: BlogCardProps): React.ReactElement {
     const category =
         post.categories[0];
@@ -35,17 +37,14 @@ export default function BlogCard({
     return (
         <motion.article
             initial={
-                reduceMotion
+                reduceMotion || !animateEntrance
                     ? false
                     : {
                           opacity: 0,
                           y: 72,
                       }
             }
-            whileInView={{
-                opacity: 1,
-                y: 0,
-            }}
+            whileInView={animateEntrance ? { opacity: 1, y: 0 } : undefined}
             viewport={{
                 amount: 0.12,
                 once: true,
@@ -60,9 +59,7 @@ export default function BlogCard({
                     1,
                 ],
             }}
-            whileHover={{
-                y: -5,
-            }}
+            whileHover={reduceMotion ? undefined : { y: -5 }}
             className="group relative h-full overflow-hidden border border-[#1c1c1c]/10 bg-[#1c1c1c] text-white shadow-[0_18px_50px_rgba(28,28,28,0.08)] transition-colors duration-300 hover:border-[#ff729f]/45"
         >
             <span className="absolute left-0 top-0 z-20 h-1 w-12 bg-[linear-gradient(90deg,#ff729f,#ee8434)] transition-all duration-500 group-hover:w-full" />

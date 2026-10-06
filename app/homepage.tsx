@@ -22,6 +22,7 @@ import Footer from "@/components/layout/Footer";
 import Header from "@/components/layout/Header";
 import LatestPosts from "@/components/stories/LatestPosts";
 import RacingIntro from "@/components/RacingIntro";
+import DirectionalScrollReveal from "@/components/ui/DirectionalScrollReveal";
 import {
     HERO_CAR_ENVIRONMENT_PATH,
     HERO_CAR_LIVERY_PATH,
@@ -453,22 +454,22 @@ export default function Home({ initialPosts, articleSlugs }: { initialPosts: Arr
                         <LatestPosts initialPosts={initialPosts} />
                     </div>
                     <div className="mx-auto flex max-w-[77.5rem] items-center justify-end gap-2 py-6">
-                        <Link
-                            href="/blog"
-                            prefetch={true}
-                            className="group inline-flex w-fit items-center gap-5 bg-[#ff729f] px-7 py-4 text-xs font-black uppercase tracking-[0.2em] text-[#1c1c1c] shadow-[0_12px_40px_rgba(255,114,159,0.28)] transition hover:-translate-y-1 hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
-                        >
-                            <span className="pr-1">Read More </span>
-                            <span
-                                aria-hidden="true"
-                                className="text-lg leading-none transition-transform group-hover:translate-x-1"
+                        <DirectionalScrollReveal direction="right">
+                            <Link
+                                href="/blog"
+                                prefetch={true}
+                                className="group inline-flex w-fit items-center gap-5 bg-[#ff729f] px-7 py-4 text-xs font-black uppercase tracking-[0.2em] text-[#1c1c1c] shadow-[0_12px_40px_rgba(255,114,159,0.28)] transition hover:-translate-y-1 hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
                             >
-                                →
-                            </span>
+                                <span className="pr-1">Read More </span>
+                                <span
+                                    aria-hidden="true"
+                                    className="text-lg leading-none transition-transform group-hover:translate-x-1"
+                                >
+                                    →
+                                </span>
 
-                        </Link>
-
-
+                            </Link>
+                        </DirectionalScrollReveal>
                     </div>
                 </section>
 

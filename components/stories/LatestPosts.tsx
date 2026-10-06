@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import BlogCard from "@/components/blog/BlogCard";
+import DirectionalScrollReveal from "@/components/ui/DirectionalScrollReveal";
 import type { BlogPostSummary } from "@/lib/wordpress/types";
 
 export default function LatestPosts({ initialPosts = [] }: { initialPosts?: Array<BlogPostSummary | null> }): React.ReactElement {
@@ -73,7 +74,11 @@ export default function LatestPosts({ initialPosts = [] }: { initialPosts?: Arra
   return (
     <div className="mt-10 grid gap-5 md:grid-cols-3">
       {posts.map((post, index) => (
-        post ? <BlogCard key={post.id} post={post} index={index} /> : <div key={`empty-${index}`} className="hidden md:block" aria-hidden="true" />
+        post ? (
+          <DirectionalScrollReveal key={`${post.id}-${index}`} direction={index === 0 ? "left" : index === 1 ? "bottom" : "right"} delay={index * 0.08} className="h-full">
+            <BlogCard post={post} index={index} animateEntrance={false} />
+          </DirectionalScrollReveal>
+        ) : <div key={`empty-${index}`} className="hidden md:block" aria-hidden="true" />
       ))}
     </div>
   );
