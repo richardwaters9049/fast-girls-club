@@ -133,3 +133,10 @@ Grid loaders now share an on-demand, credential-free browser request to the publ
 The homepage text and hero-car entrances were completing beneath the opening overlay. RacingIntro now reports completion after AnimatePresence has removed the fading overlay; seen-session and reduced-motion visits report completion immediately. Home holds its four existing text entrances and passes the same readiness flag to HeroScene, which keeps loading/rendering the model but waits to advance its existing entrance spin. Prefetching, cached editorial data and scroll animations remain intact.
 
 Validation: typecheck, lint and production build passed. A production-mode local browser timing check held logo opacity at zero throughout the intro, then observed 0 → 0.96661 → 1 after overlay removal. Fresh intro completion, Skip intro and same-tab refresh were checked in the browser.
+
+
+## 6 October 2026 — opening intro on a fresh document
+
+The intro's sessionStorage seen flag survived backend/frontend sleep and prevented it playing on subsequent loads in the same tab. Replaced that persistent flag with an in-memory document flag, set only when the intro is dismissed or reduced motion bypasses it. A fresh homepage document (including refresh or return after Render's holding page) now plays the opening sequence; client-side navigation back home in the same app does not repeat it. The intro still cannot display before Render serves the app. Existing homepage entrance handoff and prefetch remain intact.
+
+Validation: typecheck, lint and production build passed. Production-mode browser verified fresh entry, same-tab reload showing the dialog with hero opacity zero, and Grid → home client navigation without replay; console error log empty. This check exercises document reload, not a new forced hosting sleep cycle.

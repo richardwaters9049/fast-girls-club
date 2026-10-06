@@ -9,7 +9,9 @@ import logo from "@/public/images/F1-images/newlogo3.png";
 import styles from "./RacingIntro.module.css";
 import IntroCar, { INTRO_DRIVE_DURATION_MS } from "./3d/IntroCar";
 
-const SESSION_KEY = "fgc-racing-intro-v2";
+// Keep this within the loaded app, not sessionStorage: Render can sleep while
+// a browser tab survives. A new document must get its own opening sequence.
+let introPlayedInDocument = false;
 
 export default function RacingIntro({ carReady, articleSlugs, onComplete }: {
     carReady: boolean;
@@ -30,7 +32,7 @@ export default function RacingIntro({ carReady, articleSlugs, onComplete }: {
 
     const dismiss = useCallback(() => {
         setVisible(false);
-        try { sessionStorage.setItem(SESSION_KEY, "seen"); } catch { /* Storage is optional. */ }
+        introPlayedInDocument = true;
     }, []);
 
     const startFinish = useCallback(() => {
@@ -53,9 +55,8 @@ export default function RacingIntro({ carReady, articleSlugs, onComplete }: {
 
     useEffect(() => {
         const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
-        let seen = false;
-        try { seen = sessionStorage.getItem(SESSION_KEY) === "seen"; } catch { /* Storage is optional. */ }
-        if (preference.matches || seen) {
+        if (preference.matches || introPlayedInDocument) {
+            introPlayedInDocument = true;
             onComplete();
             return;
         }
