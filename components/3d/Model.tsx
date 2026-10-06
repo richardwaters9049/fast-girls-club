@@ -133,7 +133,7 @@ export function prepareModel(
 export default function Model({ onReady, ready, interactive }: ModelProps): React.ReactElement {
     const { scene: sourceScene } = useGLTF(HERO_CAR_MODEL_PATH);
     const sourceTexture = useTexture(HERO_CAR_LIVERY_PATH);
-    const { gl } = useThree();
+    const { gl, invalidate } = useThree();
     const entranceRef = useRef<THREE.Group>(null);
     const interactionRef = useRef<THREE.Group>(null);
     const scrollRef = useRef<THREE.Group>(null);
@@ -224,6 +224,7 @@ export default function Model({ onReady, ready, interactive }: ModelProps): Reac
             }
 
             scrollProgressRef.current = nextProgress;
+            invalidate();
         };
 
         updateScrollProgress();
@@ -244,7 +245,7 @@ export default function Model({ onReady, ready, interactive }: ModelProps): Reac
                 updateScrollProgress,
             );
         };
-    }, [gl]);
+    }, [gl, invalidate]);
 
     useEffect(() => {
         if (!interactive) {
@@ -282,6 +283,7 @@ export default function Model({ onReady, ready, interactive }: ModelProps): Reac
             }
 
             event.preventDefault();
+            invalidate();
             pointers.set(event.pointerId, {
                 x: event.clientX,
                 y: event.clientY,
@@ -333,11 +335,15 @@ export default function Model({ onReady, ready, interactive }: ModelProps): Reac
             canvas.removeEventListener("pointercancel", handlePointerEnd);
             pointers.clear();
         };
-    }, [gl, interactive]);
+    }, [gl, interactive, invalidate]);
 
-    useFrame((_, delta) => {
+    useEffect(() => { invalidate(); }, [invalidate, ready]);
+
+    useFrame((_, frameDelta) => {
+        const delta = Math.min(frameDelta, 0.05);
         if (!readyReportedRef.current) {
             firstFramesRef.current += 1;
+            invalidate();
 
             if (firstFramesRef.current >= 2) {
                 readyReportedRef.current = true;
@@ -454,6 +460,16 @@ export default function Model({ onReady, ready, interactive }: ModelProps): Reac
             delta,
         );
         interactionGroup.scale.setScalar(zoom);
+        const moving = Math.abs(scrollGroup.position.x - targetX)
+            + Math.abs(scrollGroup.position.y - targetY)
+            + Math.abs(scrollGroup.position.z - targetZ)
+            + Math.abs(scrollGroup.rotation.y - travelProgress * Math.PI * 2)
+            + Math.abs(scrollGroup.rotation.x - turnArc * 0.08)
+            + Math.abs(scrollGroup.rotation.z - (turnArc * -0.2 - travelProgress * 0.1))
+            + Math.abs(interactionGroup.rotation.x - rotationTargetRef.current.x)
+            + Math.abs(interactionGroup.rotation.y - rotationTargetRef.current.y)
+            + Math.abs(zoom - zoomTargetRef.current);
+        if (moving > 0.001 || (ready && !reducedMotionRef.current && entranceProgressRef.current < 1)) invalidate();
     });
 
     return (

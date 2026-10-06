@@ -201,6 +201,7 @@ export default function Home({ initialPosts, articleSlugs }: { initialPosts: Arr
             <Header />
 
             <main className="overflow-hidden bg-[#1c1c1c] text-white">
+                <h1 className="sr-only">Fast Girls Club — Women in Motorsport and Formula 1</h1>
                 <section
                     ref={heroSectionRef}
                     className="relative isolate overflow-hidden"
@@ -243,7 +244,7 @@ export default function Home({ initialPosts, articleSlugs }: { initialPosts: Arr
                                 </span>
                             </motion.div>
 
-                            <motion.img
+                            <motion.div
                                 initial={reduceMotion ? false : {
                                     opacity: 0,
                                     y: 20,
@@ -253,10 +254,10 @@ export default function Home({ initialPosts, articleSlugs }: { initialPosts: Arr
                                     duration: reduceMotion ? 0 : 0.7,
                                     delay: reduceMotion ? 0 : 0.35,
                                 }}
-                                src={newLogo.src}
-                                alt="Fast Girls Club"
                                 className="h-auto w-[450px] max-w-full"
-                            />
+                            >
+                                <Image src={newLogo} alt="Fast Girls Club" priority sizes="(max-width: 600px) calc(100vw - 48px), 450px" className="h-auto w-full" />
+                            </motion.div>
 
                             <motion.p
                                 initial={reduceMotion ? false : {

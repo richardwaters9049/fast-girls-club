@@ -8,8 +8,6 @@ import { HERO_CAR_LIVERY_PATH, HERO_CAR_MODEL_PATH } from "@/lib/hero-car-assets
 import { prepareModel } from "./Model";
 import type { MotionValue } from "framer-motion";
 
-export const INTRO_DRIVE_DURATION_MS = 1600;
-
 function Car({ driving, progress }: { driving: boolean; progress: MotionValue<number> }): React.ReactElement {
     const { scene } = useGLTF(HERO_CAR_MODEL_PATH);
     const texture = useTexture(HERO_CAR_LIVERY_PATH);

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/config";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -19,12 +20,6 @@ import type {
     BlogDateRange,
     BlogSort,
 } from "@/lib/wordpress/types";
-
-export const metadata: Metadata = {
-    title: "News",
-    description:
-        "Explore the latest Fast Girls Club motorsport stories, news and articles.",
-};
 
 const PAGE_SIZE = 4;
 
@@ -104,6 +99,24 @@ function buildBlogUrl(values: {
 
     const queryString = params.toString();
     return queryString ? `/blog?${queryString}` : "/blog";
+}
+
+export async function generateMetadata({ searchParams }: BlogPageProps): Promise<Metadata> {
+    const params = await searchParams;
+    const query = getFirstValue(params.q).trim();
+    const category = getFirstValue(params.category);
+    const dateRange = getDateRange(getFirstValue(params.range));
+    const sort = getSort(getFirstValue(params.sort));
+    const page = getPage(getFirstValue(params.page));
+    const filtered = Boolean(query || category || dateRange !== "all" || sort !== "newest");
+    const canonical = `${SITE_URL}${buildBlogUrl({ query, category, dateRange, sort, page })}`;
+    return {
+        title: page > 1 ? `News — Page ${page}` : "News",
+        description: "Explore the latest Fast Girls Club motorsport stories, news and articles.",
+        alternates: { canonical },
+        robots: filtered ? { index: false, follow: true } : { index: true, follow: true },
+        openGraph: { title: "Fast Girls Club News", url: canonical },
+    };
 }
 
 export default async function BlogPage({

@@ -1,13 +1,15 @@
 "use client";
 
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, animate, motion, useMotionValue, useTransform } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { loadRaceCalendar, loadDriverStandings, loadConstructorStandings, prefetchGridData } from "@/lib/f1/race-prefetch";
 import logo from "@/public/images/F1-images/newlogo3.png";
 import styles from "./RacingIntro.module.css";
-import IntroCar, { INTRO_DRIVE_DURATION_MS } from "./3d/IntroCar";
+const INTRO_DRIVE_DURATION_MS = 1600;
+const IntroCar = dynamic(() => import("./3d/IntroCar"), { ssr: false });
 
 // Keep this within the loaded app, not sessionStorage: Render can sleep while
 // a browser tab survives. A new document must get its own opening sequence.

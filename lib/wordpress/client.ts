@@ -101,8 +101,8 @@ function mapPostSummary(post: WordPressPost): BlogPostSummary {
     slug: post.slug,
     title: decodeHtmlText(post.title.rendered),
     excerpt: decodeHtmlText(post.excerpt.rendered),
-    date: post.date,
-    modified: post.modified,
+    date: post.date_gmt ? `${post.date_gmt.replace(/Z$/, "")}Z` : post.date,
+    modified: post.modified_gmt ? `${post.modified_gmt.replace(/Z$/, "")}Z` : post.modified,
     featuredImage: getFeaturedImage(post),
     categories: terms.map((term) => ({
       id: term.id,

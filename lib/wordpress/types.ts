@@ -55,6 +55,8 @@ export interface WordPressPost {
   id: number;
   date: string;
   modified: string;
+  date_gmt?: string;
+  modified_gmt?: string;
   slug: string;
   status: "publish" | "future" | "draft" | "pending" | "private";
   link: string;

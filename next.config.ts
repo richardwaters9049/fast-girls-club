@@ -40,6 +40,12 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        source: "/:path*",
+        has: [{ type: "host", value: "fast-girls-club.onrender.com" }],
+        destination: "https://fastgirlsclub.co.uk/:path*",
+        permanent: true,
+      },
+      {
         source: "/2026/09/27/f1-fans-please-touch-grass-alpine-speaks-out-after-baku-drama",
         destination: "/blog/f1-fans-please-touch-grass-alpine-speaks-out-after-baku-drama",
         permanent: true,

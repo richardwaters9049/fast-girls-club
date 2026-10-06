@@ -9,6 +9,7 @@ import BlogReveal from "@/components/blog/BlogReveal";
 import ArticleContent from "@/components/blog/ArticleContent";
 import Footer from "@/components/layout/Footer";
 import Header from "@/components/layout/Header";
+import { articleSchema, serializeJsonLd } from "@/lib/article-schema";
 import { SITE_URL } from "@/lib/config";
 import {
     getPostBySlug,
@@ -106,6 +107,7 @@ export default async function BlogArticlePage({
 
     return (
         <main className="min-h-screen bg-[#e6e6e6] text-[#1c1c1c]">
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(articleSchema(post, SITE_URL)) }} />
             <Header />
             <section className="relative bg-[#1c1c1c] px-6 py-10 text-white lg:px-10 lg:py-14">
                 <div aria-hidden="true" className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#ff729f,#ee8434,transparent_85%)]" />
@@ -114,7 +116,7 @@ export default async function BlogArticlePage({
                         <Link
                             href="/blog"
                             prefetch={true}
-                            className="inline-flex text-[10px] font-black uppercase tracking-[0.2em] text-white/45 transition-colors hover:text-[#ff729f]"
+                            className="inline-flex text-[10px] font-black uppercase tracking-[0.2em] text-white/65 transition-colors hover:text-[#ff729f]"
                         >
                             ← Back to news
                         </Link>
@@ -136,7 +138,7 @@ export default async function BlogArticlePage({
                             </span>
                         </h1>
 
-                        <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-3 text-[10px] font-bold uppercase tracking-[0.2em] text-white/35">
+                        <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-3 text-[10px] font-bold uppercase tracking-[0.2em] text-white/65">
                             <span>
                                 {formatDate(
                                     post.date,

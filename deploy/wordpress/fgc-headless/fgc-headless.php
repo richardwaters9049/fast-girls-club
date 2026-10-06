@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Fast Girls Club Headless
  * Description: Controlled public-page redirects from the CMS to the Next.js publication.
- * Version: 0.2.0
+ * Version: 0.2.1
  * Requires PHP: 7.4
  * License: GPL-2.0-or-later
  */
@@ -27,6 +27,16 @@ function fgc_headless_protected_request(): bool {
         || isset($_GET['preview_nonce']) || isset($_GET['rest_route'])
         || isset($_GET['sitemap']) || isset($_GET['sitemap_n']);
 }
+
+// Preserve RSS delivery while keeping full-text CMS feeds out of search results.
+add_filter('wp_headers', function (array $headers): array {
+    if (fgc_headless_mode() !== 'off'
+        && strtolower((string) wp_parse_url(home_url('/'), PHP_URL_HOST)) === 'cms.fastgirlsclub.co.uk'
+        && is_feed()) {
+        $headers['X-Robots-Tag'] = 'noindex, follow';
+    }
+    return $headers;
+});
 
 add_action('template_redirect', function () {
     $mode = fgc_headless_mode();
@@ -82,7 +92,7 @@ function fgc_headless_settings(): void {
         <p><strong>Keep Off until the public Next.js homepage and published articles work.</strong>
         Localhost cannot receive public visitors. Test in a signed-out browser.</p>
         <p>Editors, previews, REST, feeds and media retain their existing behaviour.
-        Unmapped HTML pages receive a noindex header when enabled.</p>
+        Unmapped HTML pages and RSS feeds receive a noindex header when enabled.</p>
         <form method="post" action="options.php">
             <?php settings_fields('fgc_headless'); ?>
             <label for="fgc_headless_mode">Redirect mode</label>

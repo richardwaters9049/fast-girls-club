@@ -11,12 +11,12 @@ export default function Footer(): React.ReactElement {
           <Link prefetch={true} href="/" className="text-xl font-black uppercase tracking-[-0.05em]">
             Fast Girls<span className="text-[#ff729f]">.</span>
           </Link>
-          <p className="mt-2 text-xs uppercase tracking-[0.2em] text-white/30">
+          <p className="mt-2 text-xs uppercase tracking-[0.2em] text-white/65">
             Women in motorsport
           </p>
         </div>
 
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/25">
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/65">
           © {new Date().getFullYear()} Fast Girls Club
         </p>
       </div>

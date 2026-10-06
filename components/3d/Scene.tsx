@@ -18,6 +18,7 @@ interface SceneProps {
 export default function Scene({ onReady, ready, interactive }: SceneProps): React.ReactElement {
     return (
         <Canvas
+            frameloop="demand"
             camera={{
                 position: [4, 2.5, 6],
                 fov: 40,
