@@ -114,6 +114,8 @@ export default function Home({ initialPosts, articleSlugs }: { initialPosts: Arr
     ReactDOM.preload(HERO_CAR_LIVERY_PATH, { as: "image" });
     ReactDOM.preload(HERO_CAR_ENVIRONMENT_PATH, { as: "fetch", crossOrigin: "anonymous", fetchPriority: "low" });
 
+    const [entranceReady, setEntranceReady] = useState(false);
+    const handleIntroComplete = useCallback(() => setEntranceReady(true), []);
     const [carReady, setCarReady] = useState(false);
     const handleCarReady = useCallback(() => setCarReady(true), []);
 
@@ -194,7 +196,7 @@ export default function Home({ initialPosts, articleSlugs }: { initialPosts: Arr
 
     return (
         <>
-            <RacingIntro carReady={carReady} articleSlugs={articleSlugs} />
+            <RacingIntro carReady={carReady} articleSlugs={articleSlugs} onComplete={handleIntroComplete} />
             <Header />
 
             <main className="overflow-hidden bg-[#1c1c1c] text-white">
@@ -222,16 +224,13 @@ export default function Home({ initialPosts, articleSlugs }: { initialPosts: Arr
                             className="relative z-10 max-w-[36.25rem]"
                         >
                             <motion.div
-                                initial={{
+                                initial={reduceMotion ? false : {
                                     opacity: 0,
                                     x: -40,
                                 }}
-                                animate={{
-                                    opacity: 1,
-                                    x: 0,
-                                }}
+                                animate={entranceReady || reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: -40 }}
                                 transition={{
-                                    duration: 0.8,
+                                    duration: reduceMotion ? 0 : 0.8,
                                     ease: [0.22, 1, 0.36, 1],
                                 }}
                                 className="mb-6 flex items-center gap-3"
@@ -244,17 +243,14 @@ export default function Home({ initialPosts, articleSlugs }: { initialPosts: Arr
                             </motion.div>
 
                             <motion.img
-                                initial={{
+                                initial={reduceMotion ? false : {
                                     opacity: 0,
                                     y: 20,
                                 }}
-                                animate={{
-                                    opacity: 1,
-                                    y: 0,
-                                }}
+                                animate={entranceReady || reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                                 transition={{
-                                    duration: 0.7,
-                                    delay: 0.35,
+                                    duration: reduceMotion ? 0 : 0.7,
+                                    delay: reduceMotion ? 0 : 0.35,
                                 }}
                                 src={newLogo.src}
                                 alt="Fast Girls Club"
@@ -262,17 +258,14 @@ export default function Home({ initialPosts, articleSlugs }: { initialPosts: Arr
                             />
 
                             <motion.p
-                                initial={{
+                                initial={reduceMotion ? false : {
                                     opacity: 0,
                                     y: 20,
                                 }}
-                                animate={{
-                                    opacity: 1,
-                                    y: 0,
-                                }}
+                                animate={entranceReady || reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                                 transition={{
-                                    duration: 0.7,
-                                    delay: 0.35,
+                                    duration: reduceMotion ? 0 : 0.7,
+                                    delay: reduceMotion ? 0 : 0.35,
                                 }}
                                 className="mt-8 max-w-[26.25rem] text-base leading-7 text-white/65 md:text-lg"
                             >
@@ -282,17 +275,14 @@ export default function Home({ initialPosts, articleSlugs }: { initialPosts: Arr
                             </motion.p>
 
                             <motion.div
-                                initial={{
+                                initial={reduceMotion ? false : {
                                     opacity: 0,
                                     y: 20,
                                 }}
-                                animate={{
-                                    opacity: 1,
-                                    y: 0,
-                                }}
+                                animate={entranceReady || reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                                 transition={{
-                                    duration: 0.7,
-                                    delay: 0.5,
+                                    duration: reduceMotion ? 0 : 0.7,
+                                    delay: reduceMotion ? 0 : 0.5,
                                 }}
                                 className="mt-9 flex flex-wrap items-center gap-4"
                             >
@@ -321,7 +311,7 @@ export default function Home({ initialPosts, articleSlugs }: { initialPosts: Arr
                                 FGC / 001
                             </div>
 
-                            <HeroScene onReady={handleCarReady} />
+                            <HeroScene onReady={handleCarReady} entranceReady={entranceReady} />
 
                             <div className="absolute bottom-0 right-0 z-10 text-right">
                                 <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/35">

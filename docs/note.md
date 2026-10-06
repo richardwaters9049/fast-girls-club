@@ -126,3 +126,10 @@ The first idle-recovery rollout was insufficient: the frontend again received 42
 Grid loaders now share an on-demand, credential-free browser request to the public backend health URL before asking the Next proxies for data. The public health route allows only the publication origins to read its response. The wake-up validates status/service, omits credentials, and the proxy separately validates race data. Browser wake-up is bounded to 75 seconds, failure falls through to normal proxy recovery, and it is repeated on demand after five minutes. No timer keeps a server artificially alive. The public URL can be configured with NEXT_PUBLIC_F1_WAKE_URL. Main Grid startup also refreshes on focus/visibility/online, clears prior errors after success and prevents overlapping loads. Initial live loading waits for the same wake-up before its shorter timing request timeout.
 
 51 tests passed, including server-side bypass, shared visitor wake-up, expiry, omitted credentials and failure fallback. A warm-server success is insufficient evidence of idle-cycle correctness; production verification must state whether an actual full idle cycle was observed.
+
+
+## 6 October 2026 — homepage entrance after racing intro
+
+The homepage text and hero-car entrances were completing beneath the opening overlay. RacingIntro now reports completion after AnimatePresence has removed the fading overlay; seen-session and reduced-motion visits report completion immediately. Home holds its four existing text entrances and passes the same readiness flag to HeroScene, which keeps loading/rendering the model but waits to advance its existing entrance spin. Prefetching, cached editorial data and scroll animations remain intact.
+
+Validation: typecheck, lint and production build passed. A production-mode local browser timing check held logo opacity at zero throughout the intro, then observed 0 → 0.96661 → 1 after overlay removal. Fresh intro completion, Skip intro and same-tab refresh were checked in the browser.

@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 
 import Scene from "./Scene";
 
-export default function HeroScene({ onReady }: { onReady?: () => void }): React.ReactElement {
+export default function HeroScene({ onReady, entranceReady = true }: { onReady?: () => void; entranceReady?: boolean }): React.ReactElement {
     const [ready, setReady] = useState(false);
     const [interactive, setInteractive] = useState(false);
     const handleReady = useCallback(() => { setReady(true); onReady?.(); }, [onReady]);
@@ -12,9 +12,9 @@ export default function HeroScene({ onReady }: { onReady?: () => void }): React.
     return (
         <div className="absolute inset-0">
             <div
-                className={`absolute inset-0 transition-opacity duration-500 ease-out ${ready ? "opacity-100" : "pointer-events-none opacity-0"} ${interactive ? "" : "pointer-events-none"}`}
+                className={`absolute inset-0 transition-opacity duration-500 ease-out ${ready && entranceReady ? "opacity-100" : "pointer-events-none opacity-0"} ${interactive ? "" : "pointer-events-none"}`}
             >
-                <Scene onReady={handleReady} ready={ready} interactive={interactive} />
+                <Scene onReady={handleReady} ready={ready && entranceReady} interactive={interactive} />
             </div>
 
             {!ready && (

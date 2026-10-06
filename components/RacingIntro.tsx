@@ -11,9 +11,10 @@ import IntroCar, { INTRO_DRIVE_DURATION_MS } from "./3d/IntroCar";
 
 const SESSION_KEY = "fgc-racing-intro-v2";
 
-export default function RacingIntro({ carReady, articleSlugs }: {
+export default function RacingIntro({ carReady, articleSlugs, onComplete }: {
     carReady: boolean;
     articleSlugs: string[];
+    onComplete: () => void;
 }): React.ReactElement {
     const router = useRouter();
     const [visible, setVisible] = useState(false);
@@ -54,7 +55,10 @@ export default function RacingIntro({ carReady, articleSlugs }: {
         const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
         let seen = false;
         try { seen = sessionStorage.getItem(SESSION_KEY) === "seen"; } catch { /* Storage is optional. */ }
-        if (preference.matches || seen) return;
+        if (preference.matches || seen) {
+            onComplete();
+            return;
+        }
         const open = window.setTimeout(() => setVisible(true), 0);
         const onPreference = () => { if (preference.matches) dismiss(); };
         preference.addEventListener("change", onPreference);
@@ -66,7 +70,7 @@ export default function RacingIntro({ carReady, articleSlugs }: {
             window.clearTimeout(maximum);
             preference.removeEventListener("change", onPreference);
         };
-    }, [dismiss, startFinish]);
+    }, [dismiss, onComplete, startFinish]);
 
     useEffect(() => {
         if (!visible || !minimumElapsed || !carReady || !dataReady) return;
@@ -100,7 +104,7 @@ export default function RacingIntro({ carReady, articleSlugs }: {
     return (
         <>
             <noscript><style>{`.${styles.overlay}{display:none!important}`}</style></noscript>
-            <AnimatePresence>
+            <AnimatePresence onExitComplete={onComplete}>
                 {visible && (
                     <motion.div
                         className={`${styles.overlay} fixed inset-0 z-[200] flex flex-col items-center justify-center overflow-hidden bg-[#1c1c1c] px-6 text-white`}
