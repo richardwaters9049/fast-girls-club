@@ -8,9 +8,11 @@ A bespoke motorsport publication combining a WordPress newsroom, an animated Nex
 
 [Explore the website](https://fastgirlsclub.co.uk/) · [Read the stories](https://fastgirlsclub.co.uk/blog) · [Enter The Grid](https://fastgirlsclub.co.uk/f1)
 
-![Fast Girls Club homepage with its branded pink and yellow Formula 1 car](docs/images/fast-girls-club-homepage.jpg)
+![Autoplaying Fast Girls Club preview: homepage, Race Report, Blog and The Grid](docs/images/fast-girls-club-preview.gif)
 
-*The live homepage: an interactive branded car, editorial typography and the Fast Girls Club racing identity.*
+*Explore the homepage, Race Report, Blog and The Grid — an autoplaying preview of the live site, captured 6 October 2026.*
+
+[View the still homepage screenshot](docs/images/fast-girls-club-homepage.jpg)
 
 </div>
 
@@ -170,7 +172,7 @@ python3 scripts/audit-seo.py /tmp/fgc-seo-report.json
 bunx lighthouse https://fastgirlsclub.co.uk/ --output=html --output-path=/tmp/fgc-lighthouse.html
 ```
 
-The CLI needs a supported Chrome installation. Keep reports and screenshots outside the documents-only deployment-handover directory. The README screenshot lives in `docs/images/`.
+The CLI needs a supported Chrome installation. Keep reports and screenshots outside the documents-only deployment-handover directory. The README preview and still screenshot live in `docs/images/`.
 
 ## Run the project locally
 
@@ -241,7 +243,7 @@ lib/wordpress/        CMS requests, caching and mapping
 lib/f1/               Data contracts, adapters, prefetch and wake-up recovery
 deploy/wordpress/     Headless plugin source, ZIP, checks and publishing guide
 scripts/              SEO crawl and asset optimisation tools
-docs/images/          README screenshot
+docs/images/          README preview and still screenshot
 public/               Runtime brand, circuit, driver and car assets
 ```
 
