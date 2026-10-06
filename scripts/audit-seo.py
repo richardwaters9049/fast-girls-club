@@ -57,6 +57,7 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
 variants = [BASE+'/blog?page=1', BASE+'/blog?utm_source=audit', BASE+'/blog?q=Formula',
             BASE+'/missing-audit-page', 'http://fastgirlsclub.co.uk/blog',
             'https://www.fastgirlsclub.co.uk/blog', 'https://fast-girls-club.onrender.com/blog',
+            BASE+'/category/formula-1', BASE+'/author/fast-girls-club',
             'https://cms.fastgirlsclub.co.uk/', 'https://cms.fastgirlsclub.co.uk/feed/',
             'https://cms.fastgirlsclub.co.uk/sitemap_index.xml']
 variants = [fetch(url)[0] for url in variants]
@@ -74,7 +75,18 @@ for p in pages:
 for p in wp:
     if p['status'] not in (301,302,308) or not (p['location'] or '').startswith(BASE+'/blog/'):
         failures.append(p['url']+' does not redirect to frontend article')
-result = {'sitemap_count': len(urls), 'pages': pages, 'variants': variants, 'wordpress_posts': wp, 'failures': failures}
+for p in variants:
+    if p['url'].endswith('/feed/') and p['status'] == 200 and 'noindex' not in (p['robots_header'] or ''):
+        failures.append('CMS full-text RSS is indexable; install plugin 0.2.1 and purge CMS caches')
+    if 'onrender.com/blog' in p['url'] and p['location'] != BASE+'/blog':
+        failures.append('Render hostname must redirect to the publication')
+    if p['url'].endswith('/category/formula-1') and p['status'] != 308:
+        failures.append('Legacy Formula 1 archive must redirect to the matching blog filter')
+    if p['url'].endswith('/author/fast-girls-club') and p['status'] != 308:
+        failures.append('Legacy publisher archive must redirect to the blog')
+    if '?q=Formula' in p['url'] and not any('noindex' in r for r in p['robots']):
+        failures.append('Internal search pages must be noindex')
+result = {'sitemap_count' : len(urls), 'pages': pages, 'variants': variants, 'wordpress_posts': wp, 'failures': failures}
 if len(sys.argv)>1:
     with open(sys.argv[1], 'w') as f: json.dump(result, f, indent=2)
 print(json.dumps({'sitemap_pages':len(pages),'wordpress_posts':len(wp),'failures':failures},indent=2))

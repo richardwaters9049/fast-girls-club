@@ -46,6 +46,16 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: "/category/formula-1",
+        destination: "/blog?category=formula-1",
+        permanent: true,
+      },
+      {
+        source: "/author/fast-girls-club",
+        destination: "/blog",
+        permanent: true,
+      },
+      {
         source: "/2026/09/27/f1-fans-please-touch-grass-alpine-speaks-out-after-baku-drama",
         destination: "/blog/f1-fans-please-touch-grass-alpine-speaks-out-after-baku-drama",
         permanent: true,
