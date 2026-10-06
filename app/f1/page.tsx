@@ -15,6 +15,8 @@ import {
 import { livePollingDelay } from "@/lib/f1/live-polling";
 import { isFreshLiveSession } from "@/lib/f1/live-freshness";
 
+import { wakeF1Backend } from "@/lib/f1/backend-wakeup";
+
 import AnimatedLink from "@/components/ui/AnimatedLink";
 
 import ChampionshipPanel from "@/components/f1/dashboard/ChampionshipPanel";
@@ -53,6 +55,7 @@ import type {
 } from "@/lib/f1/types";
 
 async function fetchGridJson<T>(url: string): Promise<T> {
+    await wakeF1Backend();
     const response = await fetch(url, {
         cache: "no-store",
         signal: AbortSignal.timeout(12_000),
@@ -178,7 +181,10 @@ export default function F1Dashboard(): React.ReactElement {
     useEffect(() => {
         let cancelled = false;
 
+        let loading = false;
         async function loadInitialGridData(): Promise<void> {
+            if (loading || cancelled) return;
+            loading = true;
             // Panels become usable as their own data arrives. Race bundles and
             // live timing must not hold the whole dashboard behind a loader.
             const calendarRequest = loadRaceCalendar().then((data) => {
@@ -186,6 +192,7 @@ export default function F1Dashboard(): React.ReactElement {
                 const races = data.races.map(adaptApiRace).sort((a, b) => a.round - b.round);
                 setCalendar(races);
                 setSeason(data.season);
+                setCalendarError(null);
                 void prefetchRaceBundle(races);
             }).catch(() => {
                 if (!cancelled) setCalendarError("F1 calendar is currently unavailable.");
@@ -203,21 +210,31 @@ export default function F1Dashboard(): React.ReactElement {
                 if (!cancelled) setError("F1 timing is currently unavailable.");
             });
             const driverRequest = loadDriverStandings().then((data) => {
-                if (!cancelled) setDriverStandings(data);
+                if (!cancelled) { setDriverStandings(data); setDriverError(null); }
             }).catch(() => {
                 if (!cancelled) setDriverError("Driver championship data is currently unavailable.");
             });
             const constructorRequest = loadConstructorStandings().then((data) => {
-                if (!cancelled) setConstructorStandings(data);
+                if (!cancelled) { setConstructorStandings(data); setConstructorError(null); }
             }).catch(() => {
                 if (!cancelled) setConstructorError("Constructor championship data is currently unavailable.");
             });
             await Promise.allSettled([calendarRequest, liveRequest, driverRequest, constructorRequest]);
+            loading = false;
         }
 
+        const resume = () => {
+            if (document.visibilityState === "visible" && navigator.onLine) void loadInitialGridData();
+        };
+        window.addEventListener("focus", resume);
+        window.addEventListener("online", resume);
+        document.addEventListener("visibilitychange", resume);
         void loadInitialGridData();
 
         return () => {
+            window.removeEventListener("focus", resume);
+            window.removeEventListener("online", resume);
+            document.removeEventListener("visibilitychange", resume);
             cancelled = true;
         };
     }, []);

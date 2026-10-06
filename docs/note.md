@@ -118,3 +118,11 @@ All F1 proxy requests now use a shared server transport: three maximum attempts 
 The browser's shared Grid loader has a bounded network/transient-error retry and timeout covering server recovery. Failed race panels retry when the visible tab regains focus; retries retain request deduplication. Missing races/results remain honest missing states, and persistent failures still show an error. Latest-results explicitly waits for a request so an outage cannot become prerendered JSON.
 
 Typecheck, lint, 48 Bun tests and production build passed. New tests cover concurrent wake-up recovery, uncached persistent failures, disconnects, Retry-After and browser recovery. Free Render services still sleep after inactivity: this improves recovery, not hosting availability or cold-start speed. No paid plan changes were made.
+
+### Follow-up — visitor-triggered wake-up
+
+The first idle-recovery rollout was insufficient: the frontend again received 429 while backend logs showed no incoming application requests; a direct external request started the sleeping backend and restored responses. Requests were therefore being rejected before the application. The exact hosting-layer rule remains unverified.
+
+Grid loaders now share an on-demand, credential-free browser request to the public backend health URL before asking the Next proxies for data. It uses no-cors: its opaque response is not treated as proof of health, and the proxy still validates data. Browser wake-up is bounded to 75 seconds, failure falls through to normal proxy recovery, and it is repeated on demand after five minutes. No timer keeps a server artificially alive. The public URL can be configured with NEXT_PUBLIC_F1_WAKE_URL. Main Grid startup also refreshes on focus/visibility/online, clears prior errors after success and prevents overlapping loads. Initial live loading waits for the same wake-up before its shorter timing request timeout.
+
+51 tests passed, including server-side bypass, shared visitor wake-up, expiry, omitted credentials and failure fallback. A warm-server success is insufficient evidence of idle-cycle correctness; production verification must state whether an actual full idle cycle was observed.

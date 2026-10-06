@@ -1,3 +1,4 @@
+import { wakeF1Backend } from "./backend-wakeup";
 import type { F1Race } from "@/lib/f1/calendar";
 import { countryNameToCode } from "@/lib/f1/countries";
 import { selectDisplayedRace } from "@/lib/f1/race-selection";
@@ -31,7 +32,7 @@ async function loadJson<T>(url: string, ttl: number): Promise<T> {
         return cached.value as T;
     }
 
-    const pending = fetchGridData<T>(url)
+    const pending = wakeF1Backend().then(() => fetchGridData<T>(url))
         .then((value) => {
             responseCache.set(url, {
                 value,
