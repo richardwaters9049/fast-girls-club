@@ -133,7 +133,7 @@ Responsive Next Images reserve layout space and prioritise the brand logo. The h
 
 ## Google Analytics and cookie preferences
 
-GA4 is integrated through [`AnalyticsConsent.tsx`](components/AnalyticsConsent.tsx) and [`lib/analytics.ts`](lib/analytics.ts), using measurement ID `G-76CV16SY23`.
+GA4 is integrated through [`AnalyticsConsent.tsx`](components/AnalyticsConsent.tsx) and [`lib/analytics.ts`](lib/analytics.ts).
 
 No Google tag loads before the visitor accepts analytics. Preferences last 180 days; the bottom-right 🍪 icon reopens the settings. Withdrawal disables analytics, clears GA cookies and reloads to remove the loaded tag. Advertising consent, Google signals and advertising personalisation are disabled.
 
