@@ -1,10 +1,10 @@
+import { fetchF1Backend } from "@/lib/f1/backend-fetch";
 import { NextResponse } from "next/server";
 
 import { isFreshLiveSession, normaliseFeedDate } from "@/lib/f1/live-freshness";
 
 import { F1_API_BASE_URL } from "@/lib/config";
 
-const F1_API_TIMEOUT_MS = 55_000;
 
 type JsonRecord = Record<string, unknown>;
 
@@ -681,9 +681,8 @@ function buildRaceControl(value: unknown): Array<{
 
 export async function GET(): Promise<NextResponse> {
   try {
-    const response = await fetch(`${F1_API_BASE_URL}/live`, {
+    const response = await fetchF1Backend(`${F1_API_BASE_URL}/live`, {
       cache: "no-store",
-      signal: AbortSignal.timeout(F1_API_TIMEOUT_MS),
     });
 
     if (!response.ok) {

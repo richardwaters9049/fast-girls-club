@@ -1,3 +1,4 @@
+import { fetchF1Backend } from "@/lib/f1/backend-fetch";
 import { connection, NextResponse } from "next/server";
 
 import { F1_API_BASE_URL } from "@/lib/config";
@@ -6,7 +7,6 @@ import { getTeamColour } from "@/lib/f1/team-assets";
 
 export const revalidate = 1800;
 
-const F1_API_TIMEOUT_MS = 55_000;
 
 interface ApiDriverStanding {
   position: number;
@@ -49,17 +49,15 @@ export async function GET() {
   await connection();
   try {
     const [standingsResponse, driversResponse] = await Promise.all([
-      fetch(`${F1_API_BASE_URL}/standings/drivers`, {
+      fetchF1Backend(`${F1_API_BASE_URL}/standings/drivers`, {
         next: {
           revalidate: 1800,
         },
-        signal: AbortSignal.timeout(F1_API_TIMEOUT_MS),
       }),
-      fetch(`${F1_API_BASE_URL}/drivers`, {
+      fetchF1Backend(`${F1_API_BASE_URL}/drivers`, {
         next: {
           revalidate: 1800,
         },
-        signal: AbortSignal.timeout(F1_API_TIMEOUT_MS),
       }),
     ]);
 

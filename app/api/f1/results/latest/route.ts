@@ -1,11 +1,13 @@
-import { NextResponse } from "next/server";
+import { fetchF1Backend } from "@/lib/f1/backend-fetch";
+import { connection, NextResponse } from "next/server";
 import { F1_API_BASE_URL } from "@/lib/config";
 import { normaliseResult } from "@/lib/f1/results-adapter";
 
 export async function GET() {
+  await connection();
   try {
-    const response = await fetch(`${F1_API_BASE_URL}/results/current`, {
-      next: { revalidate: 60 }, signal: AbortSignal.timeout(55_000),
+    const response = await fetchF1Backend(`${F1_API_BASE_URL}/results/current`, {
+      next: { revalidate: 60 },
     });
     if (response.status === 404) return NextResponse.json({ race: null, results: [] }, { headers: { "Cache-Control": "no-store" } });
     if (!response.ok) throw new Error(`Results service returned ${response.status}`);
@@ -15,9 +17,9 @@ export async function GET() {
     }
     const results = data.results.map(normaliseResult).sort((a: ReturnType<typeof normaliseResult>, b: ReturnType<typeof normaliseResult>) => (a.position ?? Infinity) - (b.position ?? Infinity));
     if (!results.length) return NextResponse.json({ race: null, results: [] }, { headers: { "Cache-Control": "no-store" } });
-    const detailsResponse = await fetch(`${F1_API_BASE_URL}/races/${data.round}`, {
-      next: { revalidate: 60 }, signal: AbortSignal.timeout(15_000),
-    }).catch(() => null);
+    const detailsResponse = await fetchF1Backend(`${F1_API_BASE_URL}/races/${data.round}`, {
+      next: { revalidate: 60 },
+    }, 15_000).catch(() => null);
     const envelope = detailsResponse?.ok ? await detailsResponse.json() : null;
     const details = envelope?.race ?? null;
     const sameRace = details?.round === data.round && details?.season === data.season;

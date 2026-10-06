@@ -1,3 +1,4 @@
+import { fetchF1Backend } from "@/lib/f1/backend-fetch";
 import { connection, NextResponse } from "next/server";
 
 import { F1_API_BASE_URL } from "@/lib/config";
@@ -5,7 +6,6 @@ import { getTeamColour, getTeamLogoUrl } from "@/lib/f1/team-assets";
 
 export const revalidate = 1800;
 
-const F1_API_TIMEOUT_MS = 55_000;
 
 interface ApiConstructorStanding {
   classificationId: number;
@@ -34,11 +34,10 @@ export async function GET() {
   // Cache successful upstream data, never prerender an outage as the API response.
   await connection();
   try {
-    const response = await fetch(`${F1_API_BASE_URL}/standings/constructors`, {
+    const response = await fetchF1Backend(`${F1_API_BASE_URL}/standings/constructors`, {
       next: {
         revalidate: 1800,
       },
-      signal: AbortSignal.timeout(F1_API_TIMEOUT_MS),
     });
 
     if (!response.ok) {

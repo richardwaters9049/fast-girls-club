@@ -1,20 +1,19 @@
+import { fetchF1Backend } from "@/lib/f1/backend-fetch";
 import { connection, NextResponse } from "next/server";
 
 import { F1_API_BASE_URL } from "@/lib/config";
 
 export const revalidate = 21_600;
 
-const F1_API_TIMEOUT_MS = 55_000;
 
 export async function GET(): Promise<NextResponse> {
   // Cache successful upstream data, never prerender an outage as the API response.
   await connection();
   try {
-    const response = await fetch(`${F1_API_BASE_URL}/races`, {
+    const response = await fetchF1Backend(`${F1_API_BASE_URL}/races`, {
       next: {
         revalidate: 21_600,
       },
-      signal: AbortSignal.timeout(F1_API_TIMEOUT_MS),
     });
 
     if (!response.ok) {

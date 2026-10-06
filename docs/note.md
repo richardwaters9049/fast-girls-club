@@ -108,3 +108,13 @@ A production server smoke test returned successful responses for the homepage, n
 4. Add production observability for upstream timeouts, WordPress failures and F1 backend availability.
 5. Review WordPress publishing permissions and sanitisation policy before allowing less-trusted authors or plugins to supply article HTML.
 6. Optimise the remaining logo and 3D assets only after visual comparison, as they are active production assets.
+
+## 6 October 2026 — Grid recovery after idle hosting
+
+Production frontend logs showed race details, previous results and live requests receiving HTTP 429 while the free Render backend was asleep. Backend logs recorded its overnight shutdown; a direct request started it again, and the affected public endpoints recovered. The exact platform mechanism behind the 429 has not been established.
+
+All F1 proxy requests now use a shared server transport: three maximum attempts within a 90-second budget, 65-second individual timeouts, delayed retries for transient responses/network failures, Retry-After handling and cloned responses for simultaneous callers. Successful Next fetch revalidation and no-store error/live behaviour are preserved. Optional previous-race enrichment has a separate 15-second budget. The transport identifies the publication with a descriptive User-Agent.
+
+The browser's shared Grid loader has a bounded network/transient-error retry and timeout covering server recovery. Failed race panels retry when the visible tab regains focus; retries retain request deduplication. Missing races/results remain honest missing states, and persistent failures still show an error. Latest-results explicitly waits for a request so an outage cannot become prerendered JSON.
+
+Typecheck, lint, 48 Bun tests and production build passed. New tests cover concurrent wake-up recovery, uncached persistent failures, disconnects, Retry-After and browser recovery. Free Render services still sleep after inactivity: this improves recovery, not hosting availability or cold-start speed. No paid plan changes were made.

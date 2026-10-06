@@ -31,14 +31,7 @@ async function loadJson<T>(url: string, ttl: number): Promise<T> {
         return cached.value as T;
     }
 
-    const pending = fetch(url, { cache: "no-store" })
-        .then((response) => {
-            if (!response.ok) {
-                throw new Error(`F1 request failed: ${response.status}`);
-            }
-
-            return response.json() as Promise<T>;
-        })
+    const pending = fetchGridData<T>(url)
         .then((value) => {
             responseCache.set(url, {
                 value,
@@ -55,6 +48,30 @@ async function loadJson<T>(url: string, ttl: number): Promise<T> {
     responseCache.set(url, { expiresAt: 0, pending });
 
     return pending;
+}
+
+async function fetchGridData<T>(url: string): Promise<T> {
+    for (let attempt = 0; ; attempt++) {
+        try {
+            // The proxy may need up to 90 seconds to wake a sleeping service.
+            const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(100_000) });
+            if (response.ok) return await response.json();
+            if (attempt === 0 && [429, 500, 502, 503, 504].includes(response.status)) {
+                await response.body?.cancel();
+                await new Promise((resolve) => setTimeout(resolve, 2_000));
+                continue;
+            }
+            throw new Error(`F1 request failed: ${response.status}`);
+        } catch (error) {
+            // HTTP errors have already exhausted their retry above. Retry network
+            // disconnects once; never turn a missing race into a fabricated result.
+            if (attempt === 0 && error instanceof Error && !error.message.startsWith("F1 request failed:")) {
+                await new Promise((resolve) => setTimeout(resolve, 2_000));
+                continue;
+            }
+            throw error;
+        }
+    }
 }
 
 function peekJson<T>(url: string): T | undefined {

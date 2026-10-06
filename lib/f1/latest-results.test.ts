@@ -1,9 +1,13 @@
 import { afterAll, afterEach, expect, spyOn, test } from "bun:test";
+import * as nextServer from "next/server";
 import { GET } from "../../app/api/f1/results/latest/route";
 
+const connectionSpy = spyOn(nextServer, "connection").mockResolvedValue(undefined);
+const originalTimeout = globalThis.setTimeout;
+const timerSpy = spyOn(globalThis, "setTimeout").mockImplementation(((callback: () => void) => originalTimeout(callback, 0)) as typeof setTimeout);
 const fetchSpy = spyOn(globalThis, "fetch");
 afterEach(() => fetchSpy.mockReset());
-afterAll(() => fetchSpy.mockRestore());
+afterAll(() => { fetchSpy.mockRestore(); connectionSpy.mockRestore(); timerSpy.mockRestore(); });
 
 test("latest results retain their own race identity and winner", async () => {
   fetchSpy.mockResolvedValueOnce(Response.json({ season: 2026, round: 15, raceName: "Published race", results: [
@@ -29,7 +33,7 @@ test("no published results remains an honest empty state", async () => {
 test("an upstream outage is not replaced by a successful empty result", async () => {
   const log = spyOn(console, "error").mockImplementation(() => {});
   try {
-    fetchSpy.mockResolvedValueOnce(new Response(null, { status: 502 }));
+    fetchSpy.mockResolvedValue(new Response(null, { status: 502 }));
     const response = await GET();
     expect(response.status).toBe(502);
     expect(response.headers.get("Cache-Control")).toBe("no-store");

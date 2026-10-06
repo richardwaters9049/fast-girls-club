@@ -602,6 +602,7 @@ export default function RaceWeekendPanel({
     useEffect(() => {
         let cancelled = false;
 
+        let failed = false;
         const loadRaceData = async (): Promise<void> => {
             const [current, next] = await Promise.all([
                 loadRaceDetails(race.round).catch(() => null),
@@ -612,12 +613,24 @@ export default function RaceWeekendPanel({
                 return;
             }
 
+            failed = !normaliseRaceResponse(current);
             setData(buildRaceData(current, null, next, null));
         };
 
+        const resume = () => {
+            if (failed && document.visibilityState === "visible") {
+                failed = false;
+                setData(null);
+                void loadRaceData();
+            }
+        };
+        window.addEventListener("focus", resume);
+        document.addEventListener("visibilitychange", resume);
         void loadRaceData();
 
         return () => {
+            window.removeEventListener("focus", resume);
+            document.removeEventListener("visibilitychange", resume);
             cancelled = true;
         };
     }, [
@@ -918,7 +931,8 @@ export function LatestRaceResults({ full = false }: { full?: boolean }): React.R
     const [retry, setRetry] = useState(0);
     useEffect(() => {
         let cancelled = false;
-        loadLatestRaceResults().then((input) => {
+        let failed = false;
+        const load = () => loadLatestRaceResults().then((input) => {
             const response = input as { race: RawRaceResponse | null; results: RaceResult[]; round: number; season: number };
             const data = normaliseRaceResponse(response.race);
             if (cancelled) return;
@@ -930,9 +944,24 @@ export function LatestRaceResults({ full = false }: { full?: boolean }): React.R
                 location: data.circuit.city ?? "", countryCode: "",
                 startDate: data.race.date ?? "", endDate: data.race.date ?? "",
             } });
-        }).catch(() => { if (!cancelled) setError(true); })
+        }).catch(() => { failed = true; if (!cancelled) setError(true); })
           .finally(() => { if (!cancelled) setLoading(false); });
-        return () => { cancelled = true; };
+        const resume = () => {
+            if (failed && document.visibilityState === "visible") {
+                failed = false;
+                setError(false);
+                setLoading(true);
+                void load();
+            }
+        };
+        window.addEventListener("focus", resume);
+        document.addEventListener("visibilitychange", resume);
+        void load();
+        return () => {
+            cancelled = true;
+            window.removeEventListener("focus", resume);
+            document.removeEventListener("visibilitychange", resume);
+        };
     }, [retry]);
     if (loading) return <div role="status" className="border border-white/10 p-6 text-white/60">Loading previous race results…</div>;
     if (error) return <div role="alert" className="border border-white/10 p-6 text-white/70">
