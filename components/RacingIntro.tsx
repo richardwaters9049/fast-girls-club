@@ -137,7 +137,7 @@ export default function RacingIntro({ carReady, articleSlugs, onComplete }: {
                                 <IntroCar driving={lightsOut} progress={driveProgress} />
                             </motion.div>
                         </div>
-                        <button ref={skipRef} onClick={dismiss} className="absolute bottom-6 right-6 border-b border-white/30 pb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white/60 transition-colors hover:text-[#ff729f] focus-visible:outline-2 focus-visible:outline-[#ff729f]">Skip intro →</button>
+                        <button ref={skipRef} onClick={dismiss} className="absolute bottom-6 right-6 border-0 bg-transparent p-0 text-[10px] font-bold tracking-[0.12em] text-white/60 underline decoration-white/30 underline-offset-4 outline-none transition-colors hover:text-[#ff729f] focus-visible:text-[#ff729f] focus-visible:decoration-[#ff729f]">Skip Intro →</button>
                     </motion.div>
                 )}
             </AnimatePresence>
