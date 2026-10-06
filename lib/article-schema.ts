@@ -14,7 +14,11 @@ export function articleSchema(post: BlogPost, siteUrl: string) {
                 datePublished: post.date,
                 dateModified: post.modified,
                 ...(post.featuredImage ? { image: [post.featuredImage.heroUrl] } : {}),
-                ...(post.author ? { author: { "@type": "Person", name: post.author } } : {}),
+                ...(post.author ? { author: {
+                    "@type": post.author === "Fast Girls Club" ? "Organization" : "Person",
+                    name: post.author,
+                    ...(post.author === "Fast Girls Club" ? { url: siteUrl } : {}),
+                } } : {}),
                 publisher: { "@type": "Organization", name: "Fast Girls Club", url: siteUrl },
             },
             {

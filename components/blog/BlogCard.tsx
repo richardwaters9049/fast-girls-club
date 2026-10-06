@@ -103,7 +103,7 @@ export default function BlogCard({
 
                 <div className="flex flex-1 flex-col p-5">
                     <div className="flex items-center justify-between gap-3">
-                        <span className="text-[8px] font-bold uppercase tracking-[0.2em] text-white/30">
+                        <span className="text-[8px] font-bold uppercase tracking-[0.2em] text-white/65">
                             {formatDate(
                                 post.date,
                             )}
@@ -119,7 +119,7 @@ export default function BlogCard({
                     </h2>
 
                     {post.excerpt && (
-                        <p className="mt-4 line-clamp-4 text-sm leading-6 text-white/45">
+                        <p className="mt-4 line-clamp-4 text-sm leading-6 text-white/65">
                             {post.excerpt}
                         </p>
                     )}

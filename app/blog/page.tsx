@@ -263,7 +263,7 @@ export default async function BlogPage({
                 <div className="mx-auto max-w-[77.5rem]">
                     <BlogReveal direction="left" className="mb-8 flex flex-col justify-between gap-4 border-b border-[#1c1c1c]/15 pb-6 sm:flex-row sm:items-end">
                         <div>
-                            <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] text-[#b95322]">
+                            <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] text-[#99431b]">
                                 <span className="h-2 w-2 bg-[#ee8434]" />
                                 {hasFilters
                                     ? "Your selection"
@@ -279,7 +279,7 @@ export default async function BlogPage({
                             </h2>
                         </div>
 
-                        <p className="shrink-0 text-[10px] font-bold uppercase tracking-[0.18em] text-[#1c1c1c]/50">
+                        <p className="shrink-0 text-[10px] font-bold uppercase tracking-[0.18em] text-[#1c1c1c]/75">
                             {result.total}{" "}
                             {result.total ===
                                 1
@@ -353,7 +353,7 @@ export default async function BlogPage({
                                 Nothing found.
                             </h2>
 
-                            <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-[#1c1c1c]/50">
+                            <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-[#1c1c1c]/75">
                                 Try another search
                                 term or remove
                                 one of the filters

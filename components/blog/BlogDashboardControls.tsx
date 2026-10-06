@@ -97,7 +97,7 @@ export default function BlogDashboardControls({
                 <div className="grid gap-4 lg:grid-cols-[1.4fr_0.6fr] lg:items-center">
                     <form onSubmit={handleSearch} role="search" className="flex min-w-0 border border-[#1c1c1c]/15 bg-[#f4f2f1] focus-within:border-[#d45580]">
                         <label htmlFor="blog-search" className="sr-only">Search stories</label>
-                        <Search aria-hidden="true" className="ml-4 mt-[1.1rem] h-5 w-5 shrink-0 text-[#1c1c1c]/40" />
+                        <Search aria-hidden="true" className="ml-4 mt-[1.1rem] h-5 w-5 shrink-0 text-[#1c1c1c]/75" />
                         <input
                             id="blog-search"
                             name="search"
@@ -106,7 +106,7 @@ export default function BlogDashboardControls({
                             defaultValue={query}
                             placeholder="Search stories, drivers, teams…"
                             autoComplete="off"
-                            className="h-14 min-w-0 flex-1 bg-transparent px-4 text-sm text-[#1c1c1c] outline-none placeholder:text-[#1c1c1c]/40"
+                            className="h-14 min-w-0 flex-1 bg-transparent px-4 text-sm text-[#1c1c1c] outline-none placeholder:text-[#1c1c1c]/75"
                         />
                         <button
                             type="submit"
@@ -118,7 +118,7 @@ export default function BlogDashboardControls({
 
                     <div className="flex flex-wrap gap-2 sm:flex-nowrap">
                         <div className="min-w-[9rem] flex-1">
-                            <label htmlFor="blog-date" className="mb-1.5 block cursor-pointer text-[9px] font-black uppercase tracking-[0.17em] text-[#1c1c1c]/50">
+                            <label htmlFor="blog-date" className="mb-1.5 block cursor-pointer text-[9px] font-black uppercase tracking-[0.17em] text-[#1c1c1c]/75">
                                 Published
                             </label>
                             <div className="relative">
@@ -138,7 +138,7 @@ export default function BlogDashboardControls({
                         </div>
 
                         <div className="min-w-[9rem] flex-1">
-                            <label htmlFor="blog-sort" className="mb-1.5 block cursor-pointer text-[9px] font-black uppercase tracking-[0.17em] text-[#1c1c1c]/50">
+                            <label htmlFor="blog-sort" className="mb-1.5 block cursor-pointer text-[9px] font-black uppercase tracking-[0.17em] text-[#1c1c1c]/75">
                                 Sort by
                             </label>
                             <div className="relative">
@@ -159,7 +159,7 @@ export default function BlogDashboardControls({
 
                 <div className="mt-6 flex flex-col gap-3 border-t border-[#1c1c1c]/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex flex-wrap items-center gap-2">
-                        <span className="mr-2 text-[9px] font-black uppercase tracking-[0.18em] text-[#1c1c1c]/45">Topics</span>
+                        <span className="mr-2 text-[9px] font-black uppercase tracking-[0.18em] text-[#1c1c1c]/75">Topics</span>
 
                         <Link
                         prefetch={true}

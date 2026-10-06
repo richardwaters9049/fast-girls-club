@@ -108,7 +108,7 @@ export default function BlogPagination({
                 }
                 className={`inline-flex items-center justify-center border px-5 py-3 text-[9px] font-black uppercase tracking-[0.18em] transition-colors ${currentPage === 1
                     ? "pointer-events-none border-[#1c1c1c]/5 text-[#1c1c1c]/20"
-                    : "border-[#1c1c1c]/15 text-[#1c1c1c]/60 hover:border-[#ff729f] hover:text-[#1c1c1c]"
+                    : "border-[#1c1c1c]/15 text-[#1c1c1c]/75 hover:border-[#ff729f] hover:text-[#1c1c1c]"
                     }`}
             >
                 ← Previous
@@ -142,7 +142,7 @@ export default function BlogPagination({
                             }
                             className={`flex h-10 min-w-10 items-center justify-center px-3 text-[9px] font-black uppercase tracking-[0.12em] transition-colors ${active
                                 ? "bg-[#ff729f] text-[#1c1c1c]"
-                                : "border border-[#1c1c1c]/10 text-[#1c1c1c]/40 hover:border-[#1c1c1c]/25 hover:text-[#1c1c1c]"
+                                : "border border-[#1c1c1c]/10 text-[#1c1c1c]/75 hover:border-[#1c1c1c]/25 hover:text-[#1c1c1c]"
                                 }`}
                         >
                             {page}
@@ -174,7 +174,7 @@ export default function BlogPagination({
                 className={`inline-flex items-center justify-center border px-5 py-3 text-[9px] font-black uppercase tracking-[0.18em] transition-colors ${currentPage ===
                     totalPages
                     ? "pointer-events-none border-[#1c1c1c]/5 text-[#1c1c1c]/20"
-                    : "border-[#1c1c1c]/15 text-[#1c1c1c]/60 hover:border-[#ff729f] hover:text-[#1c1c1c]"
+                    : "border-[#1c1c1c]/15 text-[#1c1c1c]/75 hover:border-[#ff729f] hover:text-[#1c1c1c]"
                     }`}
             >
                 Next →
