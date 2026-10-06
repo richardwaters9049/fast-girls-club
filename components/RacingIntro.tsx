@@ -45,14 +45,17 @@ export default function RacingIntro({ carReady, articleSlugs, onComplete }: {
 
     useEffect(() => {
         let cancelled = false;
-        // Start all main routes immediately; warm every published article supplied
-        // by the server, including cards that aren't visible on the home page.
-        ["/about", "/blog", "/f1", ...articleSlugs.map((slug) => `/blog/${slug}`)]
-            .forEach((href) => router.prefetch(href));
+        // Warm all routes, but stagger speculative requests so they do not
+        // compete with the logo and 3D chunks on a slow first connection.
+        const routes = ["/about", "/blog", "/f1", ...articleSlugs.map((slug) => `/blog/${slug}`)];
+        const routeTimers = routes.map((href, index) => window.setTimeout(
+            () => router.prefetch(href),
+            750 + index * 400,
+        ));
         void prefetchGridData();
         void Promise.allSettled([loadRaceCalendar(), loadDriverStandings(), loadConstructorStandings()])
             .then(() => { if (!cancelled) setDataReady(true); });
-        return () => { cancelled = true; };
+        return () => { cancelled = true; routeTimers.forEach(window.clearTimeout); };
     }, [articleSlugs, router]);
 
     useEffect(() => {

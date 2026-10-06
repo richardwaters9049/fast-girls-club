@@ -17,11 +17,11 @@ export default function ArticleContent({
             ref={scope}
             className={`${styles.content}
                 [&_a]:font-bold
-                [&_a]:text-[#ee8434]
+                [&_a]:text-[#99431b]
                 [&_a]:underline
                 [&_a]:underline-offset-4
                 [&_a]:transition-colors
-                [&_a:hover]:text-[#ff729f]
+                [&_a:hover]:text-[#b33c66]
 
                 [&_blockquote]:my-10
                 [&_blockquote]:border-l-4
@@ -32,6 +32,8 @@ export default function ArticleContent({
                 [&_blockquote]:font-bold
                 [&_blockquote]:italic
                 [&_blockquote]:text-white
+                [&_blockquote_a]:text-[#ff98b9]
+                [&_blockquote_a:hover]:text-white
 
                 [&_figure]:my-10
                 [&_figure]:overflow-hidden
@@ -76,7 +78,7 @@ export default function ArticleContent({
                 [&_.wp-element-caption]:mt-3
                 [&_.wp-element-caption]:text-xs
                 [&_.wp-element-caption]:italic
-                [&_.wp-element-caption]:text-[#1c1c1c]/45
+                [&_.wp-element-caption]:text-[#1c1c1c]/75
 
                 [&_.wp-block-heading]:font-black
                 [&_.wp-block-list]:leading-7
