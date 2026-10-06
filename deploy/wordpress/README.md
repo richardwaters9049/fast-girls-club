@@ -20,7 +20,8 @@ An existing saved mode survives deactivation/reactivation; check it first if rei
 - CMS front page redirects to the public homepage; posts index to /blog;
   the About page (slug about) to /about.
 - Logged-in requests, previews, Customizer, REST, admin, AJAX, cron, XML-RPC,
-  feeds, embeds, robots, favicon and identified sitemap requests are bypassed.
+  feeds, embeds, robots, favicon and identified sitemap requests bypass redirects.
+  Version 0.2.1 adds `X-Robots-Tag: noindex, follow` to CMS feeds when enabled.
 - No permalink or REST response filters are applied; the frontend still reads
   published posts from WordPress normally. Direct media files are unaffected.
 - Other CMS HTML pages get an X-Robots-Tag: noindex, follow header. Missing pages
@@ -44,7 +45,7 @@ Next.js site is available only on localhost.
    loops; test CMS homepage, About, archives and unknown URLs.
 6. Signed in: test Gutenberg save/publish/update, previews and media uploads.
    Confirm new articles reach Next.js and unpublishing is handled. The frontend
-   currently uses 60-second revalidation, not an immediate push webhook.
+   currently uses 15-second revalidation, not an immediate push webhook.
 7. Check actual CMS response headers after the cache purge. Do not blanket-block
    crawling with robots.txt: crawlers need access to see redirects/noindex.
 8. Only after these checks, select Live mode.
@@ -52,7 +53,7 @@ Next.js site is available only on localhost.
 This plugin does not disable public REST access, authenticate editorial previews,
 change Yoast's stored metadata, rewrite Gutenberg links, remove feeds or submit
 search-engine removals. Existing WordPress preview protection remains authoritative.
-The Next.js article metadata supplies public canonicals. Feed/sitemap indexing and
+The Next.js article metadata supplies public canonicals. Sitemap indexing and
 old changed/deleted-slug inventories require a separate production review.
 
 ## Rollback
@@ -91,3 +92,7 @@ Each post editor has a **Homepage placement** panel. Save/publish the post, choo
 The public `/wp-json/fgc/v1/homepage` endpoint returns exactly three published post IDs or nulls. Next.js reads those IDs, retrieves their WordPress summaries and retains slot order. An old plugin without the endpoint retains the previous newest-first behaviour. CMS/network failures are surfaced rather than silently ignoring editorial exclusions. Changes can take several minutes through the existing caches.
 
 Before rollout run `php deploy/wordpress/test-homepage.php`, `php deploy/wordpress/test-homepage-actions.php`, `php deploy/wordpress/test-routing.php`, PHP lint, and frontend lint/typecheck/tests/build. Update the existing plugin with the ZIP (do not delete it), retain Test redirect mode, deploy the frontend, then verify replacement/cancel, moving slots, hidden articles and draft/publish behaviour in the real CMS. The local checks do not substitute for this live verification.
+
+## 6 October 2026 SEO audit update
+
+The 0.2.1 ZIP includes the RSS noindex fix. Install/update the ZIP before considering this feed fix live. Public CMS HTML was verified as 302 plus noindex in Test mode; switch to Live only after authenticated editor/preview acceptance. Run `php deploy/wordpress/test-feed-headers.php` for the header regression checks.

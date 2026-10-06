@@ -32,7 +32,7 @@ export default function SectionHeading({
                 </h2>
 
                 {description && (
-                    <p className="mt-2 text-sm leading-6 text-white/40">
+                    <p className="mt-2 text-sm leading-6 text-white/65">
                         {description}
                     </p>
                 )}

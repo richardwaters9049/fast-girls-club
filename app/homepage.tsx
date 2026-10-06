@@ -256,7 +256,7 @@ export default function Home({ initialPosts, articleSlugs }: { initialPosts: Arr
                                 }}
                                 className="h-auto w-[450px] max-w-full"
                             >
-                                <Image src={newLogo} alt="Fast Girls Club" priority sizes="(max-width: 600px) calc(100vw - 48px), 450px" className="h-auto w-full" />
+                                <Image src={newLogo} alt="Fast Girls Club" loading="eager" fetchPriority="high" sizes="(max-width: 600px) calc(100vw - 48px), 450px" className="h-auto w-full" />
                             </motion.div>
 
                             <motion.p

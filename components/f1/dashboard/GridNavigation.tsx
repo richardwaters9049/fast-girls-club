@@ -100,7 +100,7 @@ export default function GridNavigation({
                             onClick={() => onPanelChange(item.id)}
                             className={`relative cursor-pointer rounded-none bg-transparent px-4 py-2 text-[10px] font-bold uppercase tracking-[0.16em] hover:bg-transparent ${activePanel === item.id
                                 ? "text-white hover:text-white"
-                                : "text-white/45 hover:text-white"
+                                : "text-white/65 hover:text-white"
                                 }`}
                         >
                             {activePanel === item.id && (

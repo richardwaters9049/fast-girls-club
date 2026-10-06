@@ -125,7 +125,7 @@ export default function RacingIntro({ carReady, articleSlugs, onComplete }: {
                         <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_35%,#68284055,transparent_65%)]" />
                         <div aria-hidden="true" className={`${styles.track} absolute inset-x-0 bottom-0 h-1/2`} />
                         <motion.div className="relative flex flex-col items-center" animate={lightsOut ? { scale: 1.03, opacity: 1 } : { scale: 1, opacity: 1 }} transition={{ duration: 0.4 }}>
-                            <Image src={logo} alt="Fast Girls Club" priority sizes="240px" className="h-auto w-48 sm:w-60" />
+                            <Image src={logo} alt="Fast Girls Club" loading="eager" fetchPriority="high" sizes="240px" className="h-auto w-48 sm:w-60" />
                             <p className="mt-8 text-[10px] font-bold uppercase tracking-[0.35em] text-white/60">Meet you on the grid</p>
                             <div aria-hidden="true" className="mt-8 flex gap-3 rounded-full border border-white/10 bg-black/30 p-4 sm:gap-4">
                                 {[0, 1, 2, 3, 4].map((light) => (
