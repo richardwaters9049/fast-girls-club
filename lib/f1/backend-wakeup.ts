@@ -9,11 +9,12 @@ export function wakeF1Backend(): Promise<void> {
     if (pending) return pending;
     if (Date.now() - lastWake < 5 * 60_000) return Promise.resolve();
     pending = fetch(WAKE_URL, {
-        mode: "no-cors", credentials: "omit", cache: "no-store",
+        mode: "cors", credentials: "omit", cache: "no-store",
         signal: AbortSignal.timeout(75_000),
-    }).then(() => {
-        // An opaque response cannot prove application health. The same-origin
-        // Grid requests still validate their HTTP status and data afterwards.
+    }).then(async (response) => {
+        if (!response.ok) throw new Error("Backend is still waking up");
+        const health = await response.json();
+        if (health?.service !== "f1-api" || health?.status !== "ok") throw new Error("Invalid backend health response");
         lastWake = Date.now();
     }).catch(() => {
         // A blocked cross-origin request must not prevent normal proxy recovery.
