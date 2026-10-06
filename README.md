@@ -8,11 +8,13 @@ A bespoke motorsport publication combining a WordPress newsroom, an animated Nex
 
 [Explore the website](https://fastgirlsclub.co.uk/) · [Read the stories](https://fastgirlsclub.co.uk/blog) · [Enter The Grid](https://fastgirlsclub.co.uk/f1)
 
-![Autoplaying Fast Girls Club preview: homepage, Race Report, Blog and The Grid](docs/images/fast-girls-club-preview.gif)
+| Homepage | Race Report |
+| --- | --- |
+| [![Homepage — open full-size screenshot](docs/images/fast-girls-club-homepage.jpg)](docs/images/fast-girls-club-homepage.jpg) | [![Race Report — open full-size screenshot](docs/images/fast-girls-club-race-report.jpg)](docs/images/fast-girls-club-race-report.jpg) |
+| **Blog** | **The Grid** |
+| [![Blog — open full-size screenshot](docs/images/fast-girls-club-blog.jpg)](docs/images/fast-girls-club-blog.jpg) | [![The Grid — open full-size screenshot](docs/images/fast-girls-club-grid.jpg)](docs/images/fast-girls-club-grid.jpg) |
 
-*Explore the homepage, Race Report, Blog and The Grid — an autoplaying preview of the live site, captured 6 October 2026.*
-
-[View the still homepage screenshot](docs/images/fast-girls-club-homepage.jpg)
+*A static gallery of the live site. Click any image to open the full-size capture.*
 
 </div>
 
@@ -172,7 +174,7 @@ python3 scripts/audit-seo.py /tmp/fgc-seo-report.json
 bunx lighthouse https://fastgirlsclub.co.uk/ --output=html --output-path=/tmp/fgc-lighthouse.html
 ```
 
-The CLI needs a supported Chrome installation. Keep reports and screenshots outside the documents-only deployment-handover directory. The README preview and still screenshot live in `docs/images/`.
+The CLI needs a supported Chrome installation. Keep reports and screenshots outside the documents-only deployment-handover directory. The README gallery screenshots live in `docs/images/`.
 
 ## Run the project locally
 
@@ -243,7 +245,7 @@ lib/wordpress/        CMS requests, caching and mapping
 lib/f1/               Data contracts, adapters, prefetch and wake-up recovery
 deploy/wordpress/     Headless plugin source, ZIP, checks and publishing guide
 scripts/              SEO crawl and asset optimisation tools
-docs/images/          README preview and still screenshot
+docs/images/          Static README screenshot gallery
 public/               Runtime brand, circuit, driver and car assets
 ```
 
