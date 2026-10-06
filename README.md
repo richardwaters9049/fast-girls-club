@@ -1,95 +1,214 @@
+<div align="center">
+
 # Fast Girls Club
 
-Fast Girls Club is a Next.js motorsport publication focused on women in motorsport. It combines WordPress editorial content with a Formula 1 dashboard, live timing and interactive 3D presentation.
+**Women in motorsport. Fast stories. A different lens on the grid.**
 
-## Technology
+A bespoke motorsport publication combining a WordPress newsroom, an animated Next.js website and a purpose-built Formula 1 data service.
 
-- Next.js 16 App Router and React 19
-- TypeScript and Tailwind CSS v4
-- Bun
-- Framer Motion
-- React Three Fiber and Three.js
-- WordPress REST API for editorial content
-- The sibling `f1-api` service for Formula 1 data
+[Explore the website](https://fastgirlsclub.co.uk/) · [Read the stories](https://fastgirlsclub.co.uk/blog) · [Enter The Grid](https://fastgirlsclub.co.uk/f1)
 
-## Application areas
+![Fast Girls Club homepage with its branded pink and yellow Formula 1 car](docs/images/fast-girls-club-homepage.jpg)
 
-### Homepage
+*The live homepage: an interactive branded car, editorial typography and the Fast Girls Club racing identity.*
 
-The homepage combines the latest WordPress stories with an interactive React Three Fiber hero, an image-led route into The Grid and branded editorial sections. On desktop, the 3D car can be rotated with the mouse and follows a scroll-driven exit and return sequence. Touch interaction remains reserved for normal page scrolling.
+</div>
 
-Homepage motion honours `prefers-reduced-motion`. Story-card entrances run once to avoid flicker, while deliberately directional sections may respond to both entry and exit.
+## The experience
 
-### Editorial
+Fast Girls Club puts women in motorsport front and centre, with an editorial website built around racing news, culture and community. The site includes:
 
-The homepage displays the latest published WordPress stories. `/blog` provides searching, category/date filters, sorting and pagination, while `/blog/[slug]` renders the article body and WordPress media.
+- A racing intro with the brand logo, starting lights and a drifting 3D car, followed by the homepage entrance animations.
+- An interactive hero car, directional scroll animations and responsive layouts that respect reduced-motion preferences.
+- **Race Report**, with three editorial positions controlled from WordPress, and a searchable, filterable, paginated blog.
+- **The Grid**, with race-weekend schedules, driver and constructor standings, the calendar, live timing and previous-race classifications.
+- Shared navigation, article animations, the pink-to-orange navbar line and a small 🍪 control for analytics preferences.
 
-WordPress requests are made on the server through `lib/wordpress/client.ts`. The public `/api/blog/latest` endpoint exists only to supply the client-rendered homepage section.
+Latest always goes directly to Race Report, bypassing the intro. The other main navigation links and logo explicitly return to the top, including when clicked again on the current page. A normal fresh homepage visit retains the opening sequence.
 
-### The Grid
+## How it all connects
 
-`/f1` is the active Formula 1 dashboard. It includes:
-
-- season overview;
-- current, previous and next race context;
-- live timing;
-- driver and constructor standings;
-- the race calendar;
-- available circuit maps and the 3D car experience.
-
-F2 and F3 are deliberately marked as unavailable until genuine data is connected. Missing results or circuit maps are shown as unavailable and are never replaced with invented values.
-
-### About
-
-`/about` presents the Fast Girls Club mission, editorial point of view and working brand values. Its current narrative copy is suitable placeholder content and should be reviewed before a final production launch.
-
-## Data architecture
-
-```text
-WordPress REST API ──→ lib/wordpress ──→ pages / internal latest-post route
-
-f1-api ──→ Next.js /api/f1/* routes ──→ F1 dashboard components
+```mermaid
+flowchart LR
+    Editors[Editors in WordPress] --> CMS[Pressable CMS]
+    CMS -->|REST articles, media and homepage slots| Next[Next.js on Render]
+    Provider[f1api.dev REST data] --> API[Bun / Fastify F1 API on Render]
+    Timing[Formula 1 SignalR feed] -->|Shared WebSocket connection| API
+    API -->|Server-side requests| Next
+    Next --> Readers[Website readers]
+    Readers -->|Consent granted| GA[Google Analytics 4]
 ```
 
-The Next.js application has one F1 backend setting: `F1_API_BASE_URL`. It should include the backend's `/api` prefix. The default local value is `http://127.0.0.1:8787/api`.
+WordPress is the editorial source of truth. Next.js requests its content and renders the public publication. The separate F1 API adapts external motorsport data; Next.js exposes same-origin `/api/f1/*` endpoints to the browser. The browser also makes an on-demand, credential-free backend health request to help wake the API after inactivity.
 
-The internal routes are:
+**Publishing currently uses REST reads and revalidation, not a publish webhook or a WordPress-to-Next.js POST pipeline.** Editors write once in WordPress; the public article appears on the Next.js site without maintaining a second content database.
 
-| Route | Purpose |
+### Hosting and domains
+
+| Component | Hosting | Address / role |
+| --- | --- | --- |
+| Public Next.js frontend | Render web service | [fastgirlsclub.co.uk](https://fastgirlsclub.co.uk/) |
+| WordPress CMS and uploaded media | Pressable | [cms.fastgirlsclub.co.uk](https://cms.fastgirlsclub.co.uk/) |
+| Bespoke F1 API | Render web service | `https://f1-api-009n.onrender.com/api` |
+| Domain DNS | Pressable | Apex points to Render; www redirects to the apex |
+| Frontend repository | GitHub | [fast-girls-club](https://github.com/richardwaters9049/fast-girls-club) |
+| Backend repository | GitHub | [f1-api](https://github.com/richardwaters9049/f1-api) |
+
+The former Netlify site was removed after the Render cutover. The frontend's Render hostname redirects permanently to the public domain. HTTPS certificates are issued for the root and www domains. Oracle deployment files in the backend are planning templates; they do not describe the current production host.
+
+The recorded Render services use free hosting, which can introduce cold-start delays. Wake-up recovery has been implemented and tested against a genuine backend idle shutdown; it does not make a sleeping service instantaneous or guarantee continuous availability. Always-on hosting is a future option requiring agreement to its cost.
+
+## WordPress integration and presentation changes
+
+The public presentation has been rebuilt in Next.js rather than served by the WordPress theme: branded typography and gradients, responsive story cards, the 3D car, intro and scroll motion, article layouts and The Grid all live in this repository. WordPress retains its familiar visual block editor, posts, categories, featured images, media and authenticated previews.
+
+The repository contains **no versioned WordPress theme source or documented theme-file patch**. The reproducible WordPress customisation is the headless plugin described below. Keep any separate dashboard-only theme/CSS changes in a deployment record before describing them as part of the source-controlled implementation.
+
+Editorial integration includes mapping embedded categories/media and Yoast-derived editorial fields, responsive YouTube embeds and server-rendered article metadata. Public article canonicals point to the Next.js URL. Authenticated Preview remains a WordPress preview, not a preview of the Next.js design. A previously reported YouTube editor warning could not be reproduced; successful embedding is verified, but a permanent warning fix has not been established.
+
+### Our custom headless plugin
+
+[Fast Girls Club Headless](deploy/wordpress/README.md) was created to keep WordPress useful for editors while avoiding a second public copy of each article.
+
+- Public CMS posts redirect to the matching `https://fastgirlsclub.co.uk/blog/{slug}` article.
+- The CMS homepage, posts index and About page map to their public equivalents; other CMS HTML receives `noindex, follow` when enabled.
+- Logged-in editors, previews, REST, administration, media and protected requests retain their normal behaviour.
+- **Off**, **Test — temporary 302**, and **Live — permanent 301** modes support controlled rollout. Destinations are fixed rather than taken from user-supplied redirect parameters.
+- Version **0.2.1** adds a noindex header to full-text CMS RSS feeds without removing feed delivery.
+- A **Homepage placement** panel lets editors choose Automatic, Hide, Left, Middle or Right. Replacing an occupied position asks for confirmation naming the affected story. Replaced stories stay in the blog; draft, trashed and unpublished pins are ignored.
+
+Source and upload package: [`deploy/wordpress/fgc-headless/`](deploy/wordpress/fgc-headless/) and [`fgc-headless.zip`](deploy/wordpress/fgc-headless.zip). WordPress updates are deployed separately from a frontend Git push.
+
+**Verified rollout status — 6 October 2026:** the installed homepage controls and CMS article redirects work in Test mode. The 0.2.1 RSS update is packaged and locally tested but its installation is pending. Complete authenticated editor/preview acceptance before switching to permanent 301 redirects. Google must recrawl before its duplicate/indexing reports can be confirmed clear.
+
+For editor guidance, see [the publishing workflow](deploy/wordpress/EDITOR-WORKFLOW.md). Update the existing plugin rather than deleting it. Rollback is Off/deactivation plus a Pressable cache purge; a `FGC_HEADLESS_DISABLED` emergency override is supported.
+
+## Our bespoke Formula 1 API
+
+The sibling [F1 API repository](https://github.com/richardwaters9049/f1-api) is built with **Bun, TypeScript, Fastify and ws**. It gives the website one application-facing data contract instead of coupling UI components to multiple provider formats.
+
+The implementation separates routes, provider access, normalisation and typed models. REST requests use finite timeouts, parameter validation, in-memory caching and shared in-flight requests. Adapters handle numeric strings, nested identities, missing fields and event-specific race/circuit reconciliation. Missing values remain unavailable; the service does not invent results, standings or timing.
+
+The same backend maintains an outbound Formula 1 SignalR/WebSocket connection, subscribes to timing topics, merges incremental feed updates and reconnects with capped backoff. It exposes snapshots through `/api/live`. The browser currently **polls Next.js**, which reads those snapshots; it does not have its own direct timing WebSocket subscription. Live labels require a connected feed, a started session, an appropriate session window and fresh updates.
+
+| Frontend endpoint | Backend endpoint | Purpose |
+| --- | --- | --- |
+| `/api/f1/calendar` | `/api/races` | Season calendar |
+| `/api/f1/drivers` | `/api/standings/drivers` + `/api/drivers` | Driver standings and metadata |
+| `/api/f1/constructors` | `/api/standings/constructors` | Constructor standings |
+| `/api/f1/race/[round]` | `/api/races/:round` | Weekend details |
+| `/api/f1/race/[round]/results` | `/api/results/:season/:round` | Matching-season classification |
+| `/api/f1/results/latest` | `/api/results/current` | Latest race with published results |
+| `/api/f1/live` | `/api/live` | Timing snapshot |
+
+The backend also exposes `/api/health` and `/api/meta`. Inspect the metadata body: HTTP 200 can accompany `status: degraded`. Production binds to the configured host/port and fails if that port is occupied; development can try the next port. Shutdown closes the timing connection cleanly.
+
+### How the API can improve
+
+Priorities are always-on hosting if continuous availability is required, stronger observability for latency/rate limits/freshness, and active-race acceptance testing for reconnects and stale-session handling. Shared persistent caching would retain REST data through restarts and support multiple instances; the current cache is process-local.
+
+Further options include stronger runtime schemas, verified provider fallback with explicit provenance, broader historical coverage, and a browser-facing streaming layer to replace polling. F2/F3 should only be enabled once genuine data is integrated. These are future improvements, not deployed capabilities. Verify provider completeness against authoritative championship data before claiming full coverage.
+
+## Caching, prefetching and rendering performance
+
+Caching is layered according to freshness:
+
+| Layer | Current behaviour |
 | --- | --- |
-| `/api/f1/live` | Normalised live or most-recent timing state |
-| `/api/f1/calendar` | Current season calendar |
-| `/api/f1/race/[round]` | Normalised race detail |
-| `/api/f1/race/[round]/results` | Results using the season reported by the race API |
-| `/api/f1/drivers` | Driver standings joined with driver metadata |
-| `/api/f1/constructors` | Constructor standings |
+| Editorial server data | Stable-key Next.js cache, 15-second revalidation; a shared 15-second `fgc_refresh` bucket avoids stale anonymous Pressable REST responses |
+| Homepage stories | Initial server-rendered cards; visible pages refresh every 30 seconds and on return; `/api/blog/latest` itself is no-store |
+| Next.js client route cache | Dynamic stale time 15 seconds, static 30 seconds to limit old prefetched editorial pages |
+| F1 browser data | Shared pending requests and cached successes: calendar/race detail 5 minutes; standings/results 1 minute |
+| Next.js F1 responses | Calendar 6 hours; standings/race detail 30 minutes; published results typically 60 seconds; errors and live responses no-store |
+| F1 backend REST cache | Drivers/constructors 30 minutes; calendar 5 minutes; race details/results 10 minutes; standings 1 minute |
+| Car runtime assets | Optimised meshopt model, 2K WebP livery and 512px HDR environment; 24-hour browser cache |
 
-Static data uses server-side revalidation. Live data is not cached; the dashboard polls every five seconds on the Live panel or while a session is live, and every thirty seconds otherwise.
+These are layered lifetimes, not a promise that every value updates within one short interval. Background revalidation can retain successful cached content during upstream outages. Failed requests are not cached as successful empty data. Editorial publication is eventual rather than instantaneous; publish/trash webhooks for immediate invalidation are a useful next improvement.
 
-## Configuration
+The homepage warms About, Blog, The Grid and published article routes, staggered by 400 ms starting after 750 ms. Grid data is also prefetched from any entry page after its first paint; shared loaders deduplicate requests. This does not download every possible filter, pagination variant, image or historical race.
 
-Copy `.env.example` to `.env.local` and adjust values when necessary:
+Live timing stays outside the response cache. Polling adapts to live/inactive sessions, pauses in hidden/offline tabs and backs off on failures. A visitor-triggered health request plus bounded retries helps recover from Render sleep; there is no periodic keep-alive designed to prevent sleeping.
 
-```dotenv
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
-WORDPRESS_API_URL=https://fastgirlsclub.co.uk/wp-json/wp/v2
-F1_API_BASE_URL=http://127.0.0.1:8787/api
+Responsive Next Images reserve layout space and prioritise the brand logo. The hero canvas renders on demand, invalidating while moving or interacting. Entrance timing uses elapsed time; sustained slow active frames reduce pixel density. Car assets and data can load during the intro, while homepage entrance motion waits for the intro to finish. Reduced motion bypasses the racing sequence.
+
+## Google Analytics and cookie preferences
+
+GA4 is integrated through [`AnalyticsConsent.tsx`](components/AnalyticsConsent.tsx) and [`lib/analytics.ts`](lib/analytics.ts), using measurement ID `G-76CV16SY23`.
+
+No Google tag loads before the visitor accepts analytics. Preferences last 180 days; the bottom-right 🍪 icon reopens the settings. Withdrawal disables analytics, clears GA cookies and reloads to remove the loaded tag. Advertising consent, Google signals and advertising personalisation are disabled.
+
+Tracking is gated to enabled production builds on the public root/www hosts; localhost, CMS and preview hosts are excluded. GA4 supplies the initial page view. Its web stream must have Enhanced measurement's **Page changes based on browser history events** enabled for client navigation; the application deliberately sends no additional manual page-view events.
+
+The code and consent behaviour have been tested. Account-side history measurement, Realtime/DebugView delivery and duplicate event counts still need verification. Review query redaction/site-search configuration and keep personal data out of URLs. The privacy notice must reflect the actual analytics setup.
+
+## Lighthouse, SEO and quality checks
+
+Lighthouse is part of the verification workflow through **Google PageSpeed Insights in the browser** and supplemental official CLI audits. It is not an embedded production service, automatic monitoring integration or a configured CI performance gate.
+
+The 6 October 2026 supplemental mobile CLI audit recorded:
+
+| Page | Performance | Accessibility | Best practices | SEO |
+| --- | ---: | ---: | ---: | ---: |
+| Homepage | 47 | 100 | 100 | 100 |
+| Blog | 83 | 100 | 100 | 100 |
+| Representative article | 98 | 100 | 100 | 100 |
+| The Grid | 71 | 100 | 100 | 100 |
+| About | 85 | 96 | 100 | 100 |
+
+Homepage performance improved from 31; blocking time fell from 5,430 to 990 ms, LCP from 14.4 to 5.7 seconds and CLS from 0.125 to 0. The About contrast flag is an aria-hidden decorative background. Scores vary by environment: the latest valid browser desktop homepage scored 57, the earlier usable mobile run scored 35, and the final mobile browser capture failed to load. **Homepage performance and those intermittent timeouts remain open work.** There is no CrUX field data establishing a real-user Core Web Vitals pass.
+
+Technical SEO includes unique page metadata, canonical URLs, a paginated article sitemap, filtered-search noindex rules, permanent legacy/hosting redirects and safe NewsArticle/Breadcrumb JSON-LD. The audit checked 10 sitemap pages and six CMS article redirects; Google's code-input validator recognised two valid structured-data items without optional warnings.
+
+Google's URL test still reported a robots block despite an allow-all public robots file. Search Console inspection is deferred; duplicate exclusions, selected canonicals, complete indexing and high rankings are **not verified**. The strict [`SEO crawler`](scripts/audit-seo.py) correctly reports the pending CMS RSS noindex fix. A Lighthouse SEO score of 100 is not proof of high search ranking.
+
+Checks also cover editorial freshness/placement, results contracts, live freshness, consent, backend wake-up and safe JSON-LD. The latest frontend audit passed 53 tests plus lint, TypeScript and production build checks. Manual desktop/mobile navigation and visual checks complement automated testing; real-device touch and screen-reader acceptance remain useful follow-ups.
+
+To run a fresh audit:
+
+```bash
+python3 scripts/audit-seo.py /tmp/fgc-seo-report.json
+bunx lighthouse https://fastgirlsclub.co.uk/ --output=html --output-path=/tmp/fgc-lighthouse.html
 ```
 
-`NEXT_PUBLIC_SITE_URL` is used for canonical URLs, Open Graph metadata, the sitemap and robots configuration.
+The CLI needs a supported Chrome installation. Keep reports and screenshots outside the documents-only deployment-handover directory. The README screenshot lives in `docs/images/`.
 
-## Development
+## Run the project locally
 
-Install dependencies and start Next.js:
+Clone the frontend and backend as sibling repositories. In the frontend repository:
+
+```bash
+bun install
+cp .env.example .env.local
+bun run dev
+```
+
+In the sibling `f1-api` repository:
 
 ```bash
 bun install
 bun run dev
 ```
 
-Run the sibling `f1-api` project separately on port `8787` when working on The Grid.
+The frontend defaults to port 3000 and the backend to 8787. Set `NEXT_PUBLIC_F1_WAKE_URL=http://127.0.0.1:8787/api/health` locally to avoid intentionally waking the production backend during development. The default code fallback is the production wake URL, so an explicit local override is preferable; the proxy remains the normal data path if the cross-origin health read is unavailable.
 
-Before merging a change, run:
+### Frontend configuration
+
+| Variable | Production value / purpose |
+| --- | --- |
+| `NEXT_PUBLIC_SITE_URL` | `https://fastgirlsclub.co.uk` — canonicals, sitemap and metadata |
+| `WORDPRESS_API_URL` | `https://cms.fastgirlsclub.co.uk/wp-json/wp/v2` |
+| `F1_API_BASE_URL` | `https://f1-api-009n.onrender.com/api` — include `/api` |
+| `NEXT_PUBLIC_F1_WAKE_URL` | `https://f1-api-009n.onrender.com/api/health` |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | `G-76CV16SY23` |
+| `NEXT_PUBLIC_ANALYTICS_ENABLED` | `true` only for intended production tracking |
+
+Public `NEXT_PUBLIC_*` values are compiled into the client build. Rebuild after changing them. Never put secrets in public variables or commit `.env.local`.
+
+Backend settings: `HOST=0.0.0.0` on Render, its assigned `PORT`, `F1_PROVIDER_BASE_URL` and `UPSTREAM_TIMEOUT_MS`. The backend runs `bun run start` without a separate build script. Render builds Next.js with `bun run build` and starts it with `bun run start`.
+
+### Validation
+
+Frontend:
 
 ```bash
 bun run test
@@ -98,171 +217,41 @@ bun run typecheck
 bun run build
 ```
 
-## Project structure
+Backend:
 
-```text
-app/
-  about/                   Brand story and values
-  api/blog/latest/         Homepage editorial feed
-  api/f1/                  F1 server-side boundary
-  blog/                    Editorial dashboard and articles
-  f1/                      The Grid
-components/
-  3d/                      Interactive hero car and circuit scenes
-  blog/                    Editorial cards, filters and pagination
-  f1/                      Timing, standings and dashboard panels
-  layout/                  Shared site navigation and footer
-lib/
-  f1/                      F1 models, country/circuit helpers and race selection
-  wordpress/               WordPress client, mapping and text utilities
-public/                     Runtime assets only
+```bash
+bun run test
+bun run typecheck
 ```
 
-## Working principles
+WordPress plugin:
 
-- Do not fabricate motorsport data. Use clear loading, error or unavailable states.
-- Keep provider response handling at the server/API boundary.
-- Keep shared navigation and editorial presentation consistent across routes.
-- Cache according to freshness: completed/static data can be cached; live data cannot.
-- Preserve the established Fast Girls Club palette and editorial character.
+```bash
+php -l deploy/wordpress/fgc-headless/fgc-headless.php
+php deploy/wordpress/test-routing.php
+php deploy/wordpress/test-homepage.php
+php deploy/wordpress/test-homepage-actions.php
+php deploy/wordpress/test-feed-headers.php
+```
 
-## Editorial migration — 4 October 2026
+PHP CLI checks are not a substitute for authenticated WordPress save, publish, Preview and media acceptance.
 
-The CMS REST origin is `https://cms.fastgirlsclub.co.uk/wp-json/wp/v2`.
-The root route renders `app/homepage.tsx`. Set `NEXT_PUBLIC_SITE_URL` to the
-public Next.js origin in production; localhost is intended for development.
+## Project map and next steps
 
-The sitemap includes About and paginates published articles in batches of 100.
-CMS failures propagate rather than returning a successful, incomplete sitemap.
-Article canonical and Open Graph URLs use the slug returned by WordPress.
+```text
+app/                  Routes, metadata, articles and server API boundary
+components/3d/        Branded intro car and interactive hero
+components/blog/      Editorial cards, filters and article presentation
+components/f1/        The Grid and timing/standings panels
+components/layout/    Navigation and footer
+lib/wordpress/        CMS requests, caching and mapping
+lib/f1/               Data contracts, adapters, prefetch and wake-up recovery
+deploy/wordpress/     Headless plugin source, ZIP, checks and publishing guide
+scripts/              SEO crawl and asset optimisation tools
+docs/images/          README screenshot
+public/               Runtime brand, circuit, driver and car assets
+```
 
-`next.config.ts` maps the four published dated article paths verified on
-4 October to their corresponding `/blog/{slug}` paths using permanent redirects.
-Keep this map when articles are renamed; add verified historical paths as needed.
-These redirects only handle requests reaching Next.js. Redirecting public CMS
-article pages still requires WordPress/Pressable configuration after the public
-Next.js site is available. Admin, REST, media and editorial previews must remain
-accessible. No production CMS or DNS changes were made.
+Next priorities: finish the WordPress RSS update and permanent redirect acceptance; investigate Search Console's crawl discrepancy; verify GA4 events; profile homepage 3D/load performance and Render timeouts; test timing during an active race; replace the About placeholder manifesto with approved client copy.
 
-## Google Analytics and consent
-
-GA4 measurement ID: `G-76CV16SY23`. The root layout mounts
-`components/AnalyticsConsent.tsx`. Visitors can accept or reject analytics,
-then change their choice using the persistent Cookie settings button.
-No Google tag is loaded before consent. Preferences last six months.
-Withdrawal disables analytics, clears GA cookies and reloads the page to remove
-the loaded tag and its listeners. If storage is blocked, choices last only for
-the current page.
-
-Tracking is restricted to production builds on `fastgirlsclub.co.uk` and
-`www.fastgirlsclub.co.uk`. Localhost, preview hosts and the CMS are excluded.
-The banner remains visible locally for UI review. No advertising consent is
-granted; Google signals and advertising personalisation are disabled.
-
-Page views use GA4's automatic strategy. The code configures the tag once after
-consent and permits its initial page view. It sends no manual page-view events
-and has no route-change tracking hook. Enhanced measurement must have
-**Page changes based on browser history events** enabled in the GA4 web stream
-for client navigation and browser back/forward tracking. Account access is
-currently unavailable, so that setting and actual event delivery are unverified.
-Do not follow the earlier instruction to disable Enhanced measurement.
-
-Production configuration:
-1. Set `NEXT_PUBLIC_GA_MEASUREMENT_ID=G-76CV16SY23` and
-   `NEXT_PUBLIC_ANALYTICS_ENABLED=true` in the production build environment,
-   then rebuild. Local and example configuration keep it false.
-2. When account access is available, verify the automatic history setting and
-   event counts in Realtime/DebugView, including initial load and back/forward.
-3. Verify browser consent, rejection, reload and withdrawal before launch.
-
-Automatic collection uses Google's URL, title and referrer handling. The former
-manual query-string removal no longer applies: URL queries, including blog
-searches, may be collected. Review the stream's query-parameter redaction and
-site-search settings when account access returns, and keep personal data out of
-URLs. No custom user IDs or personal-data events are supplied by this code.
-The site's privacy information should describe its use of Google Analytics.
-
-The Next.js source and publicly fetched CMS/root HTML contained no existing
-Google tags during inspection on 4 October. This does not establish WordPress
-plugin settings or the GA4 stream configuration; check those before launch.
-
-References:
-- https://developers.google.com/analytics/devguides/collection/ga4/views
-- https://developers.google.com/tag-platform/security/guides/consent
-
-## WordPress redirect plugin
-
-The optional [CMS redirect plugin](deploy/wordpress/README.md) is packaged at
-`deploy/wordpress/fgc-headless.zip`. It defaults to Off and provides temporary
-Test and permanent Live modes. It is prepared locally, not installed on the CMS.
-Read its launch checks and rollback instructions before enabling it.
-
-## The Grid contract and freshness — 5 October 2026
-
-Race results now read nested driver/constructor identities from the sibling API.
-The backend fastest-lap string is exposed in the frontend's fastestLap.time
-shape. Retirement text is preserved as retired and status. Unsupported laps and
-milliseconds remain null; missing fields no longer disappear during JSON
-serialisation. Both season and round must match. Successful results have a
-60-second CDN lifetime instead of twelve hours; backend caching still applies.
-
-Live responses explicitly use Cache-Control: no-store. A live label requires
-a connected feed, Started status, a valid session window and a feed update
-within two minutes (up to 30 seconds of future clock skew is tolerated).
-The scheduled end has a 30-minute grace period. Local SignalR dates use the
-supplied GmtOffset; ambiguous dates without a timezone cannot establish live
-status. These conservative bounds may hide a live label during a prolonged
-feed silence or a heavily delayed session rather than present stale data as live.
-
-Polling failures clear timing data and its live label. A five-second browser
-timer also expires a retained live label. Requests do not overlap within the
-active polling effect; obsolete responses after an effect change are ignored.
-An inactive/expired snapshot may still be shown as non-live when available.
-
-Tests cover the nested results contract, explicit nulls, retirement, timezones,
-future/historical sessions and stale/missing updates. Active-race browser
-behaviour and actual disconnect/reconnect scenarios still need verification.
-
-## Polling and article presentation — 5 October 2026
-
-The visible Grid checks inactive timing every two minutes. During a live session,
-the Live tab checks every ten seconds and other Grid panels every minute.
-Polling pauses in hidden/offline tabs and resumes with a request on return.
-Retries back off to five minutes; requests are sequential and aborted on cleanup.
-Initial Grid loading still makes one timing request. Browser freshness checks
-run locally every five seconds and do not make network requests.
-
-Steady-state idle Live-tab polling is reduced from 720 to 30 requests per hour
-per visible tab (excluding initial loads, focus/resume and retries). This is not
-a shared cache: requests still scale with concurrent viewers. The F1 backend
-maintains its existing shared SignalR connection; each browser poll reads that
-state, rather than opening a separate upstream timing subscription.
-
-Article content has scoped 0.025rem body letter spacing. YouTube and
-YouTube-nocookie embeds fill the article column at a responsive 16:9 ratio,
-overriding WordPress's fixed iframe dimensions. Global typography is unchanged.
-
-## Championship driver portraits
-
-The 2026 standings use verified local Formula 1 portraits when the live feed
-has no headshots. Matching live headshots still take priority. The local assets
-are matched by driver code and restricted to their verified season; unknown
-drivers/seasons retain initials. Tall fallback portraits are cropped from the
-top so the circular avatar shows the driver's face. Source URLs are recorded
-in public/images/f1-drivers/2026/SOURCES.md. No extra timing polling is required.
-
-## Latest published race results
-
-The Race tab's previous-race card and the Live tab's Live / Previous race switch
-share /api/f1/results/latest. This adapts the backend /api/results/current route,
-which skips missing-result races on 404 but propagates upstream outages. The
-selected result's season, round, name and date are displayed explicitly; it may
-be older than the immediately preceding calendar event. Archived classification
-is never converted into live timing data.
-
-The Race tab shows the top three; Previous race in the Live tab shows the full
-classification in a scrollable panel. Winner comes from position one. Laps and
-fastest lap come only from matching-season, matching-round race metadata.
-Missing metadata stays unavailable. Client requests are shared/cached for one
-minute; there is no additional periodic results polling. Live polling uses the
-slower background cadence while Previous race is selected.
+Preserve the approved visual identity and genuine-data policy when extending the project. Read [`AGENTS.md`](AGENTS.md) and the installed Next.js documentation before framework changes. The sibling workspace's dated `deployment-handover/` records contain detailed rollout, idle-recovery and audit evidence; newer records supersede earlier status notes.

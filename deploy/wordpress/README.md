@@ -2,7 +2,7 @@
 
 This optional plugin keeps WordPress as the content store and editor, while
 routing public readers to the Next.js publication. It is **Off by default**.
-Prepared locally; not installed or tested inside the live WordPress runtime.
+Rollout status as of 6 October 2026: version 0.2.0 is installed and public CMS articles redirect in Test mode. The packaged 0.2.1 RSS header update is locally tested but not yet installed. Authenticated editor/preview acceptance for that update and permanent Live-mode rollout remain pending.
 
 ## Install without changing public behaviour
 
@@ -89,7 +89,7 @@ Official hook references:
 
 Each post editor has a **Homepage placement** panel. Save/publish the post, choose Automatic, Hide, Left, Middle or Right, then click **Save homepage placement**. Fixed slots require a published, unprotected post. Automatic fills unassigned slots newest first. A story appears only once. Replacing a currently displayed story asks for confirmation naming it; cancellation changes nothing. The replaced article remains in the blog but is hidden from the homepage until its placement is changed back to Automatic or a fixed slot. Moving a selected article releases its old slot. Unpublished/deleted pins are ignored. On mobile the same left-to-right order stacks vertically.
 
-The public `/wp-json/fgc/v1/homepage` endpoint returns exactly three published post IDs or nulls. Next.js reads those IDs, retrieves their WordPress summaries and retains slot order. An old plugin without the endpoint retains the previous newest-first behaviour. CMS/network failures are surfaced rather than silently ignoring editorial exclusions. Changes can take several minutes through the existing caches.
+The public `/wp-json/fgc/v1/homepage` endpoint returns exactly three published post IDs or nulls. Next.js reads those IDs, retrieves their WordPress summaries and retains slot order. An old plugin without the endpoint retains the previous newest-first behaviour. CMS/network failures are surfaced rather than silently ignoring editorial exclusions. The frontend now uses 15-second Next.js revalidation and 30-second visible-homepage refreshes. Updates are eventual; upstream/cache failures can extend the delay.
 
 Before rollout run `php deploy/wordpress/test-homepage.php`, `php deploy/wordpress/test-homepage-actions.php`, `php deploy/wordpress/test-routing.php`, PHP lint, and frontend lint/typecheck/tests/build. Update the existing plugin with the ZIP (do not delete it), retain Test redirect mode, deploy the frontend, then verify replacement/cancel, moving slots, hidden articles and draft/publish behaviour in the real CMS. The local checks do not substitute for this live verification.
 
