@@ -133,14 +133,17 @@ export function prepareModel(
 export default function Model({ onReady, ready, interactive }: ModelProps): React.ReactElement {
     const { scene: sourceScene } = useGLTF(HERO_CAR_MODEL_PATH);
     const sourceTexture = useTexture(HERO_CAR_LIVERY_PATH);
-    const { gl, invalidate } = useThree();
+    const { gl, invalidate, setDpr } = useThree();
     const entranceRef = useRef<THREE.Group>(null);
     const interactionRef = useRef<THREE.Group>(null);
     const scrollRef = useRef<THREE.Group>(null);
     const scrollProgressRef = useRef(0);
     const entranceProgressRef = useRef(0);
+    const entranceStartedRef = useRef<number | null>(null);
     const reducedMotionRef = useRef(false);
     const firstFramesRef = useRef(0);
+    const slowFramesRef = useRef(0);
+    const previousFrameActiveRef = useRef(false);
     const readyReportedRef = useRef(false);
     const carHasExitedRef = useRef(false);
     const rotationTargetRef = useRef({
@@ -341,6 +344,14 @@ export default function Model({ onReady, ready, interactive }: ModelProps): Reac
 
     useFrame((_, frameDelta) => {
         const delta = Math.min(frameDelta, 0.05);
+        // Reduce only the canvas resolution when sustained rendering falls below
+        // 12.5 fps. Geometry, lighting and every interaction remain available.
+        slowFramesRef.current = previousFrameActiveRef.current && frameDelta > 0.08
+            ? slowFramesRef.current + 1 : 0;
+        if (slowFramesRef.current >= 3 && gl.getPixelRatio() > 0.75) {
+            setDpr(0.75);
+            invalidate();
+        }
         if (!readyReportedRef.current) {
             firstFramesRef.current += 1;
             invalidate();
@@ -359,9 +370,12 @@ export default function Model({ onReady, ready, interactive }: ModelProps): Reac
             !reducedMotionRef.current &&
             entranceProgressRef.current < 1
         ) {
+            // Keep the approved duration even when a low-powered renderer drops
+            // frames. Counting capped frame deltas stretches the spin under load.
+            entranceStartedRef.current ??= performance.now();
             entranceProgressRef.current = Math.min(
                 1,
-                entranceProgressRef.current + Math.min(delta, 0.05) / 1.35,
+                (performance.now() - entranceStartedRef.current) / 1350,
             );
             const progress = entranceProgressRef.current;
             const ease = 1 - Math.pow(1 - progress, 3);
@@ -469,7 +483,10 @@ export default function Model({ onReady, ready, interactive }: ModelProps): Reac
             + Math.abs(interactionGroup.rotation.x - rotationTargetRef.current.x)
             + Math.abs(interactionGroup.rotation.y - rotationTargetRef.current.y)
             + Math.abs(zoom - zoomTargetRef.current);
-        if (moving > 0.001 || (ready && !reducedMotionRef.current && entranceProgressRef.current < 1)) invalidate();
+        const keepAnimating = !readyReportedRef.current || moving > 0.001
+            || (ready && !reducedMotionRef.current && entranceProgressRef.current < 1);
+        previousFrameActiveRef.current = keepAnimating;
+        if (keepAnimating) invalidate();
     });
 
     return (
