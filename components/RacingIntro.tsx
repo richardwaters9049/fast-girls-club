@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { loadRaceCalendar, loadDriverStandings, loadConstructorStandings, prefetchGridData } from "@/lib/f1/race-prefetch";
 import logo from "@/public/images/F1-images/newlogo3.png";
 import styles from "./RacingIntro.module.css";
+import { useSiteEntryPathname } from "./SiteEntryProvider";
 const INTRO_DRIVE_DURATION_MS = 1600;
 const IntroCar = dynamic(() => import("./3d/IntroCar"), { ssr: false });
 
@@ -21,6 +22,7 @@ export default function RacingIntro({ carReady, articleSlugs, onComplete }: {
     onComplete: () => void;
 }): React.ReactElement {
     const router = useRouter();
+    const entryPathname = useSiteEntryPathname();
     const [visible, setVisible] = useState(false);
     const [minimumElapsed, setMinimumElapsed] = useState(false);
     const [dataReady, setDataReady] = useState(false);
@@ -62,7 +64,7 @@ export default function RacingIntro({ carReady, articleSlugs, onComplete }: {
         const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
         // An editorial anchor must land directly on its content, including
         // when the first homepage visit starts from another route/new tab.
-        if (preference.matches || introPlayedInDocument || window.location.hash === "#latest") {
+        if (entryPathname !== "/" || preference.matches || introPlayedInDocument || window.location.hash === "#latest") {
             introPlayedInDocument = true;
             onComplete();
             return;
@@ -78,7 +80,7 @@ export default function RacingIntro({ carReady, articleSlugs, onComplete }: {
             window.clearTimeout(maximum);
             preference.removeEventListener("change", onPreference);
         };
-    }, [dismiss, onComplete, startFinish]);
+    }, [dismiss, entryPathname, onComplete, startFinish]);
 
     useEffect(() => {
         if (!visible || !minimumElapsed || !carReady || !dataReady) return;
